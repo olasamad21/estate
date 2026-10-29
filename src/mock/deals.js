@@ -5,7 +5,6 @@ export const DEALS = [
     id: 'deal_harbor_218',
     listingId: 'list_harbor',
     stage: 'in_escrow',
-    stageLabel: 'In Escrow',
     contractStartDate: daysFromNow(-14),
     escrowTotalDays: 30,
     contractClosingDate: daysFromNow(16),
@@ -33,7 +32,6 @@ export const DEALS = [
     id: 'deal_crestwood_740',
     listingId: 'list_crestwood',
     stage: 'in_escrow',
-    stageLabel: 'In Escrow',
     contractStartDate: daysFromNow(-8),
     escrowTotalDays: 25,
     contractClosingDate: daysFromNow(17),
@@ -48,7 +46,7 @@ export const DEALS = [
       dueDate: daysFromNow(5),
       status: 'pending',
     },
-    participantIds: ['usr_sarah', 'usr_elena'], // Elena (Seller) & Sarah (Agent) only
+    participantIds: ['usr_sarah', 'usr_elena'],
     lastActivityAt: hoursFromNow(-5),
     unreadCountByRole: {
       agent: 0,
@@ -61,7 +59,7 @@ export const DEALS = [
     id: 'deal_meadowbrook_104',
     listingId: 'list_meadowbrook',
     stage: 'active_offer',
-    stageLabel: 'Active Offer',
+    offerExpiresAt: daysFromNow(2),
     contractStartDate: daysFromNow(-2),
     escrowTotalDays: 30,
     contractClosingDate: daysFromNow(28),
@@ -76,7 +74,7 @@ export const DEALS = [
       dueDate: daysFromNow(2),
       status: 'urgent',
     },
-    participantIds: ['usr_sarah', 'usr_david'], // David (Buyer) & Sarah (Agent) only
+    participantIds: ['usr_sarah', 'usr_david'],
     lastActivityAt: hoursFromNow(-3),
     unreadCountByRole: {
       agent: 1,
@@ -89,7 +87,7 @@ export const DEALS = [
     id: 'deal_aspen_512',
     listingId: 'list_aspen',
     stage: 'active_offer',
-    stageLabel: 'Active Offer',
+    offerExpiresAt: daysFromNow(1),
     contractStartDate: daysFromNow(-1),
     escrowTotalDays: 30,
     contractClosingDate: daysFromNow(29),
@@ -104,7 +102,7 @@ export const DEALS = [
       dueDate: daysFromNow(7),
       status: 'pending',
     },
-    participantIds: ['usr_sarah', 'usr_marcus'], // Marcus (Lender) & Sarah (Agent) only
+    participantIds: ['usr_sarah', 'usr_marcus'],
     lastActivityAt: hoursFromNow(-8),
     unreadCountByRole: {
       agent: 0,
@@ -117,7 +115,6 @@ export const DEALS = [
     id: 'deal_stclaire_890',
     listingId: 'list_stclaire',
     stage: 'closed',
-    stageLabel: 'Closed Escrow',
     contractStartDate: daysFromNow(-35),
     escrowTotalDays: 30,
     contractClosingDate: daysFromNow(-5),
@@ -132,7 +129,7 @@ export const DEALS = [
       dueDate: daysFromNow(-5),
       status: 'cleared',
     },
-    participantIds: ['usr_sarah', 'usr_david', 'usr_elena'], // Sarah, David, Elena (Marcus not attached)
+    participantIds: ['usr_sarah', 'usr_david', 'usr_elena'],
     lastActivityAt: daysFromNow(-5),
     unreadCountByRole: {
       agent: 0,

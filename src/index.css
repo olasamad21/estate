@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+@theme {
+  --color-canvas: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F1F3F5;
+  --color-line: #E5E7EB;
+  --color-line-strong: #D1D5DB;
+  --color-ink: #111827;
+  --color-ink-soft: #374151;
+  --color-ink-muted: #5F6775;
+  --color-brand: #0F172A;
+
+  /* Semantic status tokens */
+  --color-status-success: #065F46;
+  --color-status-success-bg: #ECFDF5;
+  --color-status-success-line: #A7F3D0;
+
+  --color-status-warning: #92400E;
+  --color-status-warning-bg: #FFFBEB;
+  --color-status-warning-line: #FDE68A;
+
+  --color-status-danger: #991B1B;
+  --color-status-danger-bg: #FEF2F2;
+  --color-status-danger-line: #FECACA;
+
+  --color-status-info: #1F2937;
+  --color-status-info-bg: #F1F3F5;
+  --color-status-info-line: #D1D5DB;
+
+  /* Semantic role tokens */
+  /* Agent: Slate */
+  --color-role-agent-solid: #334155;
+  --color-role-agent-bg: #F1F5F9;
+  --color-role-agent-line: #CBD5E1;
+  --color-role-agent-ink: #1E293B;
+
+  /* Buyer: Blue */
+  --color-role-buyer-solid: #1D4ED8;
+  --color-role-buyer-bg: #EFF6FF;
+  --color-role-buyer-line: #BFDBFE;
+  --color-role-buyer-ink: #1E40AF;
+
+  /* Seller: Teal */
+  --color-role-seller-solid: #0F766E;
+  --color-role-seller-bg: #F0FDFA;
+  --color-role-seller-line: #99F6E4;
+  --color-role-seller-ink: #115E59;
+
+  /* Lender: Indigo */
+  --color-role-lender-solid: #4338CA;
+  --color-role-lender-bg: #EEF2FF;
+  --color-role-lender-line: #C7D2FE;
+  --color-role-lender-ink: #3730A3;
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  /* Accessible focus ring utility */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

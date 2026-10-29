@@ -7,7 +7,6 @@ export const MARKET_CONFIG = {
   currency: 'USD',
   currencySymbol: '$',
   locale: 'en-US',
-  timezone: 'America/Los_Angeles',
   marketName: 'Bay Coastal Metro',
 
   // Neutral, plausible real estate sample addresses

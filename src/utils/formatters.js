@@ -50,18 +50,6 @@ export function escrowProgress(startIso, totalDays = 30) {
 }
 
 /**
- * Formats a numeric value into currency using the configured market locale and currency
- */
-export function formatCurrency(amount) {
-  if (typeof amount !== 'number' || isNaN(amount)) return '$0';
-  return new Intl.NumberFormat(MARKET_CONFIG.locale || 'en-US', {
-    style: 'currency',
-    currency: MARKET_CONFIG.currency || 'USD',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-/**
  * Formats an ISO string to a localized date string
  */
 export function formatDate(iso, options = {}) {
@@ -73,6 +61,19 @@ export function formatDate(iso, options = {}) {
     ...options,
   };
   return new Intl.DateTimeFormat(MARKET_CONFIG.locale || 'en-US', defaultOptions).format(date);
+}
+
+/**
+ * Formats a numeric value into currency using the configured market locale and currency.
+ * Always formats via IntlNumberFormat, including 0 on invalid input.
+ */
+export function formatCurrency(amount) {
+  const numericValue = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  return new Intl.NumberFormat(MARKET_CONFIG.locale || 'en-US', {
+    style: 'currency',
+    currency: MARKET_CONFIG.currency || 'USD',
+    maximumFractionDigits: 0,
+  }).format(numericValue);
 }
 
 /**
@@ -92,4 +93,26 @@ export function formatRelativeTime(iso) {
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays}d ago`;
   return formatDate(iso, { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Computes dynamic stage label based on deal state and relative dates
+ */
+export function getStageLabel(deal) {
+  if (!deal) return '';
+  if (deal.stage === 'in_escrow') {
+    const progress = escrowProgress(deal.contractStartDate, deal.escrowTotalDays || 30);
+    return `Under contract, ${progress.label}`;
+  }
+  if (deal.stage === 'active_offer') {
+    const remaining = daysUntil(deal.offerExpiresAt);
+    if (remaining <= 0) return 'Offer pending, responds today';
+    if (remaining === 1) return 'Offer pending, responds in 1 day';
+    return `Offer pending, responds in ${remaining} days`;
+  }
+  if (deal.stage === 'closed') {
+    const closedDateStr = formatDate(deal.contractClosingDate || deal.contractStartDate);
+    return `Closed ${closedDateStr}`;
+  }
+  return 'Active';
 }

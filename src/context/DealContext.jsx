@@ -36,7 +36,7 @@ function createSpawnedDeal(payload) {
     id: spawnedId,
     listingId: payload.listingId || 'list_aspen',
     stage: 'active_offer',
-    stageLabel: 'Active Offer',
+    offerExpiresAt: daysFromNow(3),
     contractStartDate: new Date().toISOString(),
     escrowTotalDays: 30,
     contractClosingDate: daysFromNow(30),
