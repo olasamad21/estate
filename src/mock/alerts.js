@@ -1,0 +1,70 @@
+import { hoursFromNow } from '../utils/formatters.js';
+import { MARKET_CONFIG } from '../config/market.js';
+
+export const INITIAL_ALERTS = [
+  {
+    id: 'alt_001',
+    type: 'inspection_due',
+    dealId: 'deal_harbor_218',
+    title: 'Inspection Period Expiring',
+    description: `Physical property inspection contingency for ${MARKET_CONFIG.sampleAddresses[0].address} expires in 3 days.`,
+    priority: 'high',
+    timestamp: hoursFromNow(-1),
+    isRead: false,
+    targetRoles: ['agent', 'buyer', 'seller'],
+  },
+  {
+    id: 'alt_002',
+    type: 'doc_signed',
+    dealId: 'deal_harbor_218',
+    title: 'Disclosure Countersigned',
+    description: `Elena Rostova signed the statutory Natural Hazard Disclosure for ${MARKET_CONFIG.sampleAddresses[0].address}.`,
+    priority: 'normal',
+    timestamp: hoursFromNow(-8),
+    isRead: false,
+    targetRoles: ['agent', 'buyer'],
+  },
+  {
+    id: 'alt_003',
+    type: 'offer_received',
+    dealId: 'deal_meadowbrook_104',
+    title: 'New Counter-Offer Received',
+    description: `David Kim submitted a $775,000 counter-offer for ${MARKET_CONFIG.sampleAddresses[2].address}.`,
+    priority: 'high',
+    timestamp: hoursFromNow(-3),
+    isRead: false,
+    targetRoles: ['agent'],
+  },
+  {
+    id: 'alt_004',
+    type: 'title_clearance',
+    dealId: 'deal_crestwood_740',
+    title: 'Preliminary Title Cleared',
+    description: `Pacific Horizon Title issued clear preliminary title commitment for ${MARKET_CONFIG.sampleAddresses[1].address}.`,
+    priority: 'normal',
+    timestamp: hoursFromNow(-16),
+    isRead: true,
+    targetRoles: ['agent', 'seller'],
+  },
+];
+
+export const SIMULATED_LEAD_TEMPLATE = {
+  id: 'lead_inquiry_active',
+  type: 'new_lead',
+  title: 'New Buyer Inquiry Received',
+  description: `New verified buyer inquiry for ${MARKET_CONFIG.sampleAddresses[3].address} from Jordan Miller.`,
+  priority: 'high',
+  timestamp: hoursFromNow(0),
+  isRead: false,
+  actionable: true,
+  actionPayload: {
+    leadName: 'Jordan Miller',
+    leadEmail: 'jordan.miller@inquiry.example',
+    leadPhone: '(555) 392-1049',
+    address: MARKET_CONFIG.sampleAddresses[3].address,
+    cityState: `${MARKET_CONFIG.sampleAddresses[3].city}, ${MARKET_CONFIG.sampleAddresses[3].state}`,
+    listingId: 'list_aspen',
+    offerBudget: '$1,150,000',
+    suggestedSlots: ['Tomorrow 2:00 PM', 'Tomorrow 4:30 PM', 'Saturday 11:00 AM'],
+  },
+};

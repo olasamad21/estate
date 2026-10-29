@@ -48,9 +48,16 @@ export const safeLocalStorage = {
         }
       }
       keysToRemove.forEach((key) => window.localStorage.removeItem(key));
-      sessionStorage.removeItem(`${STORAGE_PREFIX}lead_simulated_auto_fired`);
     } catch (err) {
-      console.warn('[storage] Error clearing demo storage:', err);
+      console.warn('[storage] Error clearing demo localStorage:', err);
+    }
+
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(`${STORAGE_PREFIX}lead_simulated_auto_fired`);
+      }
+    } catch (err) {
+      console.warn('[storage] Error clearing demo sessionStorage:', err);
     }
   },
 };
@@ -76,6 +83,15 @@ export const safeSessionStorage = {
     } catch (err) {
       console.warn(`[storage] Error saving key "${key}" to sessionStorage:`, err);
       return false;
+    }
+  },
+
+  remove(key) {
+    try {
+      if (typeof window === 'undefined') return;
+      window.sessionStorage.removeItem(STORAGE_PREFIX + key);
+    } catch (err) {
+      console.warn(`[storage] Error removing key "${key}" from sessionStorage:`, err);
     }
   },
 };

@@ -63,3 +63,7 @@ Unlike generic communication tools (Slack, WhatsApp, Microsoft Teams) that treat
 3. **Fiduciary Restraint:** The visual language projects bank-grade confidence and calm clarity rather than consumer tech gimmickry.
 4. **Frictionless Mobile Ergonomics:** Bottom-sheet drawers, touch-friendly composer actions, and instant thumb-reach navigation define every screen.
 5. **No Dead Ends:** Every clickable control yields a concrete, realistic transactional state or explanatory feedback.
+
+## Prototype Purpose
+
+This application is a throwaway clickable prototype whose primary purpose is to collect precise client and stakeholder feedback. It will not be reused as a production codebase. All values in `src/config/market.js` (currency, locale, addresses, entity names) are configurable placeholders designed to be easily swapped.
