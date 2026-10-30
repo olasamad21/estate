@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { safeLocalStorage } from '../utils/storage';
+import { safeSessionStorage } from '../utils/storage';
 import { DEALS } from '../mock/deals';
 import { INITIAL_MESSAGES } from '../mock/messages';
 import { INITIAL_DOCUMENTS } from '../mock/documents';
@@ -86,29 +86,29 @@ const DealContext = createContext(null);
 export function DealProvider({ children }) {
   // 1. Deals State
   const [deals, setDeals] = useState(() => {
-    return safeLocalStorage.get('deals', DEALS);
+    return safeSessionStorage.get('deals', DEALS);
   });
 
   useEffect(() => {
-    safeLocalStorage.set('deals', deals);
+    safeSessionStorage.set('deals', deals);
   }, [deals]);
 
   // 2. Messages State (grouped by dealId)
   const [messages, setMessages] = useState(() => {
-    return safeLocalStorage.get('messages', INITIAL_MESSAGES);
+    return safeSessionStorage.get('messages', INITIAL_MESSAGES);
   });
 
   useEffect(() => {
-    safeLocalStorage.set('messages', messages);
+    safeSessionStorage.set('messages', messages);
   }, [messages]);
 
   // 3. Documents State
   const [documents, setDocuments] = useState(() => {
-    return safeLocalStorage.get('documents', INITIAL_DOCUMENTS);
+    return safeSessionStorage.get('documents', INITIAL_DOCUMENTS);
   });
 
   useEffect(() => {
-    safeLocalStorage.set('documents', documents);
+    safeSessionStorage.set('documents', documents);
   }, [documents]);
 
   // Message Appender

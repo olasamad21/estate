@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { safeLocalStorage } from '../utils/storage';
+import { safeLocalStorage, safeSessionStorage } from '../utils/storage';
 import { INITIAL_ALERTS, SIMULATED_LEAD_TEMPLATE } from '../mock/alerts';
 
 function createLeadAlert() {
@@ -37,9 +37,9 @@ export function AppProvider({ children }) {
     safeLocalStorage.set('active_role', role);
   }, []);
 
-  // 2. Alerts State (persisted in localStorage, auto-seeded to INITIAL_ALERTS if outdated)
+  // 2. Alerts State (persisted in sessionStorage, auto-seeded to INITIAL_ALERTS if outdated)
   const [alerts, setAlerts] = useState(() => {
-    const stored = safeLocalStorage.get('alerts', null);
+    const stored = safeSessionStorage.get('alerts', null);
     if (stored && Array.isArray(stored) && stored.length >= INITIAL_ALERTS.length) {
       return stored;
     }
@@ -47,7 +47,7 @@ export function AppProvider({ children }) {
   });
 
   useEffect(() => {
-    safeLocalStorage.set('alerts', alerts);
+    safeSessionStorage.set('alerts', alerts);
   }, [alerts]);
 
   const markAlertAsRead = useCallback((alertId) => {

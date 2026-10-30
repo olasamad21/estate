@@ -1,95 +1,92 @@
-import { Link } from 'react-router-dom';
-import { useApp } from '../../context/AppContext';
-import { useDeals } from '../../context/DealContext';
-import { getVisibleDeals } from '../../utils/access';
-import { LISTINGS } from '../../mock/listings';
-import { ROLE_DETAILS } from '../../mock/roles';
-import { getStageLabel, formatCurrency } from '../../utils/formatters';
+import { useState, useMemo } from 'react';
+import { Home } from 'lucide-react';
+import { useApp } from '../../context/AppContext.jsx';
+import { useDeals } from '../../context/DealContext.jsx';
+import { getVisibleDeals } from '../../utils/access.js';
+import {
+  filterDeals,
+  countByFilter,
+  sortDealsByUrgency,
+  getLastMessage,
+  getDealCardModel,
+} from '../../utils/dashboard.js';
+import { DealCard } from './DealCard.jsx';
+import { DealFilterChips } from './DealFilterChips.jsx';
 
 export default function DealDashboardView() {
   const { activeRole } = useApp();
-  const { deals } = useDeals();
+  const { deals, messages } = useDeals();
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [prevRole, setPrevRole] = useState(activeRole);
 
-  const visibleDeals = getVisibleDeals(activeRole, deals);
-  const currentPersona = ROLE_DETAILS[activeRole] || { name: 'User', label: activeRole };
+  // Reset filter to 'all' whenever the role changes
+  if (prevRole !== activeRole) {
+    setPrevRole(activeRole);
+    setActiveFilter('all');
+  }
+
+  // 1. Get visible deals for active role
+  const roleVisibleDeals = useMemo(() => {
+    return getVisibleDeals(activeRole, deals);
+  }, [activeRole, deals]);
+
+  // 2. Compute filter counts
+  const filterCounts = useMemo(() => {
+    return countByFilter(roleVisibleDeals);
+  }, [roleVisibleDeals]);
+
+  // 3. Filter and sort deals by urgency
+  const displayedDeals = useMemo(() => {
+    const filtered = filterDeals(roleVisibleDeals, activeFilter);
+    return sortDealsByUrgency(filtered);
+  }, [roleVisibleDeals, activeFilter]);
+
+  // 4. Header count text format
+  const totalCount = roleVisibleDeals.length;
+  const countText =
+    totalCount === 1
+      ? '1 deal'
+      : activeFilter !== 'all' && activeFilter !== ''
+        ? `${displayedDeals.length} of ${totalCount} deals`
+        : `${totalCount} deals`;
 
   return (
     <div className="p-4 space-y-4">
-      {/* TEMP ROLE PROOF LIST */}
-      <div className="rounded-xl border border-line bg-surface p-4 space-y-3">
-        <div className="flex items-center justify-between border-b border-line pb-2.5">
-          <span className="font-mono text-xs font-bold tracking-wider text-ink bg-surface-raised border border-line px-2 py-0.5 rounded">
-            TEMP ROLE PROOF LIST
-          </span>
-          <span className="text-xs text-ink-muted">
-            Viewing as <strong className="text-ink font-semibold">{currentPersona.name}</strong> ({currentPersona.label})
-          </span>
+      {/* Header: Title and Live Count */}
+      <div className="flex items-baseline justify-between border-b border-line pb-2.5">
+        <h1 className="text-xl font-bold tracking-tight text-ink">Deal rooms</h1>
+        <span className="text-xs font-medium text-ink-muted tabular-nums">
+          {countText}
+        </span>
+      </div>
+
+      {/* Filter Chips (hidden if role has <= 1 deal) */}
+      <DealFilterChips
+        counts={filterCounts}
+        activeFilter={activeFilter}
+        onSelectFilter={setActiveFilter}
+      />
+
+      {/* Deal Cards Feed or Empty State */}
+      {displayedDeals.length === 0 ? (
+        <div className="text-center py-12 px-4 space-y-2">
+          <div className="w-12 h-12 rounded-full bg-surface-raised border border-line flex items-center justify-center mx-auto text-ink-muted">
+            <Home className="w-6 h-6" aria-hidden="true" />
+          </div>
+          <h2 className="text-sm font-semibold text-ink">No deal rooms yet</h2>
+          <p className="text-xs text-ink-muted max-w-xs mx-auto leading-relaxed">
+            Deals you are part of will appear here.
+          </p>
         </div>
-
-        <div className="text-xs text-ink-muted">
-          Showing <span className="font-semibold text-ink tabular-nums">{visibleDeals.length}</span> of {deals.length} deals accessible to this role.
-        </div>
-
-        {/* Visible Deals List */}
-        <div className="space-y-2.5">
-          {visibleDeals.map((deal) => {
-            const listing = LISTINGS.find((l) => l.id === deal.listingId);
-            const stageString = getStageLabel(deal);
-            const hasCommission = deal.commissionAmount !== undefined;
-            const hasNotes = deal.privateAgentNotes !== undefined;
-
-            return (
-              <div
-                key={deal.id}
-                className="bg-surface-raised border border-line rounded-lg p-3 text-xs space-y-2 shadow-xs"
-              >
-                {/* Deal Header: Address & Computed Stage */}
-                <div className="flex items-center justify-between gap-2">
-                  <Link
-                    to={`/deals/${deal.id}`}
-                    className="font-semibold text-ink hover:text-brand hover:underline flex items-center gap-1 line-clamp-1 min-w-0 text-sm"
-                  >
-                    <span>{listing?.address || 'Deal Room'}</span>
-                    <span className="text-ink-muted shrink-0">→</span>
-                  </Link>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line shrink-0">
-                    {stageString}
-                  </span>
-                </div>
-
-                {/* Role-Gated Fields: Commission & Notes only if present for active role */}
-                {(hasCommission || hasNotes) && (
-                  <div className="pt-2 border-t border-line space-y-1 text-xs">
-                    {hasCommission && (
-                      <div className="flex items-center justify-between text-ink-soft">
-                        <span className="text-ink-muted">Commission:</span>
-                        <span className="font-semibold text-ink tabular-nums">
-                          {formatCurrency(deal.commissionAmount)}
-                          {deal.commissionRate && (
-                            <span className="text-ink-muted font-normal ml-1">
-                              ({(deal.commissionRate * 100).toFixed(1)}%)
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                    {hasNotes && (
-                      <div className="text-ink-soft bg-surface p-2 rounded border border-line">
-                        <span className="font-semibold text-ink block text-xs mb-0.5">
-                          Private Agent Note:
-                        </span>
-                        <span className="text-xs text-ink-muted leading-relaxed">
-                          {deal.privateAgentNotes}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
+      ) : (
+        <div className="space-y-3" role="feed" aria-label="Active deal rooms list">
+          {displayedDeals.map((deal) => {
+            const lastMsg = getLastMessage(messages, deal.id);
+            const cardModel = getDealCardModel(activeRole, deal, { lastMessage: lastMsg });
+            return <DealCard key={deal.id} model={cardModel} />;
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 }

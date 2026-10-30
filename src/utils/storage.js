@@ -3,7 +3,7 @@
  * and storage version invalidation.
  */
 
-export const STORAGE_VERSION = 'v1.2.0';
+export const STORAGE_VERSION = 'v1.3.0';
 const STORAGE_PREFIX = 'dealroom_proto_';
 const VERSION_KEY = `${STORAGE_PREFIX}storage_version`;
 
@@ -13,6 +13,7 @@ const VERSION_KEY = `${STORAGE_PREFIX}storage_version`;
     if (typeof window === 'undefined') return;
     const currentVersion = window.localStorage.getItem(VERSION_KEY);
     if (currentVersion !== STORAGE_VERSION) {
+      // Clear localStorage demo keys
       const keysToRemove = [];
       for (let i = 0; i < window.localStorage.length; i++) {
         const fullKey = window.localStorage.key(i);
@@ -22,6 +23,16 @@ const VERSION_KEY = `${STORAGE_PREFIX}storage_version`;
       }
       keysToRemove.forEach((key) => window.localStorage.removeItem(key));
       window.localStorage.setItem(VERSION_KEY, STORAGE_VERSION);
+
+      // Clear sessionStorage demo keys
+      const sessionKeysToRemove = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const fullKey = window.sessionStorage.key(i);
+        if (fullKey && fullKey.startsWith(STORAGE_PREFIX)) {
+          sessionKeysToRemove.push(fullKey);
+        }
+      }
+      sessionKeysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
     }
   } catch (err) {
     console.warn('[storage] Error initializing storage version:', err);
@@ -79,8 +90,14 @@ export const safeLocalStorage = {
 
     try {
       if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem(`${STORAGE_PREFIX}lead_simulated_auto_fired`);
-        window.sessionStorage.removeItem(`${STORAGE_PREFIX}prototype_banner_dismissed`);
+        const sessionKeysToRemove = [];
+        for (let i = 0; i < window.sessionStorage.length; i++) {
+          const fullKey = window.sessionStorage.key(i);
+          if (fullKey && fullKey.startsWith(STORAGE_PREFIX)) {
+            sessionKeysToRemove.push(fullKey);
+          }
+        }
+        sessionKeysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
       }
     } catch (err) {
       console.warn('[storage] Error clearing demo sessionStorage:', err);
@@ -118,6 +135,22 @@ export const safeSessionStorage = {
       window.sessionStorage.removeItem(STORAGE_PREFIX + key);
     } catch (err) {
       console.warn(`[storage] Error removing key "${key}" from sessionStorage:`, err);
+    }
+  },
+
+  clear() {
+    try {
+      if (typeof window === 'undefined') return;
+      const keysToRemove = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const fullKey = window.sessionStorage.key(i);
+        if (fullKey && fullKey.startsWith(STORAGE_PREFIX)) {
+          keysToRemove.push(fullKey);
+        }
+      }
+      keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+    } catch (err) {
+      console.warn('[storage] Error clearing sessionStorage:', err);
     }
   },
 };

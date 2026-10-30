@@ -185,6 +185,22 @@ for (const file of allSrcFiles) {
         recordFailure(file, lineNum, 'No "truncate" or "line-clamp" in Toast.jsx or NotificationDrawer.jsx (messages must wrap)', line);
       }
     }
+
+    // Check 9: safeLocalStorage must never use dynamic seed collection keys
+    const BANNED_LOCAL_STORAGE_KEYS_REGEX = /\bsafeLocalStorage\s*\.\s*(?:get|set|remove)\s*\(\s*['"](deals|alerts|messages|documents)['"]/;
+    if (BANNED_LOCAL_STORAGE_KEYS_REGEX.test(line)) {
+      recordFailure(file, lineNum, 'safeLocalStorage must not access dynamic seed collections ("deals", "alerts", "messages", "documents" belong in safeSessionStorage)', line);
+    }
+
+    // Check 10: DealCard.jsx line-clamp constraints (no truncate, no line-clamp-1, line-clamp-2 only on message preview)
+    if (normFile.endsWith('DealCard.jsx')) {
+      if (/\bline-clamp-1\b/.test(line)) {
+        recordFailure(file, lineNum, 'No "line-clamp-1" in DealCard.jsx (address and badge text must wrap)', line);
+      }
+      if (/\bline-clamp-(?![2]\b)\d+\b/.test(line)) {
+        recordFailure(file, lineNum, 'Only "line-clamp-2" allowed in DealCard.jsx on message preview', line);
+      }
+    }
   });
 
   // Whole-file check for showToast(...) and setPendingToast(...)
@@ -236,6 +252,8 @@ console.log('  6. External Requests: Scanned across ALL src/ files (zero exclusi
 console.log('  7. Font Sizes: Any text-[Npx] with N < 12 fails (zero exclusions).');
 console.log('  8. Whole-File Toast Rule: First argument to showToast / setPendingToast must be an exported function from messages.js.');
 console.log('  9. Toast/Notification Wrapping: Toast.jsx & NotificationDrawer.jsx forbid line-clamp/truncate.');
+console.log(' 10. Seed Storage Rule: safeLocalStorage forbidden with "deals", "alerts", "messages", "documents".');
+console.log(' 11. DealCard Wrapping: DealCard.jsx forbids truncate and line-clamp-1; line-clamp-2 only on message preview.');
 console.log('-'.repeat(70));
 console.log(`CHECKED TOAST CALL SITES (${toastCallSites.length} total call sites verified):`);
 toastCallSites.forEach((site, idx) => {
