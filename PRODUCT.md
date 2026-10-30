@@ -8,62 +8,77 @@ web
 
 ## Users
 
-Real estate transaction participants across four core roles:
-- **Listing & Buyer Agents (Sarah):** Coordinate the transaction, manage communications between all stakeholders, maintain private transaction notes, share disclosures, upload contracts, track contingency deadlines, and initiate signature requests.
-- **Buyers (David):** Review offer details, track inspection and escrow countdowns, submit counter inquiries, and sign purchase documents.
-- **Sellers (Elena):** Monitor offer amounts, verify commission breakdowns, sign disclosures and agreements, and track transaction closing timelines.
-- **Mortgage Lenders (Marcus):** Monitor financing contingency deadlines and upload loan estimates, approvals, and closing disclosures (strictly scoped to financing documents).
+Staff of a Nigerian real estate company with offices in Lagos and Abuja. The role list below is a prototype assumption to be confirmed with the company:
+- **Admin (managing director or operations manager):** adds and removes staff, creates and archives channels, controls who can post where, and sees everything.
+- **Manager (head of sales, branch manager):** creates channels for their team, posts announcements, pins key messages, and oversees leads.
+- **Agent (sales agent, field agent):** takes part in the channels they belong to, sends direct messages, shares photos and documents, claims leads, and coordinates viewings.
+- **Support staff (legal officer, accounts or admin officer):** works in the channels relevant to their function, such as legal and accounts, and shares documents.
+- **Intern:** limited access to the channels they are added to, and cannot create channels.
+
+Clients (buyers, sellers and tenants) are not users of this product.
 
 ## Product Purpose
 
-A dedicated "Deal Room" collaboration application designed for real estate property transactions. It replaces disorganized, fragmented WhatsApp chats, multi-thread email chains, and offline phone calls with a unified, high-integrity transaction hub for each property. 
+A private, Slack-style messaging app for a real estate company's own staff. It replaces scattered WhatsApp groups, phone calls and personal-phone records with one organised workspace: channels for teams, branches and individual listings, direct messages, threads, file sharing, announcements and search.
 
-Success means every party has immediate visibility into the deal state, critical contingency milestones are never missed, documents are organized in an attached vault, and multi-party communication remains transparent yet strictly role-gated.
+Success means a new lead never goes unnoticed, every listing has one place where its updates and documents live, management can see what is happening without calling around, and company knowledge stays with the company when a staff member leaves.
 
 ## Positioning
 
-Unlike generic communication tools (Slack, WhatsApp, Microsoft Teams) that treat conversations as unstructured message streams, DealRoom pins the real estate asset (property photo, listing price, accepted offer, contingency countdown, and escrow timeline) directly to the transaction workspace. It enforces role-specific data boundaries (private agent notes, commission visibility, loan-doc-only upload permissions) within a single unified deal space.
+Unlike WhatsApp groups, the workspace has structure: channels by team and listing, admin-controlled membership, manager-only announcements with read receipts, threads that keep conversations tidy, and searchable files. Unlike generic team-chat tools, it speaks the language of Nigerian property work (C of O, Deed of Assignment, Governor's Consent and Minister's Consent, survey plans, viewings, agency fees, naira pricing) and is built for phones on patchy mobile data.
 
 ## Operating Context
 
-- High-stakes real estate transactions with contractual legal timelines (inspection periods, loan commitments, appraisal deadlines, title clearance).
-- Field-first usage: Agents and clients frequently access the application on mobile devices while at property showings or on the go; requires flawless 390px–430px mobile UX before scaling to tablet and desktop.
-- Multi-party collaboration requiring asymmetric information access: buyers must not see agent commission or private notes; lenders only access loan-related documents.
+- Design mode: Operate. Staff are completing tasks, so scanability, consistency and familiar chat patterns outrank expression.
+- Field-first: agents use mid-range Android phones at viewings on patchy mobile data, and also use laptops in the office. Flawless 390px mobile comes first, then tablet and desktop.
+- Offices in Lagos and Abuja share one company workspace but work mainly in their branch channels.
+- Access differs by role: private channels (for example management, legal and accounts) are visible only to their members, and announcements can be posted only by managers and admins.
+
+## Prototype Scope
+
+Version 1, built in this prototype: phone-number and OTP login (simulated); staff added by an admin; public, private, team and listing channels; channel archiving; direct messages and group chats; text, voice notes (simulated), photos and documents (simulated); mentions; threads; reactions; pinned messages; a short edit and delete window; offline sending (simulated); a files tab per channel; notifications with mute and quiet hours; an announcements channel with read receipts; search; admin controls.
+
+Version 2 preview, shown as a taste only: a lead alert with an "I've got this" claim button, and listing cards.
+
+Out of scope: clients inside the app, payments, escrow, e-signatures, contracts, evidence reports, voice or video calls, a real backend, real push notifications and real SMS.
 
 ## Capabilities and Constraints
 
-- **Form Factor:** Mobile-first responsive web application (primary viewport: 390px–430px base width).
-- **Frontend Stack:** React 19, Vite 6, Tailwind CSS v4 (`@tailwindcss/vite`), Lucide React icons, React Router DOM.
-- **Engineering Constraint:** Zero additional runtime dependencies without explicit sign-off.
-- **Architectural Boundary:** Pure client-side prototype. No backend, database, or external auth service; seeded React context/state with local storage persistence across sessions and a one-click demo reset.
-- **Data Integrity:** Currency, locale, and neutral real-world addresses centralized exclusively in `src/config/market.js`. All transaction countdowns and escrow days are dynamically computed relative to the current session date.
-- **Role Permissions:** Hidden capabilities and data must be genuinely absent from the DOM, never merely disabled.
-- **Interaction Quality:** Zero dead buttons or broken links; all actions trigger realistic modals, bottom sheets, drawers, or contextual toasts.
+- **Form factor:** responsive web app. Single-column phone layout below 1024px; two-pane list-and-chat layout from 1024px.
+- **Frontend stack:** React 19, Vite 6, Tailwind CSS v4 (`@tailwindcss/vite`), Lucide React icons, React Router DOM.
+- **Engineering constraint:** zero additional runtime dependencies without explicit sign-off.
+- **Architectural boundary:** pure client-side prototype with no backend, database or auth service. Seeded React context state with browser storage persistence and a one-click demo reset. Everything that would need a server is simulated: OTP accepts any six digits, uploads create local cards, voice notes are fake recordings, colleague replies are scripted, and notifications are in-app only.
+- **Data integrity:** currency, locale, company name, offices and sample entities are centralised in `src/config/market.js`. All message times and dates are computed relative to the current date. No hardcoded calendar dates.
+- **Role permissions:** hidden capabilities and data must be genuinely absent from the DOM, never merely disabled.
+- **Interaction quality:** zero dead buttons or broken links. Every action produces a believable state change, drawer or toast.
+- **Nigerian conventions:** naira symbol with thousands separators, DD/MM/YYYY dates, 12-hour times, +234 phone numbers, Nigerian names and places.
 
 ## Brand Commitments
 
-- **Tone & Voice:** Trustworthy, calm, professional, modern, precise, fiduciary. Zero playful slang or casual conversational noise.
-- **Visual Aesthetic:** Refined light theme with architectural clarity, subtle borders, high text contrast, and crisp micro-interactions.
-- **Explicit Anti-Patterns:**
-  - No generic purple/violet gradient soup.
-  - No glassmorphism clutter or translucent blurs.
+- **Tone and voice:** clear, calm, professional, plain English. Uses the company's own property vocabulary. No playful slang in UI copy.
+- **Visual aesthetic:** refined light theme with hairline borders, high text contrast, system fonts and restrained colour. Familiar chat patterns are a feature: the tool should disappear into the task.
+- **Explicit anti-patterns:**
+  - No purple or violet gradients, no gradient text, no glassmorphism.
   - No heavy, muddy dropdown shadows.
-  - No emojis in UI text, status tags, or system events (Lucide icons in structured badges only).
-  - No hardcoded calendar dates or static countdown numbers.
+  - No emoji in UI chrome (labels, buttons, badges, status text, system events). Lucide icons only. Emoji are allowed only inside staff-written message text and in message reactions.
+  - No card grids as list structure. Lists are hairline-separated rows.
+  - No modal for a task that a drawer or an inline control can do. Modals are for confirmations only.
+  - No kicker or eyebrow text above headings.
+  - No hardcoded calendar dates or static counts that cannot change.
 
 ## Evidence on Hand
 
-- Neutral property configurations and plausible entities located in `src/config/market.js`.
-- Scaffolding, SPA rewrites (`vercel.json`, `public/_redirects`), and core route layout established in Phase 1.
+- Existing primitives (Button, Badge, Avatar, Modal, Drawer, Toast), design tokens in `src/index.css`, and the static and unit verification harness (`npm run verify`).
+- Sample company, offices, staff, channels and listings to be defined in `src/config/market.js` and `src/mock`.
 
 ## Product Principles
 
-1. **Transaction Entity Above the Stream:** Chat serves the property deal. The listing details, contract terms, and contingency countdown remain anchored and visible at all times.
-2. **Absolute Role Integrity:** What a role is not permitted to see (commissions, private agent notes, cross-party disclosures) does not render in their DOM.
-3. **Fiduciary Restraint:** The visual language projects bank-grade confidence and calm clarity rather than consumer tech gimmickry.
-4. **Frictionless Mobile Ergonomics:** Bottom-sheet drawers, touch-friendly composer actions, and instant thumb-reach navigation define every screen.
-5. **No Dead Ends:** Every clickable control yields a concrete, realistic transactional state or explanatory feedback.
+1. **One conversation, one place:** every team, branch and listing has its own channel, and nothing important lives only in a personal chat.
+2. **Role integrity:** what a role may not see does not render.
+3. **Calm clarity:** unread counts, mentions and announcements are unmistakable, and everything else stays quiet.
+4. **Built for the field:** thumb-reach controls, large touch targets, tolerance for weak connections, light on data.
+5. **No dead ends:** every control does something believable.
 
 ## Prototype Purpose
 
-This application is a throwaway clickable prototype whose primary purpose is to collect precise client and stakeholder feedback. It will not be reused as a production codebase. All values in `src/config/market.js` (currency, locale, addresses, entity names) are configurable placeholders designed to be easily swapped.
+A throwaway, clickable front-end prototype made to show the person who briefed us that we understood what they want built. It is not production code and nothing is sent anywhere. Placeholders in `src/config/market.js` (company name, offices, staff, listings) are easy to swap.
