@@ -26,6 +26,8 @@ export function Badge({
   children,
   role = null,
   variant = 'neutral',
+  icon = null,
+  shape = 'pill',
   dot = false,
   className = '',
   ...props
@@ -34,16 +36,17 @@ export function Badge({
     ? (ROLE_VARIANTS[role] || ROLE_VARIANTS.agent)
     : (STATUS_VARIANTS[variant] || STATUS_VARIANTS.neutral);
 
-  const RoleIcon = role ? ROLE_ICONS[role] : null;
+  const IconComponent = icon || (role ? ROLE_ICONS[role] : null);
+  const shapeClass = shape === 'block' ? 'rounded-lg' : 'rounded-full';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${variantClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 ${shapeClass} text-xs font-semibold border ${variantClass} ${className}`}
       {...props}
     >
-      {RoleIcon && <RoleIcon className="w-3.5 h-3.5 shrink-0 text-current" aria-hidden="true" />}
-      {!RoleIcon && dot && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />}
-      <span>{children}</span>
+      {IconComponent && <IconComponent className="w-3.5 h-3.5 shrink-0 text-current" aria-hidden="true" />}
+      {!IconComponent && dot && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />}
+      <span className="min-w-0">{children}</span>
     </span>
   );
 }

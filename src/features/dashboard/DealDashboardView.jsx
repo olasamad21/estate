@@ -79,13 +79,17 @@ export default function DealDashboardView() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3" role="feed" aria-label="Active deal rooms list">
+        <ul role="list" aria-label="Deal rooms" className="space-y-3">
           {displayedDeals.map((deal) => {
             const lastMsg = getLastMessage(messages, deal.id);
             const cardModel = getDealCardModel(activeRole, deal, { lastMessage: lastMsg });
-            return <DealCard key={deal.id} model={cardModel} />;
+            return (
+              <li key={deal.id}>
+                <DealCard model={cardModel} />
+              </li>
+            );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

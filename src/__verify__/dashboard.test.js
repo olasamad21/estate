@@ -156,4 +156,212 @@ describe('Dashboard Logic Tests (dashboard.test.js)', () => {
       });
     });
   });
+
+  it('exposes only active role unreadCount and never unreadCountByRole', () => {
+    const harborDeal = DEALS.find((d) => d.id === 'deal_harbor_218');
+    const agentModel = getDealCardModel('agent', harborDeal);
+    const buyerModel = getDealCardModel('buyer', harborDeal);
+    const sellerModel = getDealCardModel('seller', harborDeal);
+    const lenderModel = getDealCardModel('lender', harborDeal);
+
+    expect(agentModel.unreadCount).toBe(2);
+    expect(buyerModel.unreadCount).toBe(1);
+    expect(sellerModel.unreadCount).toBe(0);
+    expect(lenderModel.unreadCount).toBe(1);
+
+    ['agent', 'buyer', 'seller', 'lender'].forEach((role) => {
+      const model = getDealCardModel(role, harborDeal);
+      expect('unreadCountByRole' in model).toBe(false);
+      expect(model.unreadCountByRole).toBeUndefined();
+    });
+  });
+
+  it('calculates nextDeadline with exact strings for 0, 1, 3 days and null when absent', () => {
+    // 0 days -> "due today"
+    const dealToday = {
+      id: 'test_deal_0',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+      contingency: {
+        title: 'Appraisal Inspection',
+        dueDate: daysFromNow(0),
+        status: 'urgent',
+      },
+    };
+    const modelToday = getDealCardModel('agent', dealToday);
+    expect(modelToday.nextDeadline).toEqual({
+      title: 'Appraisal Inspection',
+      label: 'due today',
+      urgent: true,
+    });
+
+    // 1 day -> "due tomorrow"
+    const dealTomorrow = {
+      id: 'test_deal_1',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+      contingency: {
+        title: 'Loan Approval',
+        dueDate: daysFromNow(1),
+        status: 'pending',
+      },
+    };
+    const modelTomorrow = getDealCardModel('agent', dealTomorrow);
+    expect(modelTomorrow.nextDeadline).toEqual({
+      title: 'Loan Approval',
+      label: 'due tomorrow',
+      urgent: false,
+    });
+
+    // 3 days -> "due in 3 days"
+    const deal3Days = {
+      id: 'test_deal_3',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+      contingency: {
+        title: 'Physical Property Inspection',
+        dueDate: daysFromNow(3),
+        status: 'urgent',
+      },
+    };
+    const model3Days = getDealCardModel('agent', deal3Days);
+    expect(model3Days.nextDeadline).toEqual({
+      title: 'Physical Property Inspection',
+      label: 'due in 3 days',
+      urgent: true,
+    });
+
+    // -1 day (past due) -> "overdue by 1 day", urgent: true
+    const dealPast1 = {
+      id: 'test_deal_past_1',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+      contingency: {
+        title: 'Financing Commitment',
+        dueDate: daysFromNow(-1),
+        status: 'pending',
+      },
+    };
+    const modelPast1 = getDealCardModel('agent', dealPast1);
+    expect(modelPast1.nextDeadline).toEqual({
+      title: 'Financing Commitment',
+      label: 'overdue by 1 day',
+      urgent: true,
+    });
+
+    // -3 days (past due) -> "overdue by 3 days", urgent: true
+    const dealPast3 = {
+      id: 'test_deal_past_3',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+      contingency: {
+        title: 'HOA Document Review',
+        dueDate: daysFromNow(-3),
+        status: 'pending',
+      },
+    };
+    const modelPast3 = getDealCardModel('agent', dealPast3);
+    expect(modelPast3.nextDeadline).toEqual({
+      title: 'HOA Document Review',
+      label: 'overdue by 3 days',
+      urgent: true,
+    });
+
+    // No contingency -> null
+    const dealNoContingency = {
+      id: 'test_deal_none',
+      listingId: 'list_harbor',
+      stage: 'in_escrow',
+    };
+    const modelNoContingency = getDealCardModel('agent', dealNoContingency);
+    expect(modelNoContingency.nextDeadline).toBeNull();
+  });
+
+  it('asserts exact sorted key list of getDealCardModel for each of the 4 roles on deal_harbor_218', () => {
+    const harborDeal = DEALS.find((d) => d.id === 'deal_harbor_218');
+    const lastMsg = getLastMessage(INITIAL_MESSAGES, 'deal_harbor_218');
+
+    const agentModel = getDealCardModel('agent', harborDeal, { lastMessage: lastMsg });
+    const buyerModel = getDealCardModel('buyer', harborDeal, { lastMessage: lastMsg });
+    const sellerModel = getDealCardModel('seller', harborDeal, { lastMessage: lastMsg });
+    const lenderModel = getDealCardModel('lender', harborDeal, { lastMessage: lastMsg });
+
+    expect(Object.keys(agentModel).sort()).toEqual([
+      'address',
+      'commission',
+      'escrowProgress',
+      'id',
+      'lastMessage',
+      'nextDeadline',
+      'offerAmount',
+      'participants',
+      'priceLabel',
+      'stage',
+      'stageLabel',
+      'unreadCount',
+      'urgency',
+    ]);
+
+    expect(Object.keys(buyerModel).sort()).toEqual([
+      'address',
+      'escrowProgress',
+      'id',
+      'lastMessage',
+      'nextDeadline',
+      'offerAmount',
+      'participants',
+      'priceLabel',
+      'stage',
+      'stageLabel',
+      'unreadCount',
+      'urgency',
+    ]);
+
+    expect(Object.keys(sellerModel).sort()).toEqual([
+      'address',
+      'commission',
+      'escrowProgress',
+      'id',
+      'lastMessage',
+      'nextDeadline',
+      'offerAmount',
+      'participants',
+      'priceLabel',
+      'stage',
+      'stageLabel',
+      'unreadCount',
+      'urgency',
+    ]);
+
+    expect(Object.keys(lenderModel).sort()).toEqual([
+      'address',
+      'escrowProgress',
+      'id',
+      'lastMessage',
+      'nextDeadline',
+      'offerAmount',
+      'participants',
+      'priceLabel',
+      'stage',
+      'stageLabel',
+      'unreadCount',
+      'urgency',
+    ]);
+  });
+
+  it('assigns priceLabel per stage and enforces null nextDeadline for closed deals', () => {
+    const harborDeal = DEALS.find((d) => d.id === 'deal_harbor_218');
+    const aspenDeal = DEALS.find((d) => d.id === 'deal_aspen_512');
+    const stclaireDeal = DEALS.find((d) => d.id === 'deal_stclaire_890');
+
+    const harborModel = getDealCardModel('agent', harborDeal);
+    expect(harborModel.priceLabel).toBe('Contract price');
+
+    const aspenModel = getDealCardModel('agent', aspenDeal);
+    expect(aspenModel.priceLabel).toBe('Offer');
+
+    const stclaireModel = getDealCardModel('agent', stclaireDeal);
+    expect(stclaireModel.priceLabel).toBe('Sold for');
+    expect(stclaireModel.nextDeadline).toBeNull();
+  });
 });

@@ -139,6 +139,12 @@ export function getLastMessage(messages, dealId) {
   )[0];
 }
 
+const PRICE_LABELS = {
+  active_offer: 'Offer',
+  in_escrow: 'Contract price',
+  closed: 'Sold for',
+};
+
 /**
  * Prepares a role-safe deal card view model
  */
@@ -155,6 +161,7 @@ export function getDealCardModel(
   const address = listing?.address || safeDeal.address || 'Deal Room';
   const stageLabel = getStageLabel(safeDeal);
   const urgency = getDealUrgency(safeDeal);
+  const priceLabel = PRICE_LABELS[safeDeal.stage] || 'Offer';
 
   // Map participant objects
   const dealParticipants = (safeDeal.participantIds || []).map((pId) => {
@@ -186,21 +193,33 @@ export function getDealCardModel(
     };
   }
 
-  // Commission (only when present on safeDeal)
-  const commission =
-    safeDeal.commissionAmount !== undefined
-      ? {
-          amount: safeDeal.commissionAmount,
-          rate: safeDeal.commissionRate,
-        }
-      : undefined;
+  // Active role's unread message count (never expose unreadCountByRole)
+  const unreadCount = safeDeal.unreadCountByRole?.[role] ?? 0;
 
-  // Offer amount (only when canViewOfferAmounts and field exists)
-  const offerAmount =
-    permissions.canViewOfferAmounts &&
-    (safeDeal.acceptedOfferPrice || safeDeal.pendingOfferPrice)
-      ? safeDeal.acceptedOfferPrice || safeDeal.pendingOfferPrice
-      : undefined;
+  // Next deadline (when contingency is present and deal is NOT closed)
+  let nextDeadline = null;
+  if (safeDeal.stage !== 'closed' && safeDeal.contingency && safeDeal.contingency.dueDate) {
+    const daysLeft = daysUntil(safeDeal.contingency.dueDate);
+    const overdueDays = Math.abs(daysLeft);
+    const label =
+      daysLeft < 0
+        ? overdueDays === 1
+          ? 'overdue by 1 day'
+          : `overdue by ${overdueDays} days`
+        : daysLeft === 0
+          ? 'due today'
+          : daysLeft === 1
+            ? 'due tomorrow'
+            : `due in ${daysLeft} days`;
+
+    const urgent = daysLeft < 0 || safeDeal.contingency.status === 'urgent';
+
+    nextDeadline = {
+      title: safeDeal.contingency.title,
+      label,
+      urgent,
+    };
+  }
 
   // Last message formatted
   let formattedMessage = null;
@@ -219,7 +238,7 @@ export function getDealCardModel(
     };
   }
 
-  return {
+  const model = {
     id: safeDeal.id,
     address,
     stage: safeDeal.stage,
@@ -227,8 +246,27 @@ export function getDealCardModel(
     urgency,
     participants: dealParticipants,
     escrowProgress: progressModel,
-    commission,
-    offerAmount,
+    unreadCount,
+    nextDeadline,
+    priceLabel,
     lastMessage: formattedMessage,
   };
+
+  // Commission (only when allowed and present on safeDeal)
+  if (safeDeal.commissionAmount !== undefined) {
+    model.commission = {
+      amount: safeDeal.commissionAmount,
+      rate: safeDeal.commissionRate,
+    };
+  }
+
+  // Offer amount (only when canViewOfferAmounts and field exists)
+  if (
+    permissions.canViewOfferAmounts &&
+    (safeDeal.acceptedOfferPrice || safeDeal.pendingOfferPrice)
+  ) {
+    model.offerAmount = safeDeal.acceptedOfferPrice || safeDeal.pendingOfferPrice;
+  }
+
+  return model;
 }
