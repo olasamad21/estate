@@ -3,10 +3,12 @@ import { safeLocalStorage } from '../utils/storage';
 import { INITIAL_ALERTS, SIMULATED_LEAD_TEMPLATE } from '../mock/alerts';
 
 function createLeadAlert() {
+  const now = new Date().toISOString();
   return {
     ...SIMULATED_LEAD_TEMPLATE,
     id: `lead_${Date.now()}`,
-    timestamp: new Date().toISOString(),
+    createdAt: now,
+    timestamp: now,
     isRead: false,
   };
 }
@@ -35,9 +37,13 @@ export function AppProvider({ children }) {
     safeLocalStorage.set('active_role', role);
   }, []);
 
-  // 2. Alerts State (persisted in localStorage)
+  // 2. Alerts State (persisted in localStorage, auto-seeded to INITIAL_ALERTS if outdated)
   const [alerts, setAlerts] = useState(() => {
-    return safeLocalStorage.get('alerts', INITIAL_ALERTS);
+    const stored = safeLocalStorage.get('alerts', null);
+    if (stored && Array.isArray(stored) && stored.length >= INITIAL_ALERTS.length) {
+      return stored;
+    }
+    return INITIAL_ALERTS;
   });
 
   useEffect(() => {
@@ -50,15 +56,18 @@ export function AppProvider({ children }) {
     );
   }, []);
 
+  const markAllAlertsAsRead = useCallback(() => {
+    setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
+  }, []);
+
   // 3. Toast System State
   const [pendingToast, setPendingToast] = useState(null);
   const clearPendingToast = useCallback(() => setPendingToast(null), []);
 
-  // 4. Simulated Lead Trigger
+  // 4. Simulated Lead Trigger (state only; toast emitted by triggering action)
   const simulateLead = useCallback(() => {
     const newAlert = createLeadAlert();
     setAlerts((prev) => [newAlert, ...prev]);
-    setPendingToast('New lead inquiry simulated for 512 Aspen Ridge Way.');
     return newAlert;
   }, []);
 
@@ -74,7 +83,6 @@ export function AppProvider({ children }) {
   const addFeedbackItem = useCallback(({ category, text, route }) => {
     const newItem = createFeedbackItem(activeRole, { category, text, route });
     setFeedbackItems((prev) => [newItem, ...prev]);
-    setPendingToast('Thank you! Feedback recorded.');
     return newItem;
   }, [activeRole]);
 
@@ -84,7 +92,6 @@ export function AppProvider({ children }) {
     setActiveRoleState('agent');
     setAlerts(INITIAL_ALERTS);
     setFeedbackItems([]);
-    setPendingToast('Demo reset to initial mock state.');
   }, []);
 
   // Unread alerts count visible to current active role
@@ -98,6 +105,7 @@ export function AppProvider({ children }) {
     alerts,
     unreadAlertCount,
     markAlertAsRead,
+    markAllAlertsAsRead,
     simulateLead,
     feedbackItems,
     addFeedbackItem,

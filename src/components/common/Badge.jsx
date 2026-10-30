@@ -1,8 +1,17 @@
+import { Briefcase, KeyRound, House, Landmark } from 'lucide-react';
+
 const ROLE_VARIANTS = {
   agent: 'bg-role-agent-bg text-role-agent-ink border-role-agent-line',
   buyer: 'bg-role-buyer-bg text-role-buyer-ink border-role-buyer-line',
   seller: 'bg-role-seller-bg text-role-seller-ink border-role-seller-line',
   lender: 'bg-role-lender-bg text-role-lender-ink border-role-lender-line',
+};
+
+const ROLE_ICONS = {
+  agent: Briefcase,
+  buyer: KeyRound,
+  seller: House,
+  lender: Landmark,
 };
 
 const STATUS_VARIANTS = {
@@ -21,14 +30,19 @@ export function Badge({
   className = '',
   ...props
 }) {
-  const variantClass = role ? (ROLE_VARIANTS[role] || ROLE_VARIANTS.agent) : (STATUS_VARIANTS[variant] || STATUS_VARIANTS.neutral);
+  const variantClass = role
+    ? (ROLE_VARIANTS[role] || ROLE_VARIANTS.agent)
+    : (STATUS_VARIANTS[variant] || STATUS_VARIANTS.neutral);
+
+  const RoleIcon = role ? ROLE_ICONS[role] : null;
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${variantClass} ${className}`}
       {...props}
     >
-      {dot && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />}
+      {RoleIcon && <RoleIcon className="w-3.5 h-3.5 shrink-0 text-current" aria-hidden="true" />}
+      {!RoleIcon && dot && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />}
       <span>{children}</span>
     </span>
   );

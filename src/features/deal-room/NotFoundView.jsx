@@ -3,7 +3,7 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function NotFoundView() {
   return (
-    <div className="p-6 flex flex-col items-center justify-center text-center min-h-[50vh]">
+    <div className="p-6 flex flex-col items-center justify-center text-center min-h-[50dvh]">
       <div className="w-12 h-12 rounded-full bg-status-danger-bg flex items-center justify-center text-status-danger mb-4 border border-status-danger-line">
         <AlertCircle className="w-6 h-6" />
       </div>

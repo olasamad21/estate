@@ -11,27 +11,42 @@ export function Modal({
 }) {
   const dialogRef = useRef(null);
   const triggerRef = useRef(null);
+  const mouseDownTargetRef = useRef(null);
   const titleId = useId();
+
+  // Latest-ref pattern for onClose callback
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (isOpen) {
-      // Store trigger that opened the modal to restore focus on close
+      // Capture trigger element once on open
       triggerRef.current = document.activeElement;
 
-      // Focus the modal or first focusable element
-      const focusable = dialogRef.current?.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusable && focusable.length > 0) {
-        focusable[0].focus();
-      } else {
-        dialogRef.current?.focus();
+      // Focus data-autofocus first, else first enabled focusable, else dialog
+      const dialogEl = dialogRef.current;
+      if (dialogEl) {
+        const autofocusEl = dialogEl.querySelector('[data-autofocus]');
+        if (autofocusEl && typeof autofocusEl.focus === 'function') {
+          autofocusEl.focus();
+        } else {
+          const focusable = dialogEl.querySelectorAll(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusable.length > 0) {
+            focusable[0].focus();
+          } else {
+            dialogEl.focus();
+          }
+        }
       }
 
       const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
-          onClose();
+          onCloseRef.current?.();
         }
 
         // Tab focus trap
@@ -65,20 +80,30 @@ export function Modal({
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
         document.body.style.overflow = '';
+        // Restore focus on close
         triggerRef.current?.focus?.();
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const handleMouseDown = (e) => {
+    mouseDownTargetRef.current = e.target;
+  };
+
+  const handleClick = (e) => {
+    // Backdrop dismiss only if mousedown AND click both originated on the backdrop
+    if (e.target === e.currentTarget && mouseDownTargetRef.current === e.currentTarget) {
+      onCloseRef.current?.();
+    }
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200"
-      style={{ backgroundColor: 'rgba(17, 24, 39, 0.45)' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-scrim transition-opacity duration-200"
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
     >
       <div
         ref={dialogRef}
@@ -86,7 +111,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`w-full ${maxWidth} bg-surface rounded-2xl border border-line shadow-2xl flex flex-col overflow-hidden transition-transform duration-200 focus:outline-none`}
+        className={`w-full ${maxWidth} bg-surface rounded-2xl border border-line shadow-2xl flex flex-col overflow-hidden animate-modal-mount focus:outline-none`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-line">
@@ -95,7 +120,7 @@ export function Modal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onCloseRef.current?.()}
             aria-label="Close dialog"
             className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors"
           >
@@ -104,7 +129,7 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto max-h-[70vh] text-sm text-ink-soft">
+        <div className="p-5 overflow-y-auto max-h-[70dvh] text-sm text-ink-soft">
           {children}
         </div>
 

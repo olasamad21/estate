@@ -1,8 +1,32 @@
 /**
- * Safe storage wrapper with try/catch error handling and serialization
+ * Safe storage wrapper with try/catch error handling, serialization,
+ * and storage version invalidation.
  */
 
+export const STORAGE_VERSION = 'v1.2.0';
 const STORAGE_PREFIX = 'dealroom_proto_';
+const VERSION_KEY = `${STORAGE_PREFIX}storage_version`;
+
+// Storage version check: if version mismatch occurs, clear stale demo storage on boot
+(function initStorageVersion() {
+  try {
+    if (typeof window === 'undefined') return;
+    const currentVersion = window.localStorage.getItem(VERSION_KEY);
+    if (currentVersion !== STORAGE_VERSION) {
+      const keysToRemove = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const fullKey = window.localStorage.key(i);
+        if (fullKey && fullKey.startsWith(STORAGE_PREFIX)) {
+          keysToRemove.push(fullKey);
+        }
+      }
+      keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+      window.localStorage.setItem(VERSION_KEY, STORAGE_VERSION);
+    }
+  } catch (err) {
+    console.warn('[storage] Error initializing storage version:', err);
+  }
+})();
 
 export const safeLocalStorage = {
   get(key, defaultValue = null) {
@@ -48,6 +72,7 @@ export const safeLocalStorage = {
         }
       }
       keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+      window.localStorage.setItem(VERSION_KEY, STORAGE_VERSION);
     } catch (err) {
       console.warn('[storage] Error clearing demo localStorage:', err);
     }
@@ -55,6 +80,7 @@ export const safeLocalStorage = {
     try {
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem(`${STORAGE_PREFIX}lead_simulated_auto_fired`);
+        window.sessionStorage.removeItem(`${STORAGE_PREFIX}prototype_banner_dismissed`);
       }
     } catch (err) {
       console.warn('[storage] Error clearing demo sessionStorage:', err);

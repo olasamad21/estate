@@ -105,6 +105,7 @@ export function getStageLabel(deal) {
     return `Under contract, ${progress.label}`;
   }
   if (deal.stage === 'active_offer') {
+    if (!deal.offerExpiresAt) return 'Offer pending';
     const remaining = daysUntil(deal.offerExpiresAt);
     if (remaining <= 0) return 'Offer pending, responds today';
     if (remaining === 1) return 'Offer pending, responds in 1 day';
@@ -115,4 +116,17 @@ export function getStageLabel(deal) {
     return `Closed ${closedDateStr}`;
   }
   return 'Active';
+}
+
+/**
+ * Maps application route paths to human-friendly page labels
+ */
+export function getFriendlyPageLabel(pathname) {
+  if (!pathname || pathname === '/' || pathname === '/deals') {
+    return 'Deals';
+  }
+  if (pathname.startsWith('/deals/')) {
+    return 'Deal room';
+  }
+  return 'Page';
 }

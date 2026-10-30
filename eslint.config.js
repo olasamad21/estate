@@ -22,7 +22,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/context/**/*.{js,jsx}', 'src/components/common/Toast.jsx'],
+    files: ['src/context/**/*.{js,jsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

@@ -22,6 +22,7 @@ export const Button = forwardRef(function Button(
     disabled = false,
     className = '',
     type = 'button',
+    onClick,
     ...props
   },
   ref
@@ -29,16 +30,30 @@ export const Button = forwardRef(function Button(
   const variantClass = VARIANTS[variant] || VARIANTS.primary;
   const sizeClass = SIZES[size] || SIZES.md;
 
+  const handleClick = (e) => {
+    if (disabled || loading) {
+      e.preventDefault();
+      return;
+    }
+    onClick?.(e);
+  };
+
   return (
     <button
       ref={ref}
       type={type}
-      disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${variantClass} ${sizeClass} ${className}`}
+      aria-busy={loading ? 'true' : 'false'}
+      disabled={disabled}
+      onClick={handleClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-150 cursor-pointer ${
+        disabled && !loading ? 'opacity-50 cursor-not-allowed' : ''
+      } ${variantClass} ${sizeClass} ${className}`}
       {...props}
     >
-      {loading && <Loader2 className="w-4 h-4 animate-spin text-current shrink-0" aria-hidden="true" />}
-      <span>{children}</span>
+      {loading && (
+        <Loader2 className="w-4 h-4 animate-spin text-current shrink-0 opacity-100" aria-hidden="true" />
+      )}
+      <span className="opacity-100">{children}</span>
     </button>
   );
 });

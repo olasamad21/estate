@@ -1,3 +1,4 @@
+// Bump STORAGE_VERSION in storage.js whenever mock data shape or participants change.
 import { daysFromNow, hoursFromNow } from '../utils/formatters.js';
 
 export const DEALS = [

@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-
-const ToastContext = createContext(null);
+import { ToastContext } from './ToastContext.js';
 
 const ICONS = {
   info: Info,
@@ -19,16 +18,31 @@ const STYLES = {
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const recentMessagesRef = useRef(new Map());
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const showToast = useCallback((message, type = 'info', duration = 4000) => {
-    const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    if (!message) return null;
+    const now = Date.now();
+
+    // Ignore duplicate messages within 2 seconds
+    const lastTimestamp = recentMessagesRef.current.get(message);
+    if (lastTimestamp && now - lastTimestamp < 2000) {
+      return null;
+    }
+    recentMessagesRef.current.set(message, now);
+
+    const id = `toast_${now}_${Math.random().toString(36).substr(2, 5)}`;
     const newToast = { id, message, type };
 
-    setToasts((prev) => [...prev, newToast]);
+    setToasts((prev) => {
+      // Show at most 3 at once (drop oldest if exceeding 3)
+      const next = [...prev, newToast];
+      return next.length > 3 ? next.slice(next.length - 3) : next;
+    });
 
     if (duration > 0) {
       setTimeout(() => {
@@ -41,9 +55,10 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ showToast, removeToast }}>
       {children}
-      {/* Toast Render Viewport */}
+      {/* Toast Render Viewport - positioned under dynamic header stack */}
       <div
-        className="fixed top-3 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-4 space-y-2"
+        className="fixed left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-4 space-y-2"
+        style={{ top: 'calc(var(--shell-top, 56px) + 8px)' }}
         role="region"
         aria-label="Notifications"
       >
@@ -56,11 +71,11 @@ export function ToastProvider({ children }) {
               key={toast.id}
               role="status"
               aria-live="polite"
-              className={`w-full max-w-sm pointer-events-auto rounded-lg border shadow-lg p-3 flex items-center justify-between gap-3 text-xs font-medium transition-all duration-250 animate-in fade-in slide-in-from-top-2 ${styleClass}`}
+              className={`w-full max-w-md pointer-events-auto rounded-lg border shadow-lg p-3 flex items-center justify-between gap-3 text-xs font-medium animate-toast-mount ${styleClass}`}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{toast.message}</span>
+                <span className="break-words leading-relaxed">{toast.message}</span>
               </div>
               <button
                 type="button"
@@ -76,30 +91,6 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-}
-
-/**
- * Bridge component to connect AppContext pendingToast to ToastProvider
- */
-export function AppToastBridge({ pendingToast, clearPendingToast }) {
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    if (pendingToast) {
-      showToast(pendingToast);
-      clearPendingToast();
-    }
-  }, [pendingToast, showToast, clearPendingToast]);
-
-  return null;
 }
 
 export default ToastProvider;

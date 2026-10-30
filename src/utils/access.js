@@ -60,3 +60,37 @@ export function canAccessDeal(role, dealId, deals = []) {
   const participantId = getParticipantIdForRole(role);
   return Boolean(participantId && Array.isArray(deal.participantIds) && deal.participantIds.includes(participantId));
 }
+
+/**
+ * Filters and sorts alerts visible to the given role (newest first).
+ * - new_lead alerts are restricted to roles with canSpawnFromLead (Agent).
+ * - Deal-specific alerts require canAccessDeal(role, dealId, deals).
+ * - Alerts with targetRoles require active role inclusion.
+ * - Inaccessible deal details are never leaked.
+ */
+export function getVisibleAlerts(role, alerts = [], deals = []) {
+  if (!role || !Array.isArray(alerts)) return [];
+
+  const permissions = PERMISSIONS[role] || {};
+
+  const filtered = alerts.filter((alert) => {
+    if (alert.type === 'new_lead') {
+      return Boolean(permissions.canSpawnFromLead);
+    }
+    if (alert.dealId) {
+      if (!canAccessDeal(role, alert.dealId, deals)) {
+        return false;
+      }
+    }
+    if (alert.targetRoles && !alert.targetRoles.includes(role)) {
+      return false;
+    }
+    return true;
+  });
+
+  return filtered.sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.timestamp || 0).getTime();
+    const timeB = new Date(b.createdAt || b.timestamp || 0).getTime();
+    return timeB - timeA;
+  });
+}

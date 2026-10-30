@@ -7,6 +7,7 @@ import { canAccessDeal, getRoleSafeDeal } from '../../utils/access';
 import { LISTINGS } from '../../mock/listings';
 import { ROLE_DETAILS } from '../../mock/roles';
 import { getStageLabel } from '../../utils/formatters';
+import { getAccessDeniedMessage } from '../../utils/messages';
 
 export default function DealRoomView() {
   const { id } = useParams();
@@ -26,8 +27,8 @@ export default function DealRoomView() {
     // If the role changes while on this screen and the new role cannot access it, redirect with a toast
     if (prevRoleRef.current !== activeRole) {
       if (rawDeal && !canAccessDeal(activeRole, id, deals)) {
-        const roleLabel = ROLE_DETAILS[activeRole]?.name || activeRole;
-        setPendingToast(`Access restricted: ${roleLabel} does not have access to deal ${id}. Redirected to Deals.`);
+        const fullName = ROLE_DETAILS[activeRole]?.name || activeRole;
+        setPendingToast(getAccessDeniedMessage(fullName));
         navigate('/deals', { replace: true });
       }
       prevRoleRef.current = activeRole;
@@ -37,7 +38,7 @@ export default function DealRoomView() {
   // If deal doesn't exist OR the role has no access, render the friendly error screen
   if (!rawDeal || !hasAccess) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center text-center min-h-[50vh]">
+      <div className="p-6 flex flex-col items-center justify-center text-center min-h-[50dvh]">
         <div className="w-12 h-12 rounded-full bg-status-danger-bg flex items-center justify-center text-status-danger mb-4 border border-status-danger-line">
           <AlertCircle className="w-6 h-6" />
         </div>
@@ -65,7 +66,7 @@ export default function DealRoomView() {
               Active Deal Room
             </span>
             <h2 className="text-lg font-semibold text-ink tracking-tight mt-0.5">
-              {listing?.address || safeDeal.id}
+              {listing?.address || 'Deal Room'}
             </h2>
           </div>
           <Link

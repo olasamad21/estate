@@ -6,6 +6,7 @@ const ROLE_SOLIDS = {
 };
 
 const SIZES = {
+  xs: 'w-5 h-5 text-xs leading-none',
   sm: 'w-8 h-8 text-xs',
   md: 'w-10 h-10 text-xs',
   lg: 'w-12 h-12 text-sm',
