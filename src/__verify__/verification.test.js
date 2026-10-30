@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DEALS } from '../mock/deals.js';
 import { INITIAL_ALERTS, SIMULATED_LEAD_TEMPLATE } from '../mock/alerts.js';
 import { PERMISSIONS, ROLE_DETAILS, PARTICIPANTS } from '../mock/roles.js';
@@ -231,6 +231,14 @@ describe('3. Alerts Verification', () => {
 });
 
 describe('4. getStageLabel Resolution', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date(2026, 5, 15, 12, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('handles in_escrow started 10 days ago (exact string)', () => {
     const deal = { stage: 'in_escrow', contractStartDate: daysFromNow(-10), escrowTotalDays: 30 };
     expect(getStageLabel(deal)).toBe('Under contract, Day 11/30');
