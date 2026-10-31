@@ -37,6 +37,15 @@ export function AppLayout({ children }) {
     safeSessionStorage.set('prototype_banner_dismissed', true);
   };
 
+  const officeSubtitle = useMemo(() => {
+    if (currentUser?.role === 'admin') {
+      return 'All offices';
+    }
+    const userOfficeId = currentUser?.officeId || currentUser?.office;
+    const officeObj = COMPANY_CONFIG.offices.find((o) => o.id === userOfficeId);
+    return `${officeObj ? officeObj.name : 'Office'} office`;
+  }, [currentUser]);
+
   // Unread notification count for bell: counts only unread mentions in channels that are not muted
   const unreadCount = useMemo(() => {
     if (!currentUser) return 0;
@@ -92,7 +101,7 @@ export function AppLayout({ children }) {
               {COMPANY_CONFIG.name}
             </span>
             <span className="hidden sm:inline text-xs text-ink-muted font-normal mt-0.5">
-              Staff Workspace
+              {officeSubtitle}
             </span>
           </div>
         </Link>

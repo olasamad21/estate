@@ -2,8 +2,12 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Bell, BellOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { channelDisplayName, visibleChannelsFor, threadReplies } from '../../utils/chat.js';
+import { COMPANY_CONFIG } from '../../config/market.js';
+import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies } from '../../utils/chat.js';
 import { formatNaira, formatDayLabelNg } from '../../utils/formatters.js';
+import { useToast } from '../../components/common/useToast.js';
+import { getAccessDeniedMessage } from '../../utils/messages.js';
+import { Badge } from '../../components/common/Badge.jsx';
 import { MessageRow } from './MessageRow.jsx';
 import { MessageComposer } from './MessageComposer.jsx';
 import { MessageActionDrawer } from './MessageActionDrawer.jsx';
@@ -21,6 +25,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const channelId = routeChannelId || defaultChannelId;
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
 
   const {
     channels,
@@ -62,10 +67,16 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
   // 2. Check visibility
   const isVisible = useMemo(() => {
-    if (!channel || !currentUser) return false;
-    const userChannels = visibleChannelsFor(currentUser, channels);
-    return userChannels.some((c) => c.id === channel.id);
-  }, [channel, currentUser, channels]);
+    return canUserSeeChannel(currentUser, channel);
+  }, [channel, currentUser]);
+
+  // Demo safety: redirect to /channels if active user cannot view this channel
+  useEffect(() => {
+    if (channel && currentUser && !canUserSeeChannel(currentUser, channel)) {
+      showToast(getAccessDeniedMessage(currentUser.name));
+      navigate('/channels', { replace: true });
+    }
+  }, [channel, currentUser, navigate, showToast]);
 
   // 3. Filter messages for this channel
   const channelMessages = useMemo(() => {
@@ -83,13 +94,11 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     return channelMessages.filter((m) => m.pinned && !m.deletedAt);
   }, [channelMessages]);
 
-  // Channel members for mention autocomplete
+  // Channel members for mention autocomplete following the single member rule
   const channelMembers = useMemo(() => {
-    if (channel?.members && channel.members.length > 0) {
-      return channel.members.map((id) => staffById[id]).filter(Boolean);
-    }
-    return staff;
-  }, [channel, staff, staffById]);
+    if (!channel) return [];
+    return channelMembersFor(channel, staff);
+  }, [channel, staff]);
 
   // Keep selected thread message updated from latest state
   const currentThreadParentMessage = useMemo(() => {
@@ -261,12 +270,19 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
           {renderChannelIcon()}
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
               <h2 className="text-sm font-bold text-ink overflow-hidden text-ellipsis whitespace-nowrap">
                 {channel.kind === 'public' || channel.kind === 'private' || channel.kind === 'announcement'
                   ? `#${displayName}`
                   : displayName}
               </h2>
+              {channel.kind !== 'dm' && channel.kind !== 'group' && channel.kind !== 'private' && (
+                <Badge variant="neutral" className="text-xs px-2 py-0.5 shrink-0">
+                  {channel.officeId
+                    ? COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId)?.name || 'Office'
+                    : 'All offices'}
+                </Badge>
+              )}
               {channel.kind === 'listing' && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
                   {channel.status}

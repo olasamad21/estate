@@ -2,19 +2,21 @@ import { BellOff, Moon } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
-import { channelDisplayName } from '../../utils/chat.js';
+import { channelDisplayName, visibleChannelsFor } from '../../utils/chat.js';
 
 export function NotificationSettingsDrawer({ isOpen, onClose }) {
   const {
     channels,
     staff,
+    currentUser,
     currentUserId,
     notifyPrefs,
     updateNotifyPrefs,
     toggleMuteChannel,
   } = useChat();
 
-  const mutedChannels = channels.filter((ch) =>
+  const userVisibleChannels = visibleChannelsFor(currentUser, channels);
+  const mutedChannels = userVisibleChannels.filter((ch) =>
     Array.isArray(notifyPrefs?.mutedChannelIds) && notifyPrefs.mutedChannelIds.includes(ch.id)
   );
 

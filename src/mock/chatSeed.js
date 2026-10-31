@@ -123,6 +123,22 @@ export const SEED_MESSAGES = [
     text: 'Thank you @Samuel. Agents picking up clients today should grab fresh copies.',
     createdAt: minutesFromNow(-45),
   },
+  {
+    id: 'msg-gen-10',
+    channelId: 'general',
+    senderId: 'aisha',
+    type: 'text',
+    text: 'Good day team. The Q4 stationery and digital tablet supplies have arrived for the Abuja office.',
+    createdAt: minutesFromNow(-30),
+  },
+  {
+    id: 'msg-gen-11',
+    channelId: 'general',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Thank you @Aisha. Field agents should collect their inspection clipboards.',
+    createdAt: minutesFromNow(-15),
+  },
 
   // ==========================================
   // #announcements
@@ -226,37 +242,110 @@ export const SEED_MESSAGES = [
   },
 
   // ==========================================
-  // #new-leads
+  // #market-updates
   // ==========================================
   {
-    id: 'msg-lead-1',
-    channelId: 'new-leads',
+    id: 'msg-mu-1',
+    channelId: 'market-updates',
+    senderId: 'adaeze',
+    type: 'text',
+    text: 'Opening this channel for management and team leads to share market intelligence and emerging pricing trends across our operational hubs.',
+    createdAt: minutesFromNow(-4800),
+  },
+  {
+    id: 'msg-mu-2',
+    channelId: 'market-updates',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Lagos overview: High demand continues for detached and terrace homes in Lekki Phase 1, especially gated developments with private power backup.',
+    createdAt: minutesFromNow(-4200),
+  },
+  {
+    id: 'msg-mu-3',
+    channelId: 'market-updates',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Abuja overview: Prime diplomatic and corporate inquiries in Maitama and Guzape are steady. Clients prioritize secure compounds and verified Minister Consent.',
+    createdAt: minutesFromNow(-3600),
+    reactions: {
+      '\u{1F44D}': ['adaeze'],
+    },
+  },
+  {
+    id: 'msg-mu-4',
+    channelId: 'market-updates',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Commercial lease inquiries in Victoria Island are shifting toward serviced shared spaces rather than multi-floor traditional corporate leases.',
+    createdAt: minutesFromNow(-2900),
+  },
+  {
+    id: 'msg-mu-5',
+    channelId: 'market-updates',
+    senderId: 'adaeze',
+    type: 'text',
+    text: 'Noted. Let us ensure all listing presentations emphasize verified title pedigree, as institutional buyers are requesting full legal compliance upfront.',
+    createdAt: minutesFromNow(-2100),
+  },
+  {
+    id: 'msg-mu-6',
+    channelId: 'market-updates',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'In Wuse 2, private equity and financial services firms are seeking commercial spaces with ample on-site parking bays.',
+    createdAt: minutesFromNow(-1500),
+  },
+  {
+    id: 'msg-mu-7',
+    channelId: 'market-updates',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Expatriate clients arriving this quarter are predominantly requesting furnished residences with comprehensive facility management.',
+    createdAt: minutesFromNow(-800),
+  },
+  {
+    id: 'msg-mu-8',
+    channelId: 'market-updates',
+    senderId: 'adaeze',
+    type: 'text',
+    text: 'Good observations. Let both branch managers ensure all agents incorporate these insights during weekend client consultations.',
+    createdAt: minutesFromNow(-200),
+    reactions: {
+      '\u{1F44D}': ['funmilayo', 'ibrahim'],
+    },
+  },
+
+  // ==========================================
+  // #lagos-leads
+  // ==========================================
+  {
+    id: 'msg-ll-1',
+    channelId: 'lagos-leads',
     senderId: 'funmilayo',
     type: 'text',
     text: 'New lead: High net worth buyer looking for a 4-bedroom detached duplex in Lekki Phase 1, budget around 200 million naira.',
     createdAt: minutesFromNow(-4000),
   },
-  // Thread reply for msg-lead-1
   {
-    id: 'msg-lead-1-r1',
-    channelId: 'new-leads',
-    parentId: 'msg-lead-1',
+    id: 'msg-ll-1-r1',
+    channelId: 'lagos-leads',
+    parentId: 'msg-ll-1',
     senderId: 'chidi',
     type: 'text',
     text: 'Verified client budget. Ready to schedule first walkthrough.',
     createdAt: minutesFromNow(-3950),
   },
   {
-    id: 'msg-lead-2',
-    channelId: 'new-leads',
+    id: 'msg-ll-2',
+    channelId: 'lagos-leads',
     senderId: 'chidi',
     type: 'text',
     text: 'I have two suitable units on Admiralty Way. I will take this lead.',
     createdAt: minutesFromNow(-3900),
   },
   {
-    id: 'msg-lead-3',
-    channelId: 'new-leads',
+    id: 'msg-ll-3',
+    channelId: 'lagos-leads',
     senderId: 'funmilayo',
     type: 'text',
     text: 'Assigned to @Chidi. Please call the client within the hour and update the notes.',
@@ -266,8 +355,8 @@ export const SEED_MESSAGES = [
     },
   },
   {
-    id: 'msg-lead-4',
-    channelId: 'new-leads',
+    id: 'msg-ll-4',
+    channelId: 'lagos-leads',
     senderId: 'chidi',
     type: 'text',
     text: 'Client contacted. Inspection scheduled for tomorrow at 2:00 PM.',
@@ -277,36 +366,24 @@ export const SEED_MESSAGES = [
     },
   },
   {
-    id: 'msg-lead-5',
-    channelId: 'new-leads',
-    senderId: 'ibrahim',
+    id: 'msg-ll-5',
+    channelId: 'lagos-leads',
+    senderId: 'funmilayo',
     type: 'text',
-    text: 'Corporate inquiry received for a full commercial floor in Abuja, minimum 400 square metres.',
-    createdAt: minutesFromNow(-2100),
+    text: 'Inbound WhatsApp inquiry for a short let apartment in Victoria Island. Forwarding details to the desk.',
+    createdAt: minutesFromNow(-2200),
   },
   {
-    id: 'msg-lead-6',
-    channelId: 'new-leads',
-    senderId: 'hauwa',
+    id: 'msg-ll-6',
+    channelId: 'lagos-leads',
+    senderId: 'tunde',
     type: 'text',
-    text: '@Ibrahim I can handle this. The Wuse office block has a vacant second floor that matches.',
-    createdAt: minutesFromNow(-2000),
+    text: 'I can pick up the Victoria Island follow-up after my afternoon inspection.',
+    createdAt: minutesFromNow(-1800),
   },
   {
-    id: 'msg-lead-7',
-    channelId: 'new-leads',
-    senderId: 'ibrahim',
-    type: 'text',
-    text: 'Assigned to @Hauwa. Please send the floor plan and schedule a walkthrough.',
-    createdAt: minutesFromNow(-1950),
-    reactions: {
-      '\u{1F44D}': ['hauwa'],
-    },
-  },
-  // Voice note in #new-leads
-  {
-    id: 'msg-lead-vn-1',
-    channelId: 'new-leads',
+    id: 'msg-ll-vn-1',
+    channelId: 'lagos-leads',
     senderId: 'tunde',
     type: 'voice',
     durationSec: 42,
@@ -314,20 +391,116 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-1200),
   },
   {
-    id: 'msg-lead-8',
-    channelId: 'new-leads',
-    senderId: 'funmilayo',
+    id: 'msg-ll-7',
+    channelId: 'lagos-leads',
+    senderId: 'tunde',
     type: 'text',
-    text: 'Inbound WhatsApp inquiry for a short let apartment in Victoria Island. Forwarding details to the desk.',
+    text: 'Client for the Ikoyi terrace wants an evening viewing on Thursday after office hours.',
     createdAt: minutesFromNow(-800),
   },
   {
-    id: 'msg-lead-9',
-    channelId: 'new-leads',
-    senderId: 'tunde',
+    id: 'msg-ll-8',
+    channelId: 'lagos-leads',
+    senderId: 'samuel',
     type: 'text',
-    text: 'I can pick up the Victoria Island follow-up after my afternoon inspection.',
+    text: 'Prepared the viewing documentation pack and visitor pass for the Ikoyi property.',
+    createdAt: minutesFromNow(-300),
+  },
+  {
+    id: 'msg-ll-9',
+    channelId: 'lagos-leads',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Please ensure the client confirms their arrival time with gate security beforehand.',
     createdAt: minutesFromNow(-30),
+    reactions: {
+      '\u{1F44D}': ['tunde'],
+    },
+  },
+
+  // ==========================================
+  // #abuja-leads
+  // ==========================================
+  {
+    id: 'msg-al-1',
+    channelId: 'abuja-leads',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Corporate inquiry received for a full commercial floor in Abuja, minimum 400 square metres.',
+    createdAt: minutesFromNow(-4300),
+  },
+  {
+    id: 'msg-al-2',
+    channelId: 'abuja-leads',
+    senderId: 'hauwa',
+    type: 'text',
+    text: '@Ibrahim I can handle this. The Wuse office block has a vacant second floor that matches.',
+    createdAt: minutesFromNow(-4200),
+  },
+  {
+    id: 'msg-al-3',
+    channelId: 'abuja-leads',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Assigned to @Hauwa. Please send the floor plan and schedule a walkthrough.',
+    createdAt: minutesFromNow(-4100),
+    reactions: {
+      '\u{1F44D}': ['hauwa'],
+    },
+  },
+  {
+    id: 'msg-al-4',
+    channelId: 'abuja-leads',
+    senderId: 'emeka',
+    type: 'text',
+    text: 'New residential lead: Diplomatic mission looking for a detached duplex in Maitama with large compound space.',
+    createdAt: minutesFromNow(-3200),
+  },
+  {
+    id: 'msg-al-5',
+    channelId: 'abuja-leads',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'The Maitama listing on Gana Street fits their security specifications perfectly.',
+    createdAt: minutesFromNow(-2500),
+  },
+  {
+    id: 'msg-al-6',
+    channelId: 'abuja-leads',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Coordinate with @Emeka to ensure perimeter access is cleared with the facility manager.',
+    createdAt: minutesFromNow(-1800),
+  },
+  {
+    id: 'msg-al-7',
+    channelId: 'abuja-leads',
+    senderId: 'emeka',
+    type: 'text',
+    text: 'Client representative has booked a pre-inspection for Friday at 11:00 AM.',
+    createdAt: minutesFromNow(-1100),
+  },
+  {
+    id: 'msg-al-8',
+    channelId: 'abuja-leads',
+    senderId: 'aisha',
+    type: 'text',
+    text: 'Visitor clearance letter printed and dispatched to the security checkpoint.',
+    createdAt: minutesFromNow(-600),
+    reactions: {
+      '\u{1F44D}': ['emeka'],
+    },
+  },
+  {
+    id: 'msg-al-9',
+    channelId: 'abuja-leads',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'Confirmed attendance with the embassy liaison. Presentation pack is complete.',
+    createdAt: minutesFromNow(-150),
+    reactions: {
+      '\u2705': ['ibrahim'],
+    },
   },
 
   // ==========================================
@@ -447,7 +620,7 @@ export const SEED_MESSAGES = [
   {
     id: 'msg-seed-ls-f2',
     channelId: 'lagos-sales',
-    senderId: 'folake',
+    senderId: 'funmilayo',
     type: 'file',
     fileName: 'Showroom_Photo.jpg',
     fileSize: '3.6 MB',
@@ -466,6 +639,7 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Welcome team. Let us review the Maitama and Wuse listings this morning.',
     createdAt: minutesFromNow(-4200),
+    pinned: true,
   },
   {
     id: 'msg-as-2',
@@ -553,6 +727,25 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-75),
     reactions: {
       '\u2705': ['hauwa'],
+    },
+  },
+  {
+    id: 'msg-as-11',
+    channelId: 'abuja-sales',
+    senderId: 'aisha',
+    type: 'text',
+    text: 'Inspection log sheets and client registration folders for the weekend viewings are prepared at the front desk.',
+    createdAt: minutesFromNow(-45),
+  },
+  {
+    id: 'msg-as-12',
+    channelId: 'abuja-sales',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Thank you @Aisha. Hauwa and Emeka please collect your packs before heading out.',
+    createdAt: minutesFromNow(-25),
+    reactions: {
+      '\u{1F44D}': ['hauwa', 'emeka'],
     },
   },
   {
@@ -800,7 +993,7 @@ export const SEED_MESSAGES = [
     channelId: 'accounts',
     senderId: 'adaeze',
     type: 'text',
-    text: 'Please prepare the agent commission voucher for @Chidi once the Deed of Assignment is signed.',
+    text: 'Please prepare the agent commission voucher for Chidi once the Deed of Assignment is signed.',
     createdAt: minutesFromNow(-2800),
   },
   {
@@ -840,10 +1033,10 @@ export const SEED_MESSAGES = [
     channelId: 'accounts',
     senderId: 'kemi',
     type: 'text',
-    text: 'Invoice generated and sent to @Ibrahim for delivery to the client.',
+    text: 'Invoice generated and uploaded to the deal record for client delivery.',
     createdAt: minutesFromNow(-80),
     reactions: {
-      '\u2705': ['adaeze', 'ibrahim'],
+      '\u2705': ['adaeze', 'funmilayo'],
     },
   },
   {
@@ -983,12 +1176,12 @@ export const SEED_MESSAGES = [
   {
     id: 'msg-md-7',
     channelId: 'maitama-duplex',
-    senderId: 'ngozi',
+    senderId: 'ibrahim',
     type: 'text',
     text: 'AGIS report confirmed no caveats or disputed boundaries on this parcel.',
     createdAt: minutesFromNow(-1200),
     reactions: {
-      '\u2705': ['hauwa', 'ibrahim'],
+      '\u2705': ['hauwa'],
     },
   },
   {
@@ -1183,12 +1376,12 @@ export const SEED_MESSAGES = [
   {
     id: 'msg-wob-6',
     channelId: 'wuse-office-block',
-    senderId: 'ngozi',
+    senderId: 'ibrahim',
     type: 'text',
     text: 'Title is an FCDA statutory right of occupancy with 65 years unexpired term.',
     createdAt: minutesFromNow(-1600),
     reactions: {
-      '\u2705': ['ibrahim'],
+      '\u2705': ['hauwa'],
     },
   },
   {
@@ -1344,7 +1537,7 @@ export const SEED_MESSAGES = [
     channelId: 'adaeze+funmilayo',
     senderId: 'adaeze',
     type: 'text',
-    text: 'Good. What is your assessment of the new sales intern, @Samuel?',
+    text: 'Good. What is your assessment of the new sales intern, Samuel?',
     createdAt: minutesFromNow(-3000),
   },
   {
@@ -1360,7 +1553,7 @@ export const SEED_MESSAGES = [
     channelId: 'adaeze+funmilayo',
     senderId: 'adaeze',
     type: 'text',
-    text: 'Glad to hear. Let us pair him with @Chidi for some field inspections next week.',
+    text: 'Glad to hear. Let us pair him with Chidi for some field inspections next week.',
     createdAt: minutesFromNow(-1700),
     reactions: {
       '\u{1F44D}': ['funmilayo'],
@@ -1505,7 +1698,7 @@ export const SEED_MESSAGES = [
     channelId: 'hauwa+ibrahim',
     senderId: 'hauwa',
     type: 'text',
-    text: 'Spoke with @Ngozi earlier. She estimated four to six weeks once the file is submitted.',
+    text: 'Spoke with Ngozi earlier. She estimated four to six weeks once the file is submitted.',
     createdAt: minutesFromNow(-1600),
   },
   {
@@ -1513,7 +1706,7 @@ export const SEED_MESSAGES = [
     channelId: 'hauwa+ibrahim',
     senderId: 'ibrahim',
     type: 'text',
-    text: 'Perfect. Let us keep @Adaeze in the loop on this deal size.',
+    text: 'Perfect. Let us keep Adaeze in the loop on this deal size.',
     createdAt: minutesFromNow(-1000),
     reactions: {
       '\u2705': ['hauwa'],
@@ -1640,5 +1833,82 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Will update this channel in real time as each client departs.',
     createdAt: minutesFromNow(-60),
+  },
+
+  // ==========================================
+  // #maitama-viewing-team (group)
+  // ==========================================
+  {
+    id: 'msg-grp-mvt-1',
+    channelId: 'maitama-viewing-team',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Coordinating weekend private viewings for the diplomatic delegation at the Maitama duplex.',
+    createdAt: minutesFromNow(-4100),
+  },
+  {
+    id: 'msg-grp-mvt-2',
+    channelId: 'maitama-viewing-team',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'I have confirmed the appointment with the embassy facilities attache for 11:30 AM Saturday.',
+    createdAt: minutesFromNow(-3400),
+    reactions: {
+      '\u{1F44D}': ['ibrahim'],
+    },
+  },
+  {
+    id: 'msg-grp-mvt-3',
+    channelId: 'maitama-viewing-team',
+    senderId: 'emeka',
+    type: 'text',
+    text: 'I will arrive 30 minutes early to ensure the main gate security has the visitor pass list.',
+    createdAt: minutesFromNow(-2700),
+  },
+  {
+    id: 'msg-grp-mvt-4',
+    channelId: 'maitama-viewing-team',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Ensure the generator test run is conducted and verified before the delegation arrives.',
+    createdAt: minutesFromNow(-2000),
+  },
+  {
+    id: 'msg-grp-mvt-5',
+    channelId: 'maitama-viewing-team',
+    senderId: 'emeka',
+    type: 'text',
+    text: 'Facility manager confirmed the generator service was completed yesterday. Fuel tank is full.',
+    createdAt: minutesFromNow(-1400),
+    reactions: {
+      '\u2705': ['hauwa'],
+    },
+  },
+  {
+    id: 'msg-grp-mvt-6',
+    channelId: 'maitama-viewing-team',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'Marketing dossiers and certified survey plan copies are printed and ready.',
+    createdAt: minutesFromNow(-800),
+  },
+  {
+    id: 'msg-grp-mvt-7',
+    channelId: 'maitama-viewing-team',
+    senderId: 'emeka',
+    type: 'text',
+    text: 'Keys have been collected from the estate security post and are in the field safe.',
+    createdAt: minutesFromNow(-250),
+  },
+  {
+    id: 'msg-grp-mvt-8',
+    channelId: 'maitama-viewing-team',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'Delegation liaison called to reconfirm arrival time. We are all set for tomorrow.',
+    createdAt: minutesFromNow(-40),
+    reactions: {
+      '\u{1F44D}': ['ibrahim', 'emeka'],
+    },
   },
 ];

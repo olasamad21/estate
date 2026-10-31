@@ -8,6 +8,10 @@ import { formatPhoneNg } from '../../utils/formatters.js';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 
+const DEMO_STAFF_MEMBERS = ['adaeze', 'ibrahim', 'hauwa', 'chidi']
+  .map((id) => STAFF.find((s) => s.id === id))
+  .filter(Boolean);
+
 export function LoginView() {
   const { login } = useChat();
   const navigate = useNavigate();
@@ -141,7 +145,7 @@ export function LoginView() {
             <span>Click any staff member to test:</span>
           </div>
           <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto no-scrollbar pr-1">
-            {STAFF.slice(0, 5).map((member) => (
+            {DEMO_STAFF_MEMBERS.map((member) => (
               <button
                 key={member.id}
                 type="button"

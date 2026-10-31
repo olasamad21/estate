@@ -16,6 +16,7 @@ import {
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
+import { COMPANY_CONFIG } from '../../config/market.js';
 import { visibleChannelsFor, channelDisplayName } from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
@@ -42,6 +43,12 @@ function HighlightMatch({ text = '', query = '' }) {
       )}
     </span>
   );
+}
+
+function getOfficeName(officeId) {
+  if (!officeId) return null;
+  const office = COMPANY_CONFIG.offices?.find((o) => o.id === officeId);
+  return office ? office.name : (officeId === 'lagos' ? 'Lagos' : 'Abuja');
 }
 
 export function GlobalSearchDrawer({
@@ -268,11 +275,18 @@ export function GlobalSearchDrawer({
                     >
                       {renderChannelIcon(ch)}
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-ink break-words">
-                          <HighlightMatch
-                            text={channelDisplayName(ch, currentUserId, staff)}
-                            query={query}
-                          />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-ink break-words">
+                            <HighlightMatch
+                              text={channelDisplayName(ch, currentUserId, staff)}
+                              query={query}
+                            />
+                          </span>
+                          {ch.officeId && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
+                              {getOfficeName(ch.officeId)}
+                            </span>
+                          )}
                         </div>
                         {ch.description && (
                           <div className="text-xs text-ink-muted break-words mt-0.5">
@@ -372,6 +386,7 @@ export function GlobalSearchDrawer({
                         <div className="flex items-center justify-between gap-2 text-xs text-ink-muted">
                           <span className="font-semibold text-brand">
                             #{chName}
+                            {ch?.officeId && ` · ${getOfficeName(ch.officeId)}`}
                           </span>
                           <span className="tabular-nums">
                             {firstName} · {formatListTimeNg(msg.createdAt)}
@@ -431,7 +446,8 @@ export function GlobalSearchDrawer({
                               <HighlightMatch text={file.fileName} query={query} />
                             </div>
                             <div className="text-xs text-ink-muted">
-                              #{chName} · {firstName} · {formatListTimeNg(file.createdAt)}
+                              #{chName}
+                              {ch?.officeId && ` · ${getOfficeName(ch.officeId)}`} · {firstName} · {formatListTimeNg(file.createdAt)}
                             </div>
                           </div>
                         </div>

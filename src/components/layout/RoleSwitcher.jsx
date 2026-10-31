@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check, ClipboardList, RotateCcw, LogOut, WifiOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -17,6 +17,23 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   const currentName = currentUser?.name || 'Staff';
   const currentRole = currentUser?.role || 'agent';
   const roleLabel = ROLE_LABELS[currentRole] || currentRole;
+
+  const staffGroups = useMemo(() => {
+    return [
+      {
+        label: 'All offices',
+        members: staff.filter((s) => s.role === 'admin'),
+      },
+      {
+        label: 'Lagos office',
+        members: staff.filter((s) => s.role !== 'admin' && (s.officeId === 'lagos' || s.office === 'lagos')),
+      },
+      {
+        label: 'Abuja office',
+        members: staff.filter((s) => s.role !== 'admin' && (s.officeId === 'abuja' || s.office === 'abuja')),
+      },
+    ];
+  }, [staff]);
 
   // Close on Escape or click outside
   useEffect(() => {
@@ -120,51 +137,58 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
             </span>
           </div>
 
-          {/* Staff List */}
-          <div className="py-1 max-h-64 overflow-y-auto no-scrollbar" role="group" aria-label="Staff Members">
-            {staff.map((member) => {
-              const isActive = currentUser?.id === member.id;
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  role="menuitem"
-                  aria-current={isActive ? 'true' : undefined}
-                  onClick={() => handleSelectStaff(member.id)}
-                  className={`w-full px-3 py-2 text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-surface-raised font-semibold text-ink'
-                      : 'text-ink-soft hover:bg-surface-raised hover:text-ink'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                    <Avatar
-                      role={member.role}
-                      initials={member.initials}
-                      name={member.name}
-                      isOnline={member.online}
-                      size="sm"
-                    />
-                    <div className="min-w-0">
-                      <div className="font-semibold text-ink line-clamp-1">
-                        {member.name}
+          {/* Staff List grouped by office */}
+          <div className="py-1 max-h-72 overflow-y-auto no-scrollbar" role="group" aria-label="Staff Members">
+            {staffGroups.map((group) => (
+              <div key={group.label} className="py-0.5">
+                <div className="px-3 pt-2 pb-1 text-xs font-bold text-ink-muted uppercase tracking-wider">
+                  {group.label}
+                </div>
+                {group.members.map((member) => {
+                  const isActive = currentUser?.id === member.id;
+                  return (
+                    <button
+                      key={member.id}
+                      type="button"
+                      role="menuitem"
+                      aria-current={isActive ? 'true' : undefined}
+                      onClick={() => handleSelectStaff(member.id)}
+                      className={`w-full px-3 py-2 text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-surface-raised font-semibold text-ink'
+                          : 'text-ink-soft hover:bg-surface-raised hover:text-ink'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <Avatar
+                          role={member.role}
+                          initials={member.initials}
+                          name={member.name}
+                          isOnline={member.online}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-ink line-clamp-1">
+                            {member.name}
+                          </div>
+                          <div className="text-xs text-ink-muted line-clamp-1">
+                            {member.title}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-ink-muted line-clamp-1">
-                        {member.title} · {member.office.toUpperCase()}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Badge role={member.role} size="sm">
+                          {ROLE_LABELS[member.role] || member.role}
+                        </Badge>
+                        {isActive && (
+                          <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge role={member.role} size="sm">
-                      {ROLE_LABELS[member.role] || member.role}
-                    </Badge>
-                    {isActive && (
-                      <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           <div className="border-t border-line my-1" />

@@ -3,33 +3,76 @@
  */
 
 /**
- * Returns the list of channels visible to the given staff user.
- * Visibility rules:
- * - Open kinds ('public', 'announcement', 'listing') are visible to all staff.
- * - 'private' channels are visible to their members AND to any admin.
- * - 'dm' and 'group' channels are visible to their members ONLY (admin cannot view other people's DMs).
+ * Exactly ONE function that decides whether a person can see a channel.
+ * Rule:
+ * - open kinds (public, announcement, listing) with officeId null: every active staff member;
+ * - open kinds with an officeId: admin, or staff whose officeId equals the channel's officeId;
+ * - private: members, and the admin;
+ * - dm and group: members only (nobody else, not even the admin).
+ */
+export function canUserSeeChannel(user, channel) {
+  if (!user || !channel) return false;
+  const isAdmin = user.role === 'admin';
+  const kind = channel.kind || 'public';
+  const userOffice = user.officeId || user.office || null;
+  const channelOffice = channel.officeId || null;
+
+  // dm and group: members only (nobody else, not even the admin)
+  if (kind === 'dm' || kind === 'group') {
+    return Array.isArray(channel.members) && channel.members.includes(user.id);
+  }
+
+  // private: members, and the admin
+  if (kind === 'private') {
+    return isAdmin || (Array.isArray(channel.members) && channel.members.includes(user.id));
+  }
+
+  // open kinds: public, announcement, listing
+  if (kind === 'public' || kind === 'announcement' || kind === 'listing') {
+    // with officeId null: every active staff member
+    if (!channelOffice) {
+      return user.active !== false;
+    }
+    // with an officeId: admin, or staff whose officeId equals the channel's officeId
+    return isAdmin || (userOffice === channelOffice && user.active !== false);
+  }
+
+  return false;
+}
+
+/**
+ * Returns the list of channels visible to the given staff user using the one visibility rule.
  */
 export function visibleChannelsFor(user, channels = []) {
   if (!user || !Array.isArray(channels)) return [];
+  return channels.filter((ch) => canUserSeeChannel(user, ch));
+}
 
-  return channels.filter((ch) => {
-    if (!ch) return false;
-    const kind = ch.kind || 'public';
+/**
+ * Returns the member staff objects for a channel following the member rule:
+ * - open channel with an officeId: active staff of that office plus the admin;
+ * - open channel with officeId null: all active staff;
+ * - private, dm and group: the memberIds.
+ */
+export function channelMembersFor(channel, staffList = []) {
+  if (!channel || !Array.isArray(staffList)) return [];
+  const kind = channel.kind || 'public';
+  const channelOffice = channel.officeId || null;
 
-    if (kind === 'public' || kind === 'announcement' || kind === 'listing') {
-      return true;
-    }
+  if (kind === 'private' || kind === 'dm' || kind === 'group') {
+    const memberIds = Array.isArray(channel.members) ? channel.members : [];
+    return staffList.filter((s) => memberIds.includes(s.id) && s.active !== false);
+  }
 
-    if (kind === 'private') {
-      if (user.role === 'admin') return true;
-      return Array.isArray(ch.members) && ch.members.includes(user.id);
-    }
+  // Open kinds (public, announcement, listing)
+  if (!channelOffice) {
+    return staffList.filter((s) => s.active !== false);
+  }
 
-    if (kind === 'dm' || kind === 'group') {
-      return Array.isArray(ch.members) && ch.members.includes(user.id);
-    }
-
-    return false;
+  return staffList.filter((s) => {
+    if (s.active === false) return false;
+    const sOffice = s.officeId || s.office || null;
+    return s.role === 'admin' || sOffice === channelOffice;
   });
 }
 

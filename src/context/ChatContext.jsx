@@ -5,6 +5,7 @@ import { STAFF, STAFF_BY_ID } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
+import { channelMembersFor } from '../utils/chat.js';
 import { useToast } from '../components/common/useToast.js';
 import {
   getBackOnlineMessage,
@@ -14,7 +15,7 @@ import {
   getChannelUnmutedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-4';
+const CHAT_STATE_VERSION = 'chat-5';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -217,18 +218,9 @@ export function ChatProvider({ children }) {
     // Scripted colleague reply if online and not in announcements
     if (!isOffline && channelId !== 'announcements') {
       const currentChannel = CHANNELS.find((c) => c.id === channelId);
-      let candidates = [];
-
-      if (currentChannel && Array.isArray(currentChannel.members)) {
-        candidates = currentChannel.members
-          .filter((id) => id !== currentUserId)
-          .map((id) => STAFF_BY_ID[id])
-          .filter((s) => s && s.online);
-      }
-
-      if (candidates.length === 0) {
-        candidates = STAFF.filter((s) => s.id !== currentUserId && s.online);
-      }
+      const candidates = currentChannel
+        ? channelMembersFor(currentChannel, STAFF).filter((s) => s.id !== currentUserId && s.online)
+        : [];
 
       if (candidates.length > 0) {
         const responder = candidates[Math.floor(Math.random() * candidates.length)];
