@@ -33,6 +33,11 @@ function WorkspaceLayout() {
   );
 }
 
+function ChannelRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/channels/${id || 'general'}`} replace />;
+}
+
 function AppContent() {
   const location = useLocation();
   const { currentUserId } = useChat();
@@ -82,6 +87,18 @@ function AppContent() {
               <Navigate to="/login" replace />
             )
           }
+        />
+
+        {/* Alias route for /channel/:id */}
+        <Route
+          path="/channel/:id"
+          element={<ChannelRedirect />}
+        />
+
+        {/* Legacy alias for /deals */}
+        <Route
+          path="/deals"
+          element={<Navigate to="/channels" replace />}
         />
 
         <Route

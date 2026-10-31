@@ -19,6 +19,7 @@ import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
 import { FileDetailDrawer } from './FileDetailDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
+import { ListingCard } from './ListingCard.jsx';
 
 export function ChatAreaView({ defaultChannelId = 'general' }) {
   const { id: routeChannelId } = useParams();
@@ -47,6 +48,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     markChannelRead,
     notifyPrefs,
     toggleMuteChannel,
+    setListingStatus,
   } = useChat();
 
   const [selectedActionMessage, setSelectedActionMessage] = useState(null);
@@ -323,6 +325,15 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
           </button>
         </div>
       </div>
+
+      {/* Listing Card directly under header for listing channels */}
+      {channel.kind === 'listing' && (
+        <ListingCard
+          channel={channel}
+          currentUser={currentUser}
+          onSetListingStatus={setListingStatus}
+        />
+      )}
 
       {/* Pinned Messages Banner */}
       {pinnedMessages.length > 0 && (

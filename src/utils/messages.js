@@ -103,3 +103,15 @@ export function getAdminAccessDeniedMessage() {
 export function getDeactivatedLoginErrorMessage() {
   return 'This account has been deactivated. Please contact your admin.';
 }
+
+export function getLeadClaimedMessage(clientName = '') {
+  return clientName ? `Lead for ${clientName} claimed` : 'Lead claimed';
+}
+
+export function getLeadSimulatedMessage(area = '') {
+  return area ? `New lead generated in ${area}` : 'New lead generated';
+}
+
+export function getListingStatusUpdatedMessage(status = '') {
+  return status ? `Listing status updated to ${status}` : 'Listing status updated';
+}

@@ -1,10 +1,14 @@
-import { Info, MessageSquare, MoreHorizontal, SmilePlus, Pin, Clock, Eye } from 'lucide-react';
-import { formatTimeNg } from '../../utils/formatters.js';
-import { mentionsUser, reactionList } from '../../utils/chat.js';
+import { Info, MessageSquare, MoreHorizontal, SmilePlus, Pin, Clock, Eye, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useChat } from '../../context/ChatContext.jsx';
+import { formatTimeNg, formatNaira } from '../../utils/formatters.js';
+import { mentionsUser, reactionList, canUserSeeChannel, channelDisplayName } from '../../utils/chat.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
+import { Button } from '../../components/common/Button.jsx';
 import { VoiceBubble } from './VoiceBubble.jsx';
 import { AttachmentCard } from './AttachmentCard.jsx';
+import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
 
 function renderFormattedText(text, currentUser) {
   if (!text) return null;
@@ -47,8 +51,11 @@ export function MessageRow({
   onOpenSeenBy,
   onOpenFileDetail,
 }) {
+  const navigate = useNavigate();
+  const { claimLead, channelsById = {}, staffById = {}, channels = [], staff = [] } = useChat();
+
   // 1. System messages
-  if (message.type === 'system' || message.senderId === 'system') {
+  if (message.type === 'system' || (message.senderId === 'system' && message.type !== 'lead')) {
     return (
       <div className="flex items-center justify-center gap-2 py-2 px-4 text-xs text-ink-muted">
         <Info className="w-3.5 h-3.5 text-ink-muted shrink-0" aria-hidden="true" />
@@ -188,6 +195,136 @@ export function MessageRow({
               onOpenFileDetail={onOpenFileDetail}
             />
           </div>
+        ) : message.type === 'lead' ? (
+          <div className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-2.5">
+            {/* Top line: Lucide UserPlus icon + "New lead" + status Badge */}
+            <div className="flex items-center justify-between gap-2 border-b border-line pb-2">
+              <div className="flex items-center gap-1.5 text-ink font-bold text-xs uppercase tracking-wider">
+                <UserPlus className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
+                <span>New lead</span>
+              </div>
+              <Badge variant={message.claimedById ? 'success' : 'warning'} size="sm">
+                {message.claimedById ? 'Taken' : 'New'}
+              </Badge>
+            </div>
+
+            {/* Client name + enquiry */}
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-ink">
+                {message.clientName}
+              </h4>
+              <p className="text-xs text-ink-soft leading-relaxed mt-1">
+                {message.enquiry}
+              </p>
+            </div>
+
+            {/* Area & Budget */}
+            <div className="flex items-center gap-2 text-xs text-ink-muted pt-1">
+              <span className="font-medium text-ink">{message.area}</span>
+              <span>·</span>
+              <span className="font-semibold text-brand tabular-nums">
+                {formatNaira(message.budgetNgn)}
+              </span>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-line">
+              {!message.claimedById ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    claimLead?.(message.id);
+                  }}
+                  className="min-h-[44px] h-11 w-full sm:w-auto px-4 justify-center cursor-pointer"
+                >
+                  I&apos;ve got this
+                </Button>
+              ) : (
+                <div className="text-xs text-ink-muted">
+                  Taken by{' '}
+                  <strong className="text-ink font-semibold">
+                    {staffById[message.claimedById]?.name || 'Staff'}
+                  </strong>{' '}
+                  · {formatTimeNg(message.claimedAt || message.createdAt)}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : message.type === 'listing' ? (
+          (() => {
+            const listingChannel =
+              channelsById[message.listingChannelId] ||
+              channels.find((c) => c.id === message.listingChannelId);
+            const canSee = canUserSeeChannel(currentUser, listingChannel);
+            const statusVariant =
+              listingChannel?.status === 'Available'
+                ? 'success'
+                : listingChannel?.status === 'Under offer'
+                ? 'warning'
+                : 'neutral';
+
+            return (
+              <div className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised shadow-2xs">
+                    <PhotoPlaceholder
+                      fileName={`${message.listingChannelId}.jpg`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="text-xs sm:text-sm font-bold text-ink">
+                        {listingChannel
+                          ? channelDisplayName(listingChannel, currentUser?.id, staff)
+                          : 'Listing Room'}
+                      </h4>
+                      {listingChannel?.status && (
+                        <Badge variant={statusVariant} size="sm">
+                          {listingChannel.status}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-ink-muted mt-0.5">
+                      <span>{listingChannel?.location}</span>
+                      <span>·</span>
+                      <span className="font-semibold text-brand tabular-nums">
+                        {formatNaira(listingChannel?.price)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {message.note && (
+                  <p className="text-xs text-ink-soft leading-relaxed border-t border-line pt-2">
+                    {message.note}
+                  </p>
+                )}
+
+                {canSee && listingChannel && (
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/channels/${listingChannel.id}`);
+                      }}
+                      className="min-h-[44px] sm:min-h-0 h-10 sm:h-8 px-3 text-xs w-full sm:w-auto justify-center cursor-pointer"
+                    >
+                      Open listing room
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()
         ) : (
           <div className="text-xs text-ink leading-relaxed break-words max-w-[65ch]">
             {renderFormattedText(message.text, currentUser)}

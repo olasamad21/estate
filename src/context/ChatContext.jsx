@@ -4,6 +4,7 @@ import { normalisePhoneNg, minutesFromNow } from '../utils/formatters.js';
 import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
+import { LAGOS_LEADS_POOL, ABUJA_LEADS_POOL } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
 import { channelMembersFor, slugify, isStaffActive } from '../utils/chat.js';
 import { useToast } from '../components/common/useToast.js';
@@ -14,9 +15,12 @@ import {
   getChannelMutedMessage,
   getChannelUnmutedMessage,
   getDeactivatedLoginErrorMessage,
+  getLeadClaimedMessage,
+  getLeadSimulatedMessage,
+  getListingStatusUpdatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-6';
+const CHAT_STATE_VERSION = 'chat-7';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -641,6 +645,117 @@ export function ChatProvider({ children }) {
     });
   }, []);
 
+  const claimLead = useCallback((messageId) => {
+    if (!messageId || !currentUserId) return;
+    const target = messages.find((m) => m.id === messageId);
+    if (!target || target.claimedById) return;
+
+    const claimedAt = new Date().toISOString();
+    const leadTakerName = currentUser?.name || 'Staff';
+
+    const systemMessage = {
+      id: `msg-sys-${Date.now()}`,
+      channelId: target.channelId,
+      senderId: 'system',
+      type: 'system',
+      text: `${leadTakerName} took this lead`,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const updatedMessages = prev.messages.map((m) => {
+        if (m.id === messageId) {
+          return {
+            ...m,
+            claimedById: currentUserId,
+            claimedAt,
+          };
+        }
+        return m;
+      });
+      return {
+        ...prev,
+        messages: [...updatedMessages, systemMessage],
+      };
+    });
+
+    showToast(getLeadClaimedMessage(target.clientName));
+  }, [currentUserId, currentUser, messages, showToast]);
+
+  const setListingStatus = useCallback((channelId, status) => {
+    if (!channelId || !status) return;
+
+    const systemMessage = {
+      id: `msg-sys-${Date.now()}`,
+      channelId,
+      senderId: 'system',
+      type: 'system',
+      text: `Status changed to ${status}`,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const updatedChannels = prev.channels.map((ch) => {
+        if (ch.id === channelId) {
+          return {
+            ...ch,
+            status,
+          };
+        }
+        return ch;
+      });
+      return {
+        ...prev,
+        channels: updatedChannels,
+        messages: [...prev.messages, systemMessage],
+      };
+    });
+
+    showToast(getListingStatusUpdatedMessage(status));
+  }, [showToast]);
+
+  const simulateNewLead = useCallback(() => {
+    const isAbuja = currentUser?.office === 'abuja';
+    const targetChannelId = isAbuja ? 'abuja-leads' : 'lagos-leads';
+    const pool = isAbuja ? ABUJA_LEADS_POOL : LAGOS_LEADS_POOL;
+    const sample = pool[Math.floor(Math.random() * pool.length)];
+    const leadTime = new Date().toISOString();
+
+    const newLeadMessage = {
+      id: `msg-lead-${Date.now()}`,
+      channelId: targetChannelId,
+      senderId: currentUserId || 'system',
+      type: 'lead',
+      clientName: sample.clientName,
+      enquiry: sample.enquiry,
+      area: sample.area,
+      budgetNgn: sample.budgetNgn,
+      claimedById: null,
+      claimedAt: null,
+      createdAt: leadTime,
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const currentReadState = prev.lastReadAtByUser || {};
+      const userReadMap = { ...(currentReadState[currentUserId] || {}) };
+      userReadMap[targetChannelId] = leadTime;
+
+      return {
+        ...prev,
+        messages: [...prev.messages, newLeadMessage],
+        lastReadAtByUser: {
+          ...currentReadState,
+          [currentUserId]: userReadMap,
+        },
+      };
+    });
+
+    showToast(getLeadSimulatedMessage(sample.area));
+  }, [currentUser, currentUserId, showToast]);
+
   const activeStaff = useMemo(() => {
     return staff.filter((s) => isStaffActive(s));
   }, [staff]);
@@ -680,6 +795,9 @@ export function ChatProvider({ children }) {
     setStaffActive,
     createChannel,
     setChannelArchived,
+    claimLead,
+    setListingStatus,
+    simulateNewLead,
   }), [
     currentUserId,
     currentUser,
@@ -715,6 +833,9 @@ export function ChatProvider({ children }) {
     setStaffActive,
     createChannel,
     setChannelArchived,
+    claimLead,
+    setListingStatus,
+    simulateNewLead,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

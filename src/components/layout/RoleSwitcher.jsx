@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Check, ClipboardList, RotateCcw, LogOut, WifiOff } from 'lucide-react';
+import { ChevronDown, Check, ClipboardList, RotateCcw, LogOut, WifiOff, UserPlus } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { isStaffActive } from '../../utils/chat.js';
@@ -8,7 +8,7 @@ import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 
 export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
-  const { currentUser, staff, switchUser, logout, isOffline, setOffline } = useChat();
+  const { currentUser, staff, switchUser, logout, isOffline, setOffline, simulateNewLead } = useChat();
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -85,6 +85,12 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   const handleResetDemo = () => {
     setIsOpen(false);
     onOpenResetModal?.();
+    triggerRef.current?.focus?.();
+  };
+
+  const handleSimulateNewLead = () => {
+    setIsOpen(false);
+    simulateNewLead?.();
     triggerRef.current?.focus?.();
   };
 
@@ -203,6 +209,17 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
           </div>
 
           <div className="py-0.5" role="group" aria-label="Prototype Actions">
+            {/* Simulate New Lead */}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleSimulateNewLead}
+              className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-ink hover:bg-surface-raised cursor-pointer transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
+              <span>Simulate new lead</span>
+            </button>
+
             {/* Simulate Offline Toggle */}
             <button
               type="button"

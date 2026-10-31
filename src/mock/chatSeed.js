@@ -1,6 +1,6 @@
 import { minutesFromNow } from '../utils/formatters.js';
 
-export const SEED_MESSAGES = [
+const RAW_SEED_MESSAGES = [
   // ==========================================
   // #general
   // ==========================================
@@ -319,79 +319,55 @@ export const SEED_MESSAGES = [
   // #lagos-leads
   // ==========================================
   {
-    id: 'msg-ll-1',
+    id: 'msg-lead-lagos-1',
     channelId: 'lagos-leads',
     senderId: 'funmilayo',
-    type: 'text',
-    text: 'New lead: High net worth buyer looking for a 4-bedroom detached duplex in Lekki Phase 1, budget around 200 million naira.',
-    createdAt: minutesFromNow(-4000),
-  },
-  {
-    id: 'msg-ll-1-r1',
-    channelId: 'lagos-leads',
-    parentId: 'msg-ll-1',
-    senderId: 'chidi',
-    type: 'text',
-    text: 'Verified client budget. Ready to schedule first walkthrough.',
-    createdAt: minutesFromNow(-3950),
-  },
-  {
-    id: 'msg-ll-2',
-    channelId: 'lagos-leads',
-    senderId: 'chidi',
-    type: 'text',
-    text: 'I have two suitable units on Admiralty Way. I will take this lead.',
-    createdAt: minutesFromNow(-3900),
-  },
-  {
-    id: 'msg-ll-3',
-    channelId: 'lagos-leads',
-    senderId: 'funmilayo',
-    type: 'text',
-    text: 'Assigned to @Chidi. Please call the client within the hour and update the notes.',
-    createdAt: minutesFromNow(-3800),
+    type: 'lead',
+    clientName: 'Chief Babatunde Adeleke',
+    enquiry: 'Looking for a 5-bedroom waterfront detached duplex with private jetty in Ikoyi.',
+    area: 'Ikoyi',
+    budgetNgn: 1450000000,
+    claimedById: 'chidi',
+    claimedAt: minutesFromNow(-2500),
+    createdAt: minutesFromNow(-2600),
     reactions: {
       '\u{1F44D}': ['chidi'],
     },
   },
   {
-    id: 'msg-ll-4',
+    id: 'msg-sys-lead-lagos-1',
+    channelId: 'lagos-leads',
+    senderId: 'system',
+    type: 'system',
+    text: 'Chidi Okeke took this lead',
+    createdAt: minutesFromNow(-2500),
+  },
+  {
+    id: 'msg-ll-chidi-1',
     channelId: 'lagos-leads',
     senderId: 'chidi',
     type: 'text',
     text: 'Client contacted. Inspection scheduled for tomorrow at 2:00 PM.',
-    createdAt: minutesFromNow(-2700),
+    createdAt: minutesFromNow(-2400),
     reactions: {
       '\u2705': ['funmilayo'],
     },
   },
   {
-    id: 'msg-ll-5',
+    id: 'msg-lead-lagos-2',
     channelId: 'lagos-leads',
     senderId: 'funmilayo',
-    type: 'text',
-    text: 'Inbound WhatsApp inquiry for a short let apartment in Victoria Island. Forwarding details to the desk.',
-    createdAt: minutesFromNow(-2200),
+    type: 'lead',
+    clientName: 'Dr. (Mrs) Olufunke Williams',
+    enquiry: 'Seeking modern 4-bedroom terrace duplex in a gated estate with 24-hour power.',
+    area: 'Lekki Phase 1',
+    budgetNgn: 260000000,
+    claimedById: null,
+    claimedAt: null,
+    createdAt: minutesFromNow(-900),
   },
   {
-    id: 'msg-ll-6',
-    channelId: 'lagos-leads',
-    senderId: 'tunde',
-    type: 'text',
-    text: 'I can pick up the Victoria Island follow-up after my afternoon inspection.',
-    createdAt: minutesFromNow(-1800),
-  },
-  {
-    id: 'msg-ll-vn-1',
-    channelId: 'lagos-leads',
-    senderId: 'tunde',
-    type: 'voice',
-    durationSec: 42,
-    text: '',
-    createdAt: minutesFromNow(-1200),
-  },
-  {
-    id: 'msg-ll-7',
+    id: 'msg-ll-tunde-1',
     channelId: 'lagos-leads',
     senderId: 'tunde',
     type: 'text',
@@ -399,7 +375,7 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-800),
   },
   {
-    id: 'msg-ll-8',
+    id: 'msg-ll-samuel-1',
     channelId: 'lagos-leads',
     senderId: 'samuel',
     type: 'text',
@@ -407,81 +383,72 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-300),
   },
   {
-    id: 'msg-ll-9',
+    id: 'msg-lead-lagos-3',
     channelId: 'lagos-leads',
     senderId: 'funmilayo',
-    type: 'text',
-    text: 'Please ensure the client confirms their arrival time with gate security beforehand.',
-    createdAt: minutesFromNow(-30),
-    reactions: {
-      '\u{1F44D}': ['tunde'],
-    },
+    type: 'lead',
+    clientName: 'Engr. Segun Martins',
+    enquiry: 'High-floor 3-bedroom luxury serviced apartment with ocean view for executive living.',
+    area: 'Victoria Island',
+    budgetNgn: 380000000,
+    claimedById: null,
+    claimedAt: null,
+    createdAt: minutesFromNow(-20),
   },
 
   // ==========================================
   // #abuja-leads
   // ==========================================
   {
-    id: 'msg-al-1',
+    id: 'msg-lead-abuja-1',
     channelId: 'abuja-leads',
     senderId: 'ibrahim',
-    type: 'text',
-    text: 'Corporate inquiry received for a full commercial floor in Abuja, minimum 400 square metres.',
-    createdAt: minutesFromNow(-4300),
-  },
-  {
-    id: 'msg-al-2',
-    channelId: 'abuja-leads',
-    senderId: 'hauwa',
-    type: 'text',
-    text: '@Ibrahim I can handle this. The Wuse office block has a vacant second floor that matches.',
-    createdAt: minutesFromNow(-4200),
-  },
-  {
-    id: 'msg-al-3',
-    channelId: 'abuja-leads',
-    senderId: 'ibrahim',
-    type: 'text',
-    text: 'Assigned to @Hauwa. Please send the floor plan and schedule a walkthrough.',
-    createdAt: minutesFromNow(-4100),
+    type: 'lead',
+    clientName: 'Senator Aliyu Garba',
+    enquiry: 'Prime 6-bedroom ambassadorial mansion with guest chalet and swimming pool in Maitama.',
+    area: 'Maitama',
+    budgetNgn: 1200000000,
+    claimedById: 'hauwa',
+    claimedAt: minutesFromNow(-2400),
+    createdAt: minutesFromNow(-2500),
     reactions: {
       '\u{1F44D}': ['hauwa'],
     },
   },
   {
-    id: 'msg-al-4',
+    id: 'msg-sys-lead-abuja-1',
     channelId: 'abuja-leads',
-    senderId: 'emeka',
-    type: 'text',
-    text: 'New residential lead: Diplomatic mission looking for a detached duplex in Maitama with large compound space.',
-    createdAt: minutesFromNow(-3200),
+    senderId: 'system',
+    type: 'system',
+    text: 'Hauwa Sani took this lead',
+    createdAt: minutesFromNow(-2400),
   },
   {
-    id: 'msg-al-5',
+    id: 'msg-al-hauwa-1',
     channelId: 'abuja-leads',
     senderId: 'hauwa',
     type: 'text',
-    text: 'The Maitama listing on Gana Street fits their security specifications perfectly.',
-    createdAt: minutesFromNow(-2500),
+    text: 'Client representative has booked a pre-inspection for Friday at 11:00 AM.',
+    createdAt: minutesFromNow(-2300),
+    reactions: {
+      '\u2705': ['ibrahim'],
+    },
   },
   {
-    id: 'msg-al-6',
+    id: 'msg-lead-abuja-2',
     channelId: 'abuja-leads',
     senderId: 'ibrahim',
-    type: 'text',
-    text: 'Coordinate with @Emeka to ensure perimeter access is cleared with the facility manager.',
-    createdAt: minutesFromNow(-1800),
+    type: 'lead',
+    clientName: 'Dr. Kabir Usman',
+    enquiry: 'Modern 4-bedroom terrace duplex in a serviced residential court.',
+    area: 'Wuse 2',
+    budgetNgn: 280000000,
+    claimedById: null,
+    claimedAt: null,
+    createdAt: minutesFromNow(-800),
   },
   {
-    id: 'msg-al-7',
-    channelId: 'abuja-leads',
-    senderId: 'emeka',
-    type: 'text',
-    text: 'Client representative has booked a pre-inspection for Friday at 11:00 AM.',
-    createdAt: minutesFromNow(-1100),
-  },
-  {
-    id: 'msg-al-8',
+    id: 'msg-al-aisha-1',
     channelId: 'abuja-leads',
     senderId: 'aisha',
     type: 'text',
@@ -492,15 +459,17 @@ export const SEED_MESSAGES = [
     },
   },
   {
-    id: 'msg-al-9',
+    id: 'msg-lead-abuja-3',
     channelId: 'abuja-leads',
-    senderId: 'hauwa',
-    type: 'text',
-    text: 'Confirmed attendance with the embassy liaison. Presentation pack is complete.',
-    createdAt: minutesFromNow(-150),
-    reactions: {
-      '\u2705': ['ibrahim'],
-    },
+    senderId: 'ibrahim',
+    type: 'lead',
+    clientName: 'Engr. Mustapha Balarabe',
+    enquiry: 'Well-finished 4-bedroom bungalow with extensive compound space for family home.',
+    area: 'Gwarinpa',
+    budgetNgn: 175000000,
+    claimedById: null,
+    claimedAt: null,
+    createdAt: minutesFromNow(-15),
   },
 
   // ==========================================
@@ -627,6 +596,15 @@ export const SEED_MESSAGES = [
     fileKind: 'photo',
     text: 'Showroom_Photo.jpg',
     createdAt: minutesFromNow(-400),
+  },
+  {
+    id: 'msg-ls-listing-1',
+    channelId: 'lagos-sales',
+    senderId: 'funmilayo',
+    type: 'listing',
+    listingChannelId: 'lekki-terraces',
+    note: 'New price agreed with the owner, please share with clients',
+    createdAt: minutesFromNow(-250),
   },
 
   // ==========================================
@@ -758,6 +736,15 @@ export const SEED_MESSAGES = [
     fileKind: 'document',
     text: 'Maitama_Floor_Plan.pdf',
     createdAt: minutesFromNow(-500),
+  },
+  {
+    id: 'msg-as-listing-1',
+    channelId: 'abuja-sales',
+    senderId: 'ibrahim',
+    type: 'listing',
+    listingChannelId: 'maitama-duplex',
+    note: 'New price agreed with the owner, please share with clients',
+    createdAt: minutesFromNow(-240),
   },
 
   // ==========================================
@@ -1912,3 +1899,118 @@ export const SEED_MESSAGES = [
     },
   },
 ];
+
+/**
+ * Retimes messages to realistic Nigerian office hours (08:00 to 18:30 local time).
+ * - Preserves original calendar day (days ago) and original message order.
+ * - Deterministic jitter (1 to 3 minutes, derived from message index, zero Math.random).
+ * - Messages from "today" never fall in the future; placed at now - (remaining * 4 minutes).
+ * - Thread replies remain strictly after their parent messages.
+ * - Lead messages keep their timestamps from minutesFromNow.
+ * - Uses ONLY numeric Date construction (no string dates).
+ */
+export function retimeToOfficeHours(messages = []) {
+  if (!Array.isArray(messages)) return [];
+
+  const now = new Date();
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth();
+  const todayDate = now.getDate();
+
+  // Group messages by channel and calendar day
+  const channelDayGroups = {};
+
+  messages.forEach((msg, idx) => {
+    // Lead messages are timed with minutesFromNow as usual, do not retime
+    if (msg.type === 'lead') return;
+
+    const d = new Date(msg.createdAt);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const dt = d.getDate();
+    const key = `${msg.channelId}__${y}_${m}_${dt}`;
+
+    if (!channelDayGroups[key]) {
+      channelDayGroups[key] = {
+        channelId: msg.channelId,
+        year: y,
+        month: m,
+        date: dt,
+        items: [],
+      };
+    }
+    channelDayGroups[key].items.push({ msg, originalIndex: idx });
+  });
+
+  const updatedTimestamps = new Map();
+
+  // Process each channel-day group
+  Object.values(channelDayGroups).forEach((group) => {
+    const { year, month, date, items } = group;
+    const count = items.length;
+    const isToday = year === todayYear && month === todayMonth && date === todayDate;
+
+    // Window: 08:00 (480 mins) to 18:30 (1110 mins) -> 630 minutes total span
+    const startMins = 480;
+    const totalSpan = 630;
+
+    let prevMs = 0;
+
+    items.forEach((item, i) => {
+      const remainingThatDay = count - 1 - i;
+      // Fractional step across the working day
+      const fraction = count > 1 ? i / (count - 1) : 0.35;
+      const baseMinutes = startMins + Math.floor(fraction * totalSpan);
+
+      // Deterministic jitter between 1 and 3 minutes derived from item.originalIndex
+      const jitter = ((item.originalIndex * 7 + 3) % 3) + 1;
+      const computedMinuteOfDay = Math.min(1110, baseMinutes + jitter);
+
+      const hour = Math.floor(computedMinuteOfDay / 60);
+      const minute = computedMinuteOfDay % 60;
+      const second = (item.originalIndex * 17) % 60;
+
+      // Numeric Date construction only: (year, month, date, hours, minutes, seconds)
+      let candidate = new Date(year, month, date, hour, minute, second);
+      let candidateMs = candidate.getTime();
+
+      // Today check: messages from today must never be in the future
+      if (isToday) {
+        const maxAllowedMs = now.getTime() - remainingThatDay * 4 * 60 * 1000 - 30000;
+        if (candidateMs > maxAllowedMs) {
+          candidateMs = maxAllowedMs;
+        }
+      }
+
+      // Ensure strictly ascending order within the day
+      if (prevMs > 0 && candidateMs <= prevMs) {
+        candidateMs = prevMs + 60 * 1000 + (jitter * 1000);
+      }
+
+      // Thread parent ordering check: thread reply must remain after parent
+      if (item.msg.parentId && updatedTimestamps.has(item.msg.parentId)) {
+        const parentIso = updatedTimestamps.get(item.msg.parentId);
+        const parentMs = new Date(parentIso).getTime();
+        if (candidateMs <= parentMs) {
+          candidateMs = parentMs + 90 * 1000 + (jitter * 1000);
+        }
+      }
+
+      prevMs = candidateMs;
+      updatedTimestamps.set(item.msg.id, new Date(candidateMs).toISOString());
+    });
+  });
+
+  // Return rewritten messages with updated timestamps
+  return messages.map((msg) => {
+    if (updatedTimestamps.has(msg.id)) {
+      return {
+        ...msg,
+        createdAt: updatedTimestamps.get(msg.id),
+      };
+    }
+    return msg;
+  });
+}
+
+export const SEED_MESSAGES = retimeToOfficeHours(RAW_SEED_MESSAGES);

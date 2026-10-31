@@ -33,7 +33,7 @@ export function MessageActionDrawer({
 
   if (!message) return null;
 
-  const allowedToEdit = canEdit(message, currentUser);
+  const allowedToEdit = message.type !== 'lead' && message.type !== 'listing' && canEdit(message, currentUser);
   const allowedToDelete = canDelete(message, currentUser);
   const allowedToPin = canPin(message, currentUser);
 
