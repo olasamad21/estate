@@ -82,6 +82,7 @@ export function LoginView() {
               </div>
               <input
                 id="staff-phone"
+                name="login_phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -109,6 +110,7 @@ export function LoginView() {
               </div>
               <input
                 id="staff-code"
+                name="login_code"
                 type="text"
                 maxLength={6}
                 value={code}

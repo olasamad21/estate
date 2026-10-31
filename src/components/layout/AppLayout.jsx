@@ -12,7 +12,7 @@ import { FeedbackLogDrawer } from './FeedbackLogDrawer.jsx';
 import { ConfirmResetModal } from './ConfirmResetModal.jsx';
 
 export function AppLayout({ children }) {
-  const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline } = useChat();
+  const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs } = useChat();
 
   // Drawer / Modal states
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -37,22 +37,24 @@ export function AppLayout({ children }) {
     safeSessionStorage.set('prototype_banner_dismissed', true);
   };
 
-  // Unread notification count for bell
+  // Unread notification count for bell: counts only unread mentions in channels that are not muted
   const unreadCount = useMemo(() => {
     if (!currentUser) return 0;
     const userReadMap = lastReadAtByUser?.[currentUserId] || {};
     const visible = visibleChannelsFor(currentUser, channels);
-    const visibleChannelIds = new Set(visible.map((c) => c.id));
+    const mutedSet = new Set(notifyPrefs?.mutedChannelIds || []);
+    const visibleUnmutedChannelIds = new Set(
+      visible.filter((c) => !mutedSet.has(c.id)).map((c) => c.id)
+    );
 
     return messages.filter((m) => {
-      if (!visibleChannelIds.has(m.channelId)) return false;
+      if (!visibleUnmutedChannelIds.has(m.channelId)) return false;
       if (m.senderId === currentUserId || m.senderId === 'system') return false;
       const isMention = mentionsUser(m, currentUser);
-      const isAnnouncement = m.channelId === 'announcements';
       const isUnread = !userReadMap[m.channelId] || m.createdAt > userReadMap[m.channelId];
-      return (isMention || isAnnouncement) && isUnread;
+      return isMention && isUnread;
     }).length;
-  }, [currentUser, currentUserId, lastReadAtByUser, channels, messages]);
+  }, [currentUser, currentUserId, lastReadAtByUser, channels, messages, notifyPrefs]);
 
   return (
     <div className="h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden">
@@ -86,7 +88,7 @@ export function AppLayout({ children }) {
             CP
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="leading-none text-sm font-bold text-ink overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="leading-tight text-xs sm:text-sm font-bold text-ink sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap">
               {COMPANY_CONFIG.name}
             </span>
             <span className="hidden sm:inline text-xs text-ink-muted font-normal mt-0.5">

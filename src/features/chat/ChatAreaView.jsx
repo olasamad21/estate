@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Bell, BellOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { channelDisplayName, visibleChannelsFor, threadReplies } from '../../utils/chat.js';
 import { formatNaira, formatDayLabelNg } from '../../utils/formatters.js';
@@ -11,6 +11,8 @@ import { ThreadDrawer } from './ThreadDrawer.jsx';
 import { SeenByDrawer } from './SeenByDrawer.jsx';
 import { PinnedMessagesDrawer } from './PinnedMessagesDrawer.jsx';
 import { AttachmentDrawer } from './AttachmentDrawer.jsx';
+import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
+import { FileDetailDrawer } from './FileDetailDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
 
@@ -18,6 +20,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const { id: routeChannelId } = useParams();
   const channelId = routeChannelId || defaultChannelId;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     channels,
@@ -37,6 +40,8 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     togglePin,
     toggleReaction,
     markChannelRead,
+    notifyPrefs,
+    toggleMuteChannel,
   } = useChat();
 
   const [selectedActionMessage, setSelectedActionMessage] = useState(null);
@@ -44,6 +49,8 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const [selectedAnnouncementMessage, setSelectedAnnouncementMessage] = useState(null);
   const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
   const [isAttachmentDrawerOpen, setIsAttachmentDrawerOpen] = useState(false);
+  const [isFilesDrawerOpen, setIsFilesDrawerOpen] = useState(false);
+  const [selectedFileForPreview, setSelectedFileForPreview] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
 
   const scrollRef = useRef(null);
@@ -138,12 +145,32 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
   // Scroll to bottom on channel change and new messages
   useEffect(() => {
-    if (scrollRef.current) {
+    if (!location.hash && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [channelId, timelineMessages.length]);
+  }, [channelId, timelineMessages.length, location.hash]);
 
-  const handleJumpToMessage = (msgId) => {
+  const handleJumpToMessage = useCallback((msgId) => {
+    if (!msgId) return;
+    const targetMsg = messages.find((m) => m.id === msgId);
+    if (targetMsg && targetMsg.parentId) {
+      const parent = messages.find((m) => m.id === targetMsg.parentId);
+      if (parent) {
+        setSelectedThreadMessage(parent);
+      }
+      setTimeout(() => {
+        const el = document.getElementById(`msg-${msgId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('bg-brand/10');
+          setTimeout(() => {
+            el.classList.remove('bg-brand/10');
+          }, 1500);
+        }
+      }, 200);
+      return;
+    }
+
     const el = document.getElementById(`msg-${msgId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -152,7 +179,18 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         el.classList.remove('bg-brand/10');
       }, 1500);
     }
-  };
+  }, [messages]);
+
+  // Jump to message if URL hash is present (e.g. #msg-xyz from search or external link)
+  useEffect(() => {
+    if (location.hash && location.hash.startsWith('#msg-')) {
+      const msgId = location.hash.replace('#msg-', '');
+      const timer = setTimeout(() => {
+        handleJumpToMessage(msgId);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash, channelId, timelineMessages.length, handleJumpToMessage]);
 
   if (!channel || !isVisible) {
     return (
@@ -174,6 +212,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   }
 
   const displayName = channelDisplayName(channel, currentUserId, staff);
+  const isMuted = Boolean(notifyPrefs?.mutedChannelIds?.includes(channel.id));
 
   const renderChannelIcon = () => {
     if (channel.kind === 'announcement') {
@@ -240,6 +279,32 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                 : channel.description || (channel.kind === 'dm' ? 'Direct conversation' : '')}
             </p>
           </div>
+        </div>
+
+        {/* Header Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsFilesDrawerOpen(true)}
+            aria-label="Shared files"
+            title="Shared files"
+            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer"
+          >
+            <FolderOpen className="w-5 h-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleMuteChannel(channel.id, displayName)}
+            aria-label={isMuted ? 'Unmute channel' : 'Mute channel'}
+            title={isMuted ? 'Unmute channel' : 'Mute channel'}
+            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer"
+          >
+            {isMuted ? (
+              <BellOff className="w-5 h-5 text-ink-muted" aria-hidden="true" />
+            ) : (
+              <Bell className="w-5 h-5" aria-hidden="true" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -404,6 +469,28 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         onClose={() => setIsAttachmentDrawerOpen(false)}
         onAttachFile={(fileData) => {
           sendFile(channel.id, fileData);
+        }}
+      />
+
+      <ChannelFilesDrawer
+        isOpen={isFilesDrawerOpen}
+        onClose={() => setIsFilesDrawerOpen(false)}
+        channel={channel}
+        messages={channelMessages}
+        staffById={staffById}
+        onSelectFile={(file) => {
+          setSelectedFileForPreview(file);
+        }}
+      />
+
+      <FileDetailDrawer
+        isOpen={Boolean(selectedFileForPreview)}
+        onClose={() => setSelectedFileForPreview(null)}
+        fileItem={selectedFileForPreview}
+        onShowInChat={(messageId) => {
+          setIsFilesDrawerOpen(false);
+          setSelectedFileForPreview(null);
+          handleJumpToMessage(messageId);
         }}
       />
     </div>

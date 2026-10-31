@@ -1,87 +1,112 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Hash, Building2, MessageSquare } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { visibleChannelsFor, channelDisplayName, groupChannels } from '../../utils/chat.js';
+import { visibleChannelsFor, groupChannels, unreadCount } from '../../utils/chat.js';
 import { ChannelRow } from './ChannelRow.jsx';
+import { GlobalSearchDrawer } from './GlobalSearchDrawer.jsx';
 
 const FILTER_TABS = [
   { id: 'all', label: 'All' },
+  { id: 'unread', label: 'Unread' },
   { id: 'channels', label: 'Channels', icon: Hash },
   { id: 'listings', label: 'Listings', icon: Building2 },
   { id: 'direct', label: 'Direct', icon: MessageSquare },
 ];
 
 export function ChannelListView() {
-  const { channels, messages, lastReadAtByUser, currentUser, currentUserId, staff } = useChat();
+  const {
+    channels,
+    messages,
+    lastReadAtByUser,
+    currentUser,
+    currentUserId,
+    staff,
+    staffById,
+    notifyPrefs,
+  } = useChat();
   const navigate = useNavigate();
   const { id: activeChannelId } = useParams();
 
   const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Keyboard shortcut Ctrl/Cmd+K to open search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // 1. Filter channels strictly by current user's visibility
   const userVisibleChannels = useMemo(() => {
     return visibleChannelsFor(currentUser, channels);
   }, [currentUser, channels]);
 
-  // 2. Filter by search query
-  const searchedChannels = useMemo(() => {
-    if (!searchQuery.trim()) return userVisibleChannels;
-    const q = searchQuery.toLowerCase().trim();
-    return userVisibleChannels.filter((ch) => {
-      const name = channelDisplayName(ch, currentUserId, staff).toLowerCase();
-      const desc = (ch.description || '').toLowerCase();
-      const loc = (ch.location || '').toLowerCase();
-      return name.includes(q) || desc.includes(q) || loc.includes(q);
-    });
-  }, [userVisibleChannels, searchQuery, currentUserId, staff]);
+  const userReadMap = useMemo(() => {
+    return (currentUserId && lastReadAtByUser?.[currentUserId]) || {};
+  }, [lastReadAtByUser, currentUserId]);
 
-  // 3. Filter by active category tab
+  // 2. Filter by active category tab (All, Unread, Channels, Listings, Direct)
   const filteredChannels = useMemo(() => {
+    if (activeFilter === 'unread') {
+      return userVisibleChannels.filter((ch) => {
+        const count = unreadCount(ch.id, messages, userReadMap[ch.id], currentUserId);
+        return count > 0;
+      });
+    }
     if (activeFilter === 'channels') {
-      return searchedChannels.filter(
+      return userVisibleChannels.filter(
         (ch) => ch.kind === 'public' || ch.kind === 'announcement' || ch.kind === 'private'
       );
     }
     if (activeFilter === 'listings') {
-      return searchedChannels.filter((ch) => ch.kind === 'listing');
+      return userVisibleChannels.filter((ch) => ch.kind === 'listing');
     }
     if (activeFilter === 'direct') {
-      return searchedChannels.filter((ch) => ch.kind === 'dm' || ch.kind === 'group');
+      return userVisibleChannels.filter((ch) => ch.kind === 'dm' || ch.kind === 'group');
     }
-    return searchedChannels;
-  }, [searchedChannels, activeFilter]);
+    return userVisibleChannels;
+  }, [userVisibleChannels, activeFilter, messages, userReadMap, currentUserId]);
 
-  // 4. Group channels into sections when on 'all' tab with no search query
+  // 3. Group channels into sections when on 'all' tab
   const grouped = useMemo(() => {
-    return groupChannels(searchedChannels);
-  }, [searchedChannels]);
-
-  const userReadMap = lastReadAtByUser?.[currentUserId] || {};
+    return groupChannels(userVisibleChannels);
+  }, [userVisibleChannels]);
 
   const handleSelectChannel = (channelId) => {
     navigate(`/channels/${channelId}`);
   };
 
-  const isGroupedView = activeFilter === 'all' && !searchQuery.trim();
+  const isGroupedView = activeFilter === 'all';
+
+  const isChannelMuted = (channelId) => {
+    return Array.isArray(notifyPrefs?.mutedChannelIds) && notifyPrefs.mutedChannelIds.includes(channelId);
+  };
 
   return (
     <div className="h-full flex flex-col bg-surface select-none">
-      {/* Search Input */}
+      {/* Search Trigger Button */}
       <div className="p-3 border-b border-line shrink-0">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
-            <Search className="w-4 h-4" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          aria-label="Search workspace (Ctrl+K)"
+          className="w-full flex items-center justify-between pl-3 pr-3 py-1.5 text-xs bg-surface-raised border border-line rounded-lg text-ink-muted hover:border-brand hover:text-ink transition-colors cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>Search channels & listings...</span>
           </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search channels & listings..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-raised border border-line rounded-lg text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none"
-          />
-        </div>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-2xs font-mono bg-surface border border-line rounded text-ink-muted">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* Filter Chips */}
@@ -125,6 +150,8 @@ export function ChannelListView() {
                     lastReadAt={userReadMap[channel.id]}
                     currentUser={currentUser}
                     staffList={staff}
+                    isMuted={isChannelMuted(channel.id)}
+                    notifyMode={notifyPrefs?.mode || 'all'}
                   />
                 ))}
               </div>
@@ -146,6 +173,8 @@ export function ChannelListView() {
                     lastReadAt={userReadMap[channel.id]}
                     currentUser={currentUser}
                     staffList={staff}
+                    isMuted={isChannelMuted(channel.id)}
+                    notifyMode={notifyPrefs?.mode || 'all'}
                   />
                 ))}
               </div>
@@ -167,6 +196,8 @@ export function ChannelListView() {
                     lastReadAt={userReadMap[channel.id]}
                     currentUser={currentUser}
                     staffList={staff}
+                    isMuted={isChannelMuted(channel.id)}
+                    notifyMode={notifyPrefs?.mode || 'all'}
                   />
                 ))}
               </div>
@@ -188,6 +219,8 @@ export function ChannelListView() {
                     lastReadAt={userReadMap[channel.id]}
                     currentUser={currentUser}
                     staffList={staff}
+                    isMuted={isChannelMuted(channel.id)}
+                    notifyMode={notifyPrefs?.mode || 'all'}
                   />
                 ))}
               </div>
@@ -197,7 +230,7 @@ export function ChannelListView() {
           <div className="space-y-1">
             {filteredChannels.length === 0 ? (
               <div className="text-center py-8 px-4 text-xs text-ink-muted">
-                No matching channels found
+                {activeFilter === 'unread' ? 'No unread messages' : 'No matching channels found'}
               </div>
             ) : (
               filteredChannels.map((channel) => (
@@ -210,12 +243,25 @@ export function ChannelListView() {
                   lastReadAt={userReadMap[channel.id]}
                   currentUser={currentUser}
                   staffList={staff}
+                  isMuted={isChannelMuted(channel.id)}
+                  notifyMode={notifyPrefs?.mode || 'all'}
                 />
               ))
             )}
           </div>
         )}
       </div>
+
+      {/* Global Search Drawer */}
+      <GlobalSearchDrawer
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        channels={channels}
+        messages={messages}
+        staff={staff}
+        staffById={staffById}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

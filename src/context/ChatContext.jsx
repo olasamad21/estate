@@ -10,9 +10,18 @@ import {
   getBackOnlineMessage,
   getMessagePinnedMessage,
   getMessageUnpinnedMessage,
+  getChannelMutedMessage,
+  getChannelUnmutedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-2';
+const CHAT_STATE_VERSION = 'chat-3';
+
+const DEFAULT_USER_NOTIFY_PREFS = {
+  mutedChannelIds: [],
+  mode: 'all',
+  quietStart: '21:00',
+  quietEnd: '07:00',
+};
 
 function buildInitialReadState() {
   const seedThreshold = minutesFromNow(-300);
@@ -68,6 +77,55 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     safeSessionStorage.set('chat_state', chatState);
   }, [chatState]);
+
+  // 5. Notification preferences (stored per-user under 'notify_prefs' in safeLocalStorage)
+  const [notifyPrefsByUserId, setNotifyPrefsByUserId] = useState(() => {
+    return safeLocalStorage.get('notify_prefs', {});
+  });
+
+  useEffect(() => {
+    safeLocalStorage.set('notify_prefs', notifyPrefsByUserId);
+  }, [notifyPrefsByUserId]);
+
+  const notifyPrefs = useMemo(() => {
+    if (!currentUserId) return DEFAULT_USER_NOTIFY_PREFS;
+    const userPrefs = notifyPrefsByUserId[currentUserId];
+    return {
+      mutedChannelIds: Array.isArray(userPrefs?.mutedChannelIds) ? userPrefs.mutedChannelIds : [],
+      mode: userPrefs?.mode === 'mentions' ? 'mentions' : 'all',
+      quietStart: userPrefs?.quietStart || '21:00',
+      quietEnd: userPrefs?.quietEnd || '07:00',
+    };
+  }, [notifyPrefsByUserId, currentUserId]);
+
+  const updateNotifyPrefs = useCallback((partial) => {
+    if (!currentUserId) return;
+    setNotifyPrefsByUserId((prev) => {
+      const current = prev[currentUserId] || DEFAULT_USER_NOTIFY_PREFS;
+      return {
+        ...prev,
+        [currentUserId]: {
+          ...current,
+          ...partial,
+        },
+      };
+    });
+  }, [currentUserId]);
+
+  const toggleMuteChannel = useCallback((channelId, channelDisplayName) => {
+    if (!currentUserId || !channelId) return;
+    const isMuted = notifyPrefs.mutedChannelIds.includes(channelId);
+    const updated = isMuted
+      ? notifyPrefs.mutedChannelIds.filter((id) => id !== channelId)
+      : [...notifyPrefs.mutedChannelIds, channelId];
+    updateNotifyPrefs({ mutedChannelIds: updated });
+    const name = channelDisplayName || channelId;
+    if (isMuted) {
+      showToast(getChannelUnmutedMessage(name));
+    } else {
+      showToast(getChannelMutedMessage(name));
+    }
+  }, [currentUserId, notifyPrefs.mutedChannelIds, updateNotifyPrefs, showToast]);
 
   const currentUser = useMemo(() => {
     return currentUserId ? STAFF_BY_ID[currentUserId] || null : null;
@@ -417,6 +475,9 @@ export function ChatProvider({ children }) {
     toggleReaction,
     markChannelRead,
     resetDemo,
+    notifyPrefs,
+    updateNotifyPrefs,
+    toggleMuteChannel,
   }), [
     currentUserId,
     currentUser,
@@ -439,6 +500,9 @@ export function ChatProvider({ children }) {
     toggleReaction,
     markChannelRead,
     resetDemo,
+    notifyPrefs,
+    updateNotifyPrefs,
+    toggleMuteChannel,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -285,6 +285,7 @@ export function MessageComposer({
             {/* Textarea */}
             <textarea
               ref={textareaRef}
+              name="composer_message"
               rows={1}
               value={text}
               onChange={handleTextChange}

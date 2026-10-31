@@ -55,3 +55,15 @@ export function getBackOnlineMessage(count = 0) {
 export function getFileDownloadStartedMessage(fileName = '') {
   return fileName ? `Downloading ${fileName}...` : 'Download started';
 }
+
+export function getNoDirectMessageToast(name = '') {
+  return name ? `No direct message with ${name} yet` : 'No direct message with user yet';
+}
+
+export function getChannelMutedMessage(channelName = '') {
+  return `Muted #${channelName}`;
+}
+
+export function getChannelUnmutedMessage(channelName = '') {
+  return `Unmuted #${channelName}`;
+}

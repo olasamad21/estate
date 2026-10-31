@@ -7,6 +7,7 @@ export function Drawer({
   title,
   children,
   footer = null,
+  panelClassName = '',
 }) {
   const drawerRef = useRef(null);
   const triggerRef = useRef(null);
@@ -146,7 +147,7 @@ export function Drawer({
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        className="w-full max-w-md bg-surface rounded-t-2xl border-t border-x border-line shadow-2xl flex flex-col max-h-[85dvh] animate-drawer-mount focus:outline-none"
+        className={`w-full max-w-md bg-surface rounded-t-2xl border-t border-x border-line shadow-2xl flex flex-col max-h-[85dvh] animate-drawer-mount focus:outline-none ${panelClassName}`}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" aria-hidden="true">

@@ -433,6 +433,28 @@ export const SEED_MESSAGES = [
     text: 'New viewing booked for tomorrow 11:00 AM on Chevron toll axis.',
     createdAt: minutesFromNow(-50),
   },
+  {
+    id: 'msg-seed-ls-f1',
+    channelId: 'lagos-sales',
+    senderId: 'chidi',
+    type: 'file',
+    fileName: 'Price_List_Lekki.pdf',
+    fileSize: '1.1 MB',
+    fileKind: 'document',
+    text: 'Price_List_Lekki.pdf',
+    createdAt: minutesFromNow(-600),
+  },
+  {
+    id: 'msg-seed-ls-f2',
+    channelId: 'lagos-sales',
+    senderId: 'folake',
+    type: 'file',
+    fileName: 'Showroom_Photo.jpg',
+    fileSize: '3.6 MB',
+    fileKind: 'photo',
+    text: 'Showroom_Photo.jpg',
+    createdAt: minutesFromNow(-400),
+  },
 
   // ==========================================
   // #abuja-sales
@@ -532,6 +554,17 @@ export const SEED_MESSAGES = [
     reactions: {
       '\u2705': ['hauwa'],
     },
+  },
+  {
+    id: 'msg-seed-as-f1',
+    channelId: 'abuja-sales',
+    senderId: 'emeka',
+    type: 'file',
+    fileName: 'Maitama_Floor_Plan.pdf',
+    fileSize: '2.2 MB',
+    fileKind: 'document',
+    text: 'Maitama_Floor_Plan.pdf',
+    createdAt: minutesFromNow(-500),
   },
 
   // ==========================================
@@ -812,6 +845,17 @@ export const SEED_MESSAGES = [
     reactions: {
       '\u2705': ['adaeze', 'ibrahim'],
     },
+  },
+  {
+    id: 'msg-seed-acc-f1',
+    channelId: 'accounts',
+    senderId: 'kemi',
+    type: 'file',
+    fileName: 'Receipt_Template.pdf',
+    fileSize: '310 KB',
+    fileKind: 'document',
+    text: 'Receipt_Template.pdf',
+    createdAt: minutesFromNow(-700),
   },
 
   // ==========================================

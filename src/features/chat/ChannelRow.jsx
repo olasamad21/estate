@@ -1,4 +1,4 @@
-import { Hash, Lock, Megaphone, Building2, Users } from 'lucide-react';
+import { Hash, Lock, Megaphone, Building2, Users, BellOff } from 'lucide-react';
 import { channelDisplayName, lastMessage, unreadCount, mentionsUser } from '../../utils/chat.js';
 import { formatNaira, formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
@@ -11,6 +11,8 @@ export function ChannelRow({
   lastReadAt = null,
   currentUser = null,
   staffList = [],
+  isMuted = false,
+  notifyMode = 'all',
 }) {
   const currentUserId = currentUser?.id || null;
   const displayName = channelDisplayName(channel, currentUserId, staffList);
@@ -80,6 +82,9 @@ export function ChannelRow({
                 ? `#${displayName}`
                 : displayName}
             </span>
+            {isMuted && (
+              <BellOff className="w-3.5 h-3.5 text-ink-muted shrink-0" aria-label="Channel muted" />
+            )}
             {channel.kind === 'listing' && channel.status && (
               <span className="text-xs px-1.5 py-0.2 rounded bg-surface-raised text-ink-muted border border-line shrink-0">
                 {channel.status}
@@ -103,16 +108,40 @@ export function ChannelRow({
           </span>
         )}
         {unread > 0 && (
-          <span
-            className={`min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-xs ${
-              hasMention
-                ? 'bg-status-danger text-surface'
-                : 'bg-brand text-surface'
-            }`}
-            title={`${unread} unread messages`}
-          >
-            {unread}
-          </span>
+          isMuted ? (
+            <span
+              className="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-xs bg-surface-raised text-ink-muted border border-line"
+              title={`${unread} unread messages (muted)`}
+            >
+              {unread}
+            </span>
+          ) : notifyMode === 'mentions' ? (
+            hasMention ? (
+              <span
+                className="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-xs bg-status-danger text-surface"
+                title={`${unread} unread mentions`}
+              >
+                {unread}
+              </span>
+            ) : (
+              <span
+                className="w-2 h-2 rounded-full bg-line-strong shrink-0 my-1.5"
+                title={`${unread} unread messages`}
+                aria-label="Unread messages"
+              />
+            )
+          ) : (
+            <span
+              className={`min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-xs ${
+                hasMention
+                  ? 'bg-status-danger text-surface'
+                  : 'bg-brand text-surface'
+              }`}
+              title={`${unread} unread messages`}
+            >
+              {unread}
+            </span>
+          )
         )}
       </div>
     </button>

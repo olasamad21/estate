@@ -1,11 +1,28 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, ChevronRight, Megaphone, AtSign } from 'lucide-react';
+import { Bell, CheckCheck, ChevronRight, Megaphone, AtSign, Settings, Moon } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { visibleChannelsFor, mentionsUser } from '../../utils/chat.js';
-import { formatTimeNg } from '../../utils/formatters.js';
+import { formatTimeNg, formatTimeInput12h } from '../../utils/formatters.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { useToast } from '../common/useToast.js';
 import { getAllNotificationsReadMessage } from '../../utils/messages.js';
+import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
+
+function checkQuietHours(quietStart = '21:00', quietEnd = '07:00') {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const [sH, sM] = (quietStart || '21:00').split(':').map(Number);
+  const [eH, eM] = (quietEnd || '07:00').split(':').map(Number);
+  const start = (sH || 0) * 60 + (sM || 0);
+  const end = (eH || 0) * 60 + (eM || 0);
+
+  if (start <= end) {
+    return currentMinutes >= start && currentMinutes < end;
+  }
+  return currentMinutes >= start || currentMinutes < end;
+}
 
 export function NotificationDrawer({ isOpen, onClose }) {
   const {
@@ -16,9 +33,14 @@ export function NotificationDrawer({ isOpen, onClose }) {
     lastReadAtByUser,
     markChannelRead,
     staffById,
+    notifyPrefs,
   } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const quietActive = checkQuietHours(notifyPrefs?.quietStart, notifyPrefs?.quietEnd);
 
   const userReadMap = lastReadAtByUser?.[currentUserId] || {};
   const visible = visibleChannelsFor(currentUser, channels);
@@ -67,6 +89,14 @@ export function NotificationDrawer({ isOpen, onClose }) {
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Notifications">
       <div className="space-y-4">
+        {/* Quiet hours slim banner */}
+        {quietActive && (
+          <div className="px-3 py-1.5 rounded-lg bg-surface-raised border border-line text-xs text-ink-muted flex items-center gap-2">
+            <Moon className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
+            <span>Quiet hours on until {formatTimeInput12h(notifyPrefs?.quietEnd || '07:00')}</span>
+          </div>
+        )}
+
         {/* Drawer Header Controls */}
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div className="text-xs text-ink-muted">
@@ -78,16 +108,27 @@ export function NotificationDrawer({ isOpen, onClose }) {
               <span>All notifications caught up</span>
             )}
           </div>
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-1 shrink-0">
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="inline-flex flex-row items-center gap-1.5 whitespace-nowrap min-h-[44px] px-2.5 py-2 text-xs font-medium text-ink hover:text-brand hover:bg-surface-raised rounded-lg transition-colors cursor-pointer shrink-0"
+              >
+                <CheckCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Mark all read</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={handleMarkAllRead}
-              className="inline-flex flex-row items-center gap-1.5 whitespace-nowrap min-h-[44px] px-3 py-2 text-xs font-medium text-ink hover:text-brand hover:bg-surface-raised rounded-lg transition-colors cursor-pointer shrink-0"
+              onClick={() => setIsSettingsOpen(true)}
+              aria-label="Notification settings"
+              title="Notification settings"
+              className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised transition-colors cursor-pointer shrink-0"
             >
-              <CheckCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>Mark all read</span>
+              <Settings className="w-4 h-4" aria-hidden="true" />
             </button>
-          )}
+          </div>
         </div>
 
         {/* Notifications List */}
@@ -159,6 +200,11 @@ export function NotificationDrawer({ isOpen, onClose }) {
           </div>
         )}
       </div>
+
+      <NotificationSettingsDrawer
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </Drawer>
   );
 }

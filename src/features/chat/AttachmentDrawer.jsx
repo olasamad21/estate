@@ -53,6 +53,7 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
         {/* Hidden native file inputs */}
         <input
           ref={photoInputRef}
+          name="attach_photo"
           type="file"
           accept="image/*"
           className="hidden"
@@ -60,6 +61,7 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
         />
         <input
           ref={docInputRef}
+          name="attach_document"
           type="file"
           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
           className="hidden"

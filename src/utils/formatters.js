@@ -122,12 +122,10 @@ export function getStageLabel(deal) {
  * Maps application route paths to human-friendly page labels
  */
 export function getFriendlyPageLabel(pathname) {
-  if (!pathname || pathname === '/' || pathname === '/deals') {
-    return 'Deals';
-  }
-  if (pathname.startsWith('/deals/')) {
-    return 'Deal room';
-  }
+  if (pathname === '/login') return 'Login';
+  if (pathname === '/channels') return 'Channels';
+  if (pathname && pathname.startsWith('/channels/')) return 'Chat';
+  if (pathname === '/admin') return 'Admin';
   return 'Page';
 }
 
@@ -182,6 +180,18 @@ export function formatTimeNg(iso) {
   if (isNaN(date.getTime())) return '';
   let hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');
+  const period = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${period}`;
+}
+
+export function formatTimeInput12h(timeStr) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let hours = parseInt(hStr, 10);
+  if (isNaN(hours)) return timeStr;
+  const minutes = mStr || '00';
   const period = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12;
   if (hours === 0) hours = 12;

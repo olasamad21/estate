@@ -105,6 +105,7 @@ export function FeedbackModal({ isOpen, onClose }) {
           </label>
           <textarea
             id="feedback-text"
+            name="feedback_note"
             data-autofocus
             rows={4}
             value={text}
