@@ -1,8 +1,13 @@
 const ROLE_SOLIDS = {
+  admin: 'bg-role-admin-solid text-surface',
+  manager: 'bg-role-manager-solid text-surface',
   agent: 'bg-role-agent-solid text-surface',
-  buyer: 'bg-role-buyer-solid text-surface',
-  seller: 'bg-role-seller-solid text-surface',
-  lender: 'bg-role-lender-solid text-surface',
+  support: 'bg-role-support-solid text-surface',
+  intern: 'bg-role-intern-solid text-surface',
+  // Legacy aliases
+  buyer: 'bg-role-manager-solid text-surface',
+  seller: 'bg-role-support-solid text-surface',
+  lender: 'bg-role-admin-solid text-surface',
 };
 
 const SIZES = {

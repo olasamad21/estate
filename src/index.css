@@ -31,25 +31,47 @@
   --color-status-info-line: #D1D5DB;
 
   /* Semantic role tokens */
+  /* Admin: Indigo */
+  --color-role-admin-solid: #4338CA;
+  --color-role-admin-bg: #EEF2FF;
+  --color-role-admin-line: #C7D2FE;
+  --color-role-admin-ink: #3730A3;
+
+  /* Manager: Blue */
+  --color-role-manager-solid: #1D4ED8;
+  --color-role-manager-bg: #EFF6FF;
+  --color-role-manager-line: #BFDBFE;
+  --color-role-manager-ink: #1E40AF;
+
   /* Agent: Slate */
   --color-role-agent-solid: #334155;
   --color-role-agent-bg: #F1F5F9;
   --color-role-agent-line: #CBD5E1;
   --color-role-agent-ink: #1E293B;
 
-  /* Buyer: Blue */
+  /* Support staff: Teal */
+  --color-role-support-solid: #0F766E;
+  --color-role-support-bg: #F0FDFA;
+  --color-role-support-line: #99F6E4;
+  --color-role-support-ink: #115E59;
+
+  /* Intern: Neutral */
+  --color-role-intern-solid: #5F6775;
+  --color-role-intern-bg: #F1F3F5;
+  --color-role-intern-line: #D1D5DB;
+  --color-role-intern-ink: #374151;
+
+  /* Legacy aliases for backwards compatibility */
   --color-role-buyer-solid: #1D4ED8;
   --color-role-buyer-bg: #EFF6FF;
   --color-role-buyer-line: #BFDBFE;
   --color-role-buyer-ink: #1E40AF;
 
-  /* Seller: Teal */
   --color-role-seller-solid: #0F766E;
   --color-role-seller-bg: #F0FDFA;
   --color-role-seller-line: #99F6E4;
   --color-role-seller-ink: #115E59;
 
-  /* Lender: Indigo */
   --color-role-lender-solid: #4338CA;
   --color-role-lender-bg: #EEF2FF;
   --color-role-lender-line: #C7D2FE;

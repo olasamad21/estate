@@ -1,14 +1,24 @@
-import { Briefcase, KeyRound, House, Landmark } from 'lucide-react';
+import { Briefcase, ShieldCheck, Headphones, GraduationCap, UserCheck, KeyRound, House, Landmark } from 'lucide-react';
 
 const ROLE_VARIANTS = {
+  admin: 'bg-role-admin-bg text-role-admin-ink border-role-admin-line',
+  manager: 'bg-role-manager-bg text-role-manager-ink border-role-manager-line',
   agent: 'bg-role-agent-bg text-role-agent-ink border-role-agent-line',
-  buyer: 'bg-role-buyer-bg text-role-buyer-ink border-role-buyer-line',
-  seller: 'bg-role-seller-bg text-role-seller-ink border-role-seller-line',
-  lender: 'bg-role-lender-bg text-role-lender-ink border-role-lender-line',
+  support: 'bg-role-support-bg text-role-support-ink border-role-support-line',
+  intern: 'bg-role-intern-bg text-role-intern-ink border-role-intern-line',
+  // Legacy aliases
+  buyer: 'bg-role-manager-bg text-role-manager-ink border-role-manager-line',
+  seller: 'bg-role-support-bg text-role-support-ink border-role-support-line',
+  lender: 'bg-role-admin-bg text-role-admin-ink border-role-admin-line',
 };
 
 const ROLE_ICONS = {
-  agent: Briefcase,
+  admin: ShieldCheck,
+  manager: Briefcase,
+  agent: UserCheck,
+  support: Headphones,
+  intern: GraduationCap,
+  // Legacy aliases
   buyer: KeyRound,
   seller: House,
   lender: Landmark,

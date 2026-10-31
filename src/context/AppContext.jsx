@@ -1,23 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { safeLocalStorage, safeSessionStorage } from '../utils/storage';
-import { INITIAL_ALERTS, SIMULATED_LEAD_TEMPLATE } from '../mock/alerts';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { safeLocalStorage } from '../utils/storage.js';
 
-function createLeadAlert() {
-  const now = new Date().toISOString();
-  return {
-    ...SIMULATED_LEAD_TEMPLATE,
-    id: `lead_${Date.now()}`,
-    createdAt: now,
-    timestamp: now,
-    isRead: false,
-  };
-}
-
-function createFeedbackItem(activeRole, { category, text, route }) {
+function createFeedbackItem(role, { category, text, route }) {
   return {
     id: `fb_${Date.now()}`,
     timestamp: new Date().toISOString(),
-    role: activeRole,
+    role: role || 'staff',
     category,
     text,
     route,
@@ -27,51 +15,11 @@ function createFeedbackItem(activeRole, { category, text, route }) {
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  // 1. Role State (persisted in localStorage)
-  const [activeRole, setActiveRoleState] = useState(() => {
-    return safeLocalStorage.get('active_role', 'agent');
-  });
-
-  const setActiveRole = useCallback((role) => {
-    setActiveRoleState(role);
-    safeLocalStorage.set('active_role', role);
-  }, []);
-
-  // 2. Alerts State (persisted in sessionStorage, auto-seeded to INITIAL_ALERTS if outdated)
-  const [alerts, setAlerts] = useState(() => {
-    const stored = safeSessionStorage.get('alerts', null);
-    if (stored && Array.isArray(stored) && stored.length >= INITIAL_ALERTS.length) {
-      return stored;
-    }
-    return INITIAL_ALERTS;
-  });
-
-  useEffect(() => {
-    safeSessionStorage.set('alerts', alerts);
-  }, [alerts]);
-
-  const markAlertAsRead = useCallback((alertId) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
-    );
-  }, []);
-
-  const markAllAlertsAsRead = useCallback(() => {
-    setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
-  }, []);
-
-  // 3. Toast System State
+  // 1. Toast System Bridge State
   const [pendingToast, setPendingToast] = useState(null);
   const clearPendingToast = useCallback(() => setPendingToast(null), []);
 
-  // 4. Simulated Lead Trigger (state only; toast emitted by triggering action)
-  const simulateLead = useCallback(() => {
-    const newAlert = createLeadAlert();
-    setAlerts((prev) => [newAlert, ...prev]);
-    return newAlert;
-  }, []);
-
-  // 5. Feedback Items (persisted in localStorage)
+  // 2. Feedback Items (persisted in safeLocalStorage)
   const [feedbackItems, setFeedbackItems] = useState(() => {
     return safeLocalStorage.get('feedback_items', []);
   });
@@ -80,40 +28,32 @@ export function AppProvider({ children }) {
     safeLocalStorage.set('feedback_items', feedbackItems);
   }, [feedbackItems]);
 
-  const addFeedbackItem = useCallback(({ category, text, route }) => {
-    const newItem = createFeedbackItem(activeRole, { category, text, route });
+  const addFeedbackItem = useCallback(({ category, text, route, role = 'agent' }) => {
+    const newItem = createFeedbackItem(role, { category, text, route });
     setFeedbackItems((prev) => [newItem, ...prev]);
     return newItem;
-  }, [activeRole]);
+  }, []);
 
-  // 6. Reset Demo
+  // 3. Reset Demo App State
   const resetDemo = useCallback(() => {
     safeLocalStorage.clearDemoStorage();
-    setActiveRoleState('agent');
-    setAlerts(INITIAL_ALERTS);
     setFeedbackItems([]);
   }, []);
 
-  // Unread alerts count visible to current active role
-  const unreadAlertCount = alerts.filter(
-    (a) => !a.isRead && (!a.targetRoles || a.targetRoles.includes(activeRole))
-  ).length;
-
-  const value = {
-    activeRole,
-    setActiveRole,
-    alerts,
-    unreadAlertCount,
-    markAlertAsRead,
-    markAllAlertsAsRead,
-    simulateLead,
+  const value = useMemo(() => ({
     feedbackItems,
     addFeedbackItem,
     pendingToast,
     setPendingToast,
     clearPendingToast,
     resetDemo,
-  };
+  }), [
+    feedbackItems,
+    addFeedbackItem,
+    pendingToast,
+    clearPendingToast,
+    resetDemo,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
@@ -125,3 +65,5 @@ export function useApp() {
   }
   return context;
 }
+
+export default AppContext;

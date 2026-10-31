@@ -1,18 +1,18 @@
 import { useApp } from '../../context/AppContext.jsx';
-import { useDeals } from '../../context/DealContext.jsx';
+import { useChat } from '../../context/ChatContext.jsx';
 import { Modal } from '../common/Modal.jsx';
 import { Button } from '../common/Button.jsx';
 import { useToast } from '../common/useToast.js';
 import { getDemoResetMessage } from '../../utils/messages.js';
 
 export function ConfirmResetModal({ isOpen, onClose }) {
-  const { resetDemo } = useApp();
-  const { resetDealState } = useDeals();
+  const { resetDemo: resetAppDemo } = useApp();
+  const { resetDemo: resetChatDemo } = useChat();
   const { showToast } = useToast();
 
   const handleConfirm = () => {
-    resetDemo();
-    resetDealState();
+    resetAppDemo();
+    resetChatDemo();
     showToast(getDemoResetMessage(), 'info');
     onClose();
   };
@@ -38,7 +38,7 @@ export function ConfirmResetModal({ isOpen, onClose }) {
           Are you sure you want to reset the prototype to its default state?
         </p>
         <p>
-          This will restore all sample deals, messages, alerts, documents, and clear any recorded feedback.
+          This will restore all sample channels, messages, read states, and clear any recorded feedback.
         </p>
       </div>
     </Modal>

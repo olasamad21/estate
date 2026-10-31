@@ -1,6 +1,6 @@
 import { Copy, ClipboardList } from 'lucide-react';
 import { useApp } from '../../context/AppContext.jsx';
-import { ROLE_DETAILS } from '../../mock/roles.js';
+import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatRelativeTime, getFriendlyPageLabel } from '../../utils/formatters.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { Button } from '../common/Button.jsx';
@@ -18,7 +18,7 @@ export function FeedbackLogDrawer({ isOpen, onClose }) {
     try {
       const formatted = feedbackItems
         .map((item, idx) => {
-          const roleName = ROLE_DETAILS[item.role]?.name || item.role;
+          const roleName = ROLE_LABELS[item.role] || item.role;
           const pageLabel = getFriendlyPageLabel(item.route);
           return `[${idx + 1}] ${item.timestamp} | ${roleName} (${item.role}) | [${item.category}] on ${pageLabel} (${item.route})\n"${item.text}"`;
         })
@@ -80,7 +80,7 @@ export function FeedbackLogDrawer({ isOpen, onClose }) {
         ) : (
           <div className="space-y-3" role="feed" aria-label="Submitted feedback list">
             {feedbackItems.map((item) => {
-              const roleName = ROLE_DETAILS[item.role]?.name || item.role;
+              const roleName = ROLE_LABELS[item.role] || item.role;
               return (
                 <div
                   key={item.id}
