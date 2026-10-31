@@ -130,3 +130,107 @@ export function getFriendlyPageLabel(pathname) {
   }
   return 'Page';
 }
+
+// Staff app (Nigeria) formatters
+const NAIRA = '\u20A6';
+
+function addThousandsSeparators(intStr) {
+  return intStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+export function minutesFromNow(n) {
+  const d = new Date();
+  d.setTime(d.getTime() + n * 60 * 1000);
+  return d.toISOString();
+}
+
+export function formatNaira(amount) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) return '';
+  const rounded = Math.round(amount);
+  const isNegative = rounded < 0;
+  const absStr = Math.abs(rounded).toString();
+  const formatted = addThousandsSeparators(absStr);
+  return isNegative ? `-${NAIRA}${formatted}` : `${NAIRA}${formatted}`;
+}
+
+export function formatNairaShort(amount) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) return '';
+  if (amount >= 1e9) {
+    const val = (amount / 1e9).toFixed(1).replace(/\.0$/, '');
+    return `${NAIRA}${val}bn`;
+  }
+  if (amount >= 1e6) {
+    const val = (amount / 1e6).toFixed(1).replace(/\.0$/, '');
+    return `${NAIRA}${val}m`;
+  }
+  return formatNaira(amount);
+}
+
+export function formatDateNg(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+export function formatTimeNg(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const period = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${period}`;
+}
+
+export function formatDayLabelNg(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  const diff = daysUntil(iso);
+  if (diff === 0) return 'Today';
+  if (diff === -1) return 'Yesterday';
+  return formatDateNg(iso);
+}
+
+export function formatListTimeNg(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  const diff = daysUntil(iso);
+  if (diff === 0) return formatTimeNg(iso);
+  if (diff === -1) return 'Yesterday';
+  return formatDateNg(iso);
+}
+
+export function normalisePhoneNg(input) {
+  if (typeof input !== 'string') return null;
+  const digits = input.replace(/\D/g, '');
+  if (digits.length === 13 && digits.startsWith('234')) {
+    return `+234${digits.slice(3)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('0')) {
+    return `+234${digits.slice(1)}`;
+  }
+  if (digits.length === 10) {
+    return `+234${digits}`;
+  }
+  return null;
+}
+
+export function formatPhoneNg(input) {
+  if (input === null || input === undefined) return '';
+  const normalised = normalisePhoneNg(input);
+  if (!normalised) return input;
+  const national = normalised.slice(4);
+  return `+234 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+}
+
+export function isValidPhoneNg(input) {
+  return normalisePhoneNg(input) !== null;
+}

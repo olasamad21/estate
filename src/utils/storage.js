@@ -3,14 +3,37 @@
  * and storage version invalidation.
  */
 
-export const STORAGE_VERSION = 'v1.3.0';
-const STORAGE_PREFIX = 'dealroom_proto_';
+export const STORAGE_VERSION = 'v2.0.0';
+const STORAGE_PREFIX = 'staffchat_proto_';
 const VERSION_KEY = `${STORAGE_PREFIX}storage_version`;
+const LEGACY_PREFIXES = ['dealroom_proto_'];
 
 // Storage version check: if version mismatch occurs, clear stale demo storage on boot
 (function initStorageVersion() {
   try {
     if (typeof window === 'undefined') return;
+
+    // Remove legacy prefixed keys from both storages
+    for (const prefix of LEGACY_PREFIXES) {
+      const localLegacyKeys = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const fullKey = window.localStorage.key(i);
+        if (fullKey && fullKey.startsWith(prefix)) {
+          localLegacyKeys.push(fullKey);
+        }
+      }
+      localLegacyKeys.forEach((key) => window.localStorage.removeItem(key));
+
+      const sessionLegacyKeys = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const fullKey = window.sessionStorage.key(i);
+        if (fullKey && fullKey.startsWith(prefix)) {
+          sessionLegacyKeys.push(fullKey);
+        }
+      }
+      sessionLegacyKeys.forEach((key) => window.sessionStorage.removeItem(key));
+    }
+
     const currentVersion = window.localStorage.getItem(VERSION_KEY);
     if (currentVersion !== STORAGE_VERSION) {
       // Clear localStorage demo keys

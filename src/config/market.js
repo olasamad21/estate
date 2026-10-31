@@ -64,3 +64,27 @@ export const MARKET_CONFIG = {
 };
 
 export default MARKET_CONFIG;
+
+// Placeholder company configuration values to be swapped
+export const COMPANY_CONFIG = {
+  name: 'Crestview Properties',
+  currency: 'NGN',
+  currencySymbol: '\u20A6',
+  locale: 'en-NG',
+  timeZone: 'Africa/Lagos',
+  phoneCountryCode: '+234',
+  offices: [
+    {
+      id: 'lagos',
+      name: 'Lagos',
+      areas: ['Lekki', 'Victoria Island'],
+      consentLabel: "Governor's Consent",
+    },
+    {
+      id: 'abuja',
+      name: 'Abuja',
+      areas: ['Maitama', 'Wuse 2'],
+      consentLabel: "Minister's Consent",
+    },
+  ],
+};
