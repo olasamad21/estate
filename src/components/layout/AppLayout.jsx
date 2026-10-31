@@ -88,7 +88,7 @@ export function AppLayout({ children }) {
       )}
 
       {/* Top Bar (56px sticky, wordmark left, RoleSwitcher pill + Feedback + Notifications right) */}
-      <header className="h-14 bg-surface border-b border-line px-2.5 sm:px-4 flex items-center justify-between shrink-0 z-20">
+      <header className="h-14 bg-surface border-b border-line px-2.5 sm:px-4 flex items-center justify-between shrink-0 z-20 relative">
         {/* Wordmark */}
         <Link
           to="/channels"

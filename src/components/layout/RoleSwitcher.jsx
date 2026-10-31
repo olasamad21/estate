@@ -101,7 +101,7 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   };
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left">
+    <div ref={containerRef} className="sm:relative inline-block text-left">
       {/* Dev-Control Pill Trigger */}
       <button
         ref={triggerRef}
@@ -133,7 +133,7 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
           id="role-switcher-popover"
           role="menu"
           aria-label="Staff Switcher and Tools"
-          className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl bg-surface border border-line shadow-2xl py-1.5 z-50 animate-modal-mount focus:outline-none max-h-[85dvh] overflow-y-auto no-scrollbar"
+          className="absolute right-2.5 sm:right-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl bg-surface border border-line shadow-2xl py-1.5 z-50 animate-modal-mount focus:outline-none max-h-[85dvh] overflow-y-auto no-scrollbar"
         >
           {/* Header */}
           <div className="px-3 py-1.5 border-b border-line">
