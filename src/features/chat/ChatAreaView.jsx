@@ -383,6 +383,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                   onOpenThread={() => setSelectedThreadMessage(msg)}
                   onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}
                   onOpenSeenBy={() => setSelectedAnnouncementMessage(msg)}
+                  onOpenFileDetail={(fileMsg) => setSelectedFileForPreview(fileMsg)}
                 />
               );
             })}
@@ -468,7 +469,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         isOpen={isAttachmentDrawerOpen}
         onClose={() => setIsAttachmentDrawerOpen(false)}
         onAttachFile={(fileData) => {
-          sendFile(channel.id, fileData);
+          return sendFile(channel.id, fileData);
         }}
       />
 
@@ -478,20 +479,15 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         channel={channel}
         messages={channelMessages}
         staffById={staffById}
-        onSelectFile={(file) => {
-          setSelectedFileForPreview(file);
-        }}
+        onShowInChat={handleJumpToMessage}
       />
 
       <FileDetailDrawer
         isOpen={Boolean(selectedFileForPreview)}
         onClose={() => setSelectedFileForPreview(null)}
         fileItem={selectedFileForPreview}
-        onShowInChat={(messageId) => {
-          setIsFilesDrawerOpen(false);
-          setSelectedFileForPreview(null);
-          handleJumpToMessage(messageId);
-        }}
+        staffById={staffById}
+        showInChat={false}
       />
     </div>
   );

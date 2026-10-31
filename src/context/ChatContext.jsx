@@ -14,7 +14,7 @@ import {
   getChannelUnmutedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-3';
+const CHAT_STATE_VERSION = 'chat-4';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -299,7 +299,7 @@ export function ChatProvider({ children }) {
   }, [currentUserId, isOffline]);
 
   const sendFile = useCallback((channelId, { fileName, fileSize, fileKind }) => {
-    if (!currentUserId || !channelId || !fileName) return;
+    if (!currentUserId || !channelId || !fileName) return null;
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -318,6 +318,8 @@ export function ChatProvider({ children }) {
       ...prev,
       messages: [...prev.messages, newMsg],
     }));
+
+    return newMsg.id;
   }, [currentUserId, isOffline]);
 
   const editMessage = useCallback((messageId, newText) => {

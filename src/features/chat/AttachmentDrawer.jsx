@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Image, FileText, Sparkles } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
+import { setPreviewUrl } from '../../utils/previewUrls.js';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -17,11 +18,15 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onAttachFile({
+      const msgId = onAttachFile?.({
         fileName: file.name,
         fileSize: formatBytes(file.size),
         fileKind: 'photo',
       });
+      if (file.type?.startsWith('image/') && msgId) {
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(msgId, objectUrl);
+      }
       onClose();
     }
   };
@@ -29,7 +34,7 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
   const handleDocChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onAttachFile({
+      onAttachFile?.({
         fileName: file.name,
         fileSize: formatBytes(file.size),
         fileKind: 'document',
@@ -38,8 +43,17 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
     }
   };
 
-  const handleSampleFile = () => {
-    onAttachFile({
+  const handleSamplePhoto = () => {
+    onAttachFile?.({
+      fileName: 'Site_Photo_Ikoyi.jpg',
+      fileSize: '2.8 MB',
+      fileKind: 'photo',
+    });
+    onClose();
+  };
+
+  const handleSampleDoc = () => {
+    onAttachFile?.({
       fileName: 'Brochure_Maitama_Duplex.pdf',
       fileSize: '2.4 MB',
       fileKind: 'document',
@@ -68,7 +82,7 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
           onChange={handleDocChange}
         />
 
-        {/* Action 1: Upload Photo */}
+        {/* Option 1: Photo */}
         <button
           type="button"
           onClick={() => photoInputRef.current?.click()}
@@ -78,12 +92,12 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
             <Image className="w-5 h-5 text-brand" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-ink">Upload Photo</p>
-            <p className="text-xs text-ink-muted">Share property photos, site inspections, or receipts</p>
+            <p className="text-xs font-bold text-ink">Photo</p>
+            <p className="text-xs text-ink-muted">Share property photos or site inspections</p>
           </div>
         </button>
 
-        {/* Action 2: Upload Document */}
+        {/* Option 2: Document */}
         <button
           type="button"
           onClick={() => docInputRef.current?.click()}
@@ -93,22 +107,37 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
             <FileText className="w-5 h-5 text-brand" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-ink">Upload Document</p>
+            <p className="text-xs font-bold text-ink">Document</p>
             <p className="text-xs text-ink-muted">PDFs, C of O scans, deeds, or valuation reports</p>
           </div>
         </button>
 
-        {/* Action 3: Use Sample File */}
+        {/* Option 3: Use a sample photo */}
         <button
           type="button"
-          onClick={handleSampleFile}
+          onClick={handleSamplePhoto}
           className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line-strong bg-surface-raised hover:bg-surface hover:border-brand transition-colors text-left cursor-pointer group"
         >
           <div className="w-10 h-10 rounded-xl bg-brand text-surface flex items-center justify-center shrink-0 shadow-xs">
             <Sparkles className="w-5 h-5 text-surface" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-ink">Use Sample File</p>
+            <p className="text-xs font-bold text-ink">Use a sample photo</p>
+            <p className="text-xs text-ink-muted">Site_Photo_Ikoyi.jpg (2.8 MB)</p>
+          </div>
+        </button>
+
+        {/* Option 4: Use a sample document */}
+        <button
+          type="button"
+          onClick={handleSampleDoc}
+          className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand">
+            <Sparkles className="w-5 h-5 text-brand" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-ink">Use a sample document</p>
             <p className="text-xs text-ink-muted">Brochure_Maitama_Duplex.pdf (2.4 MB)</p>
           </div>
         </button>

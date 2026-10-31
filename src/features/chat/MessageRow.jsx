@@ -45,6 +45,7 @@ export function MessageRow({
   onOpenThread,
   onToggleReaction,
   onOpenSeenBy,
+  onOpenFileDetail,
 }) {
   // 1. System messages
   if (message.type === 'system' || message.senderId === 'system') {
@@ -180,9 +181,11 @@ export function MessageRow({
         ) : message.type === 'file' ? (
           <div className="mt-1">
             <AttachmentCard
+              message={message}
               fileName={message.fileName || message.text}
               fileSize={message.fileSize || '1.5 MB'}
               fileKind={message.fileKind || 'document'}
+              onOpenFileDetail={onOpenFileDetail}
             />
           </div>
         ) : (

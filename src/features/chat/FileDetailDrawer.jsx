@@ -1,9 +1,11 @@
-import { Image, FileText, Mic, Download, MessageSquare } from 'lucide-react';
+import { Download, MessageSquare, Mic } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
-import { formatDateNg, formatTimeNg } from '../../utils/formatters.js';
+import { formatDateNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getFileDownloadStartedMessage } from '../../utils/messages.js';
+import { PhotoView } from './PhotoView.jsx';
+import { DocumentPreview } from './DocumentPreview.jsx';
 
 function formatDuration(sec) {
   const m = Math.floor(sec / 60);
@@ -15,96 +17,102 @@ export function FileDetailDrawer({
   isOpen,
   onClose,
   file,
+  fileItem,
   staffById = {},
+  showInChat = false,
   onShowInChat,
 }) {
   const { showToast } = useToast();
 
-  if (!file) return null;
+  const currentFile = file || fileItem;
+  if (!currentFile) return null;
 
-  const isVoice = file.type === 'voice';
-  const isPhoto = file.fileKind === 'photo';
-  const sender = staffById[file.senderId];
+  const isVoice = currentFile.type === 'voice';
+  const isPhoto = currentFile.fileKind === 'photo';
+  const sender = staffById[currentFile.senderId];
   const senderName = sender?.name || 'Staff';
 
   const title = isVoice
-    ? `Voice note, ${formatDuration(file.durationSec || 15)}`
-    : file.fileName || 'Attachment';
+    ? `Voice note, ${formatDuration(currentFile.durationSec || 15)}`
+    : currentFile.fileName || 'Attachment';
 
-  const sizeOrDuration = isVoice
-    ? formatDuration(file.durationSec || 15)
-    : file.fileSize || 'Unknown size';
+  const size = isVoice
+    ? formatDuration(currentFile.durationSec || 15)
+    : currentFile.fileSize || '1.2 MB';
+
+  const formattedDate = formatDateNg(currentFile.createdAt) || 'Today';
 
   const handleDownload = () => {
-    showToast(getFileDownloadStartedMessage(file.fileName || 'Voice note'));
+    showToast(getFileDownloadStartedMessage(currentFile.fileName || 'File'));
   };
 
   const handleShowInChat = () => {
-    onShowInChat?.(file.id);
+    onShowInChat?.(currentFile.id);
     onClose();
   };
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="File Details">
-      <div className="space-y-5">
-        {/* Large icon & title banner */}
-        <div className="flex flex-col items-center text-center p-6 bg-surface-raised border border-line rounded-2xl space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-surface border border-line flex items-center justify-center text-brand shadow-xs">
-            {isPhoto ? (
-              <Image className="w-8 h-8 text-brand" aria-hidden="true" />
-            ) : isVoice ? (
-              <Mic className="w-8 h-8 text-brand" aria-hidden="true" />
-            ) : (
-              <FileText className="w-8 h-8 text-brand" aria-hidden="true" />
-            )}
+      <div className="space-y-4">
+        {/* Header: file name (wrapping) and metadata subtitle */}
+        <div className="space-y-1">
+          <h3 className="text-base font-bold text-ink break-words">
+            {title}
+          </h3>
+          <p className="text-xs text-ink-muted">
+            Shared by {senderName} on {formattedDate}, {size}
+          </p>
+        </div>
+
+        {/* Body: large PhotoView for photos, DocumentPreview for documents */}
+        {isPhoto ? (
+          <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden">
+            <PhotoView
+              message={currentFile}
+              fileName={currentFile.fileName}
+              fit="contain"
+              className="w-full max-h-[58dvh] rounded-xl"
+            />
           </div>
-          <div className="space-y-1 max-w-full">
-            <h3 className="text-sm font-bold text-ink break-words">
-              {title}
-            </h3>
-            <p className="text-xs text-ink-muted">
-              {sizeOrDuration} · {isPhoto ? 'Photo' : isVoice ? 'Audio' : 'Document'}
+        ) : isVoice ? (
+          <div className="w-full p-8 bg-surface-raised border border-line rounded-2xl flex flex-col items-center justify-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-surface border border-line flex items-center justify-center text-brand shadow-2xs">
+              <Mic className="w-7 h-7 text-brand" aria-hidden="true" />
+            </div>
+            <p className="text-xs font-semibold text-ink">
+              Voice Note ({formatDuration(currentFile.durationSec || 15)})
             </p>
           </div>
-        </div>
+        ) : (
+          <DocumentPreview
+            key={currentFile.id || currentFile.fileName}
+            fileName={currentFile.fileName}
+          />
+        )}
 
-        {/* Metadata section */}
-        <div className="p-4 rounded-xl border border-line bg-surface space-y-2.5 text-xs">
-          <div className="flex items-center justify-between py-1 border-b border-line">
-            <span className="text-ink-muted">Shared by</span>
-            <span className="font-semibold text-ink">{senderName}</span>
-          </div>
-          <div className="flex items-center justify-between py-1 border-b border-line">
-            <span className="text-ink-muted">Date</span>
-            <span className="font-semibold text-ink tabular-nums">{formatDateNg(file.createdAt)}</span>
-          </div>
-          <div className="flex items-center justify-between py-1">
-            <span className="text-ink-muted">Time</span>
-            <span className="font-semibold text-ink tabular-nums">{formatTimeNg(file.createdAt)}</span>
-          </div>
-        </div>
-
-        {/* Action buttons */}
+        {/* Action Buttons directly UNDER the preview */}
         <div className="space-y-2 pt-2">
           <Button
             type="button"
             variant="primary"
-            onClick={handleShowInChat}
-            className="w-full justify-center gap-2 h-11"
-          >
-            <MessageSquare className="w-4 h-4" aria-hidden="true" />
-            <span>Show in chat</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
             onClick={handleDownload}
             className="w-full justify-center gap-2 h-11"
           >
             <Download className="w-4 h-4" aria-hidden="true" />
             <span>Download</span>
           </Button>
+
+          {showInChat && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleShowInChat}
+              className="w-full justify-center gap-2 h-11"
+            >
+              <MessageSquare className="w-4 h-4" aria-hidden="true" />
+              <span>Show in chat</span>
+            </Button>
+          )}
         </div>
       </div>
     </Drawer>
