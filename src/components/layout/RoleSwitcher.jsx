@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Check, Sparkles, ClipboardList, RotateCcw, LogOut } from 'lucide-react';
+import { ChevronDown, Check, ClipboardList, RotateCcw, LogOut, WifiOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
-import { useToast } from '../common/useToast.js';
-import { getSimulatedLeadMessage } from '../../utils/messages.js';
 
 export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
-  const { currentUser, staff, switchUser, logout } = useChat();
-  const { showToast } = useToast();
+  const { currentUser, staff, switchUser, logout, isOffline, setOffline } = useChat();
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -54,9 +51,9 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
     triggerRef.current?.focus?.();
   };
 
-  const handleSimulateLead = () => {
+  const handleToggleOffline = () => {
+    setOffline(!isOffline);
     setIsOpen(false);
-    showToast(getSimulatedLeadMessage('Chidi Eze', '4-bedroom duplex in Lekki Phase 1', false), 'info');
     triggerRef.current?.focus?.();
   };
 
@@ -180,15 +177,26 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
           </div>
 
           <div className="py-0.5" role="group" aria-label="Prototype Actions">
-            {/* Simulate New Lead */}
+            {/* Simulate Offline Toggle */}
             <button
               type="button"
               role="menuitem"
-              onClick={handleSimulateLead}
-              className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-ink hover:bg-surface-raised cursor-pointer transition-colors"
+              onClick={handleToggleOffline}
+              className="w-full px-3 py-2 text-left flex items-center justify-between text-xs text-ink hover:bg-surface-raised cursor-pointer transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5 text-status-warning shrink-0" aria-hidden="true" />
-              <span>Simulate new lead</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <WifiOff className={`w-3.5 h-3.5 shrink-0 ${isOffline ? 'text-status-warning' : 'text-ink-muted'}`} aria-hidden="true" />
+                <span>Simulate offline</span>
+              </div>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                  isOffline
+                    ? 'bg-status-warning-bg text-status-warning border border-status-warning-line'
+                    : 'bg-surface-raised text-ink-muted border border-line'
+                }`}
+              >
+                {isOffline ? 'Active' : 'Off'}
+              </span>
             </button>
 
             {/* Feedback Log */}

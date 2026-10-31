@@ -122,14 +122,11 @@ export function getStageLabel(deal) {
  * Maps application route paths to human-friendly page labels
  */
 export function getFriendlyPageLabel(pathname) {
-  if (!pathname || pathname === '/' || pathname === '/channels') {
-    return 'Channels';
+  if (!pathname || pathname === '/' || pathname === '/deals') {
+    return 'Deals';
   }
-  if (pathname.startsWith('/channels/')) {
-    return 'Chat';
-  }
-  if (pathname === '/login') {
-    return 'Login';
+  if (pathname.startsWith('/deals/')) {
+    return 'Deal room';
   }
   return 'Page';
 }

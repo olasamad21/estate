@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Megaphone, Bell, X } from 'lucide-react';
+import { Megaphone, Bell, X, WifiOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { visibleChannelsFor, mentionsUser } from '../../utils/chat.js';
@@ -12,7 +12,7 @@ import { FeedbackLogDrawer } from './FeedbackLogDrawer.jsx';
 import { ConfirmResetModal } from './ConfirmResetModal.jsx';
 
 export function AppLayout({ children }) {
-  const { channels, messages, currentUser, currentUserId, lastReadAtByUser } = useChat();
+  const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline } = useChat();
 
   // Drawer / Modal states
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -129,6 +129,14 @@ export function AppLayout({ children }) {
           </button>
         </div>
       </header>
+
+      {/* Offline simulation alert banner */}
+      {isOffline && (
+        <div className="bg-status-warning-bg border-b border-status-warning-line text-status-warning px-4 py-1.5 text-xs flex items-center justify-center gap-2 font-medium shrink-0 z-10">
+          <WifiOff className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <span>You are offline. Messages will send when you are back online.</span>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 overflow-hidden">

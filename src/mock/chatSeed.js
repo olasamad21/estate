@@ -1,7 +1,9 @@
 import { minutesFromNow } from '../utils/formatters.js';
 
 export const SEED_MESSAGES = [
+  // ==========================================
   // #general
+  // ==========================================
   {
     id: 'msg-gen-1',
     channelId: 'general',
@@ -9,6 +11,30 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Good morning team. Please ensure all viewing logs for the week are completed by Friday noon.',
     createdAt: minutesFromNow(-4200),
+    pinned: true,
+    reactions: {
+      '\u{1F44D}': ['chidi', 'funmilayo', 'ibrahim'],
+      '\u2705': ['tunde'],
+    },
+  },
+  // Thread replies for msg-gen-1
+  {
+    id: 'msg-gen-1-r1',
+    channelId: 'general',
+    parentId: 'msg-gen-1',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Lagos branch submission will be ready by 11:00 AM.',
+    createdAt: minutesFromNow(-4100),
+  },
+  {
+    id: 'msg-gen-1-r2',
+    channelId: 'general',
+    parentId: 'msg-gen-1',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Abuja viewing register compiled and filed.',
+    createdAt: minutesFromNow(-4000),
   },
   {
     id: 'msg-gen-2',
@@ -25,6 +51,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: '@Chidi please coordinate with @Tunde so you do not double book the inspection vehicle.',
     createdAt: minutesFromNow(-3100),
+    reactions: {
+      '\u{1F440}': ['chidi', 'tunde'],
+    },
   },
   {
     id: 'msg-gen-4',
@@ -41,6 +70,20 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Abuja team has three client meetings scheduled today across Maitama and Guzape.',
     createdAt: minutesFromNow(-1800),
+    reactions: {
+      '\u{1F44D}': ['hauwa', 'emeka'],
+      '\u{1F389}': ['adaeze'],
+    },
+  },
+  // Thread replies for msg-gen-5
+  {
+    id: 'msg-gen-5-r1',
+    channelId: 'general',
+    parentId: 'msg-gen-5',
+    senderId: 'hauwa',
+    type: 'text',
+    text: 'Guzape client confirmed for 2:30 PM.',
+    createdAt: minutesFromNow(-1700),
   },
   {
     id: 'msg-gen-6',
@@ -57,6 +100,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: '@Hauwa send the coordinates to my desk and I will confirm the charting.',
     createdAt: minutesFromNow(-700),
+    reactions: {
+      '\u{1F64F}': ['hauwa'],
+    },
   },
   {
     id: 'msg-gen-8',
@@ -65,6 +111,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'The updated company brochures have arrived at the Lagos reception desk.',
     createdAt: minutesFromNow(-250),
+    reactions: {
+      '\u2764\uFE0F': ['funmilayo', 'ngozi'],
+    },
   },
   {
     id: 'msg-gen-9',
@@ -75,7 +124,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-45),
   },
 
+  // ==========================================
   // #announcements
+  // ==========================================
   {
     id: 'msg-ann-1',
     channelId: 'announcements',
@@ -83,6 +134,12 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Official Notice: Both Lagos and Abuja offices will be closed on Monday in observance of the public holiday.',
     createdAt: minutesFromNow(-5000),
+    pinned: true,
+    seenBy: ['adaeze', 'ibrahim', 'funmilayo', 'chidi', 'tunde', 'hauwa', 'ngozi', 'samuel'],
+    reactions: {
+      '\u{1F64F}': ['tunde', 'samuel', 'kemi'],
+      '\u{1F44D}': ['chidi', 'emeka'],
+    },
   },
   {
     id: 'msg-ann-2',
@@ -91,6 +148,7 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Emergency client viewings during the holiday require prior sign-off from your branch manager.',
     createdAt: minutesFromNow(-4320),
+    seenBy: ['adaeze', 'ibrahim', 'funmilayo', 'chidi', 'tunde', 'hauwa'],
   },
   {
     id: 'msg-ann-3',
@@ -99,6 +157,20 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'New viewing protocol: All prospective buyers must complete the digital visitor sheet before entering occupied properties.',
     createdAt: minutesFromNow(-3200),
+    seenBy: ['adaeze', 'ibrahim', 'funmilayo', 'chidi', 'tunde', 'hauwa', 'emeka'],
+    reactions: {
+      '\u2705': ['chidi', 'tunde', 'emeka'],
+    },
+  },
+  // Thread reply for msg-ann-3
+  {
+    id: 'msg-ann-3-r1',
+    channelId: 'announcements',
+    parentId: 'msg-ann-3',
+    senderId: 'chidi',
+    type: 'text',
+    text: 'Will enforce this for the Lekki inspections this weekend.',
+    createdAt: minutesFromNow(-3100),
   },
   {
     id: 'msg-ann-4',
@@ -107,6 +179,7 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Abuja staff: AGIS search fees must be receipted under the client file within 24 hours of submission.',
     createdAt: minutesFromNow(-2500),
+    seenBy: ['adaeze', 'ibrahim', 'hauwa', 'emeka', 'ngozi'],
   },
   {
     id: 'msg-ann-5',
@@ -115,6 +188,10 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Mid-month performance review will hold this Thursday at 10:00 AM via video link for all sales agents.',
     createdAt: minutesFromNow(-1600),
+    seenBy: ['adaeze', 'ibrahim', 'funmilayo', 'chidi', 'tunde', 'hauwa', 'emeka', 'samuel'],
+    reactions: {
+      '\u{1F44D}': ['chidi', 'hauwa'],
+    },
   },
   {
     id: 'msg-ann-6',
@@ -123,6 +200,7 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Reminder to Lagos agents: The keys for the Lekki properties must be returned to the lockbox before 6:00 PM daily.',
     createdAt: minutesFromNow(-900),
+    seenBy: ['adaeze', 'funmilayo', 'chidi', 'tunde', 'samuel'],
   },
   {
     id: 'msg-ann-7',
@@ -131,6 +209,7 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Attention @Hauwa and @Emeka: Ensure the new Wuse listing details are fully verified before public circulation.',
     createdAt: minutesFromNow(-300),
+    seenBy: ['adaeze', 'ibrahim', 'hauwa', 'emeka'],
   },
   {
     id: 'msg-ann-8',
@@ -139,9 +218,16 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Well done to both branches on meeting our quarterly target ahead of schedule.',
     createdAt: minutesFromNow(-60),
+    seenBy: ['adaeze', 'ibrahim', 'funmilayo', 'chidi', 'tunde', 'hauwa', 'ngozi', 'kemi', 'samuel'],
+    reactions: {
+      '\u{1F389}': ['funmilayo', 'ibrahim', 'chidi', 'hauwa', 'samuel'],
+      '\u2764\uFE0F': ['ngozi', 'kemi'],
+    },
   },
 
+  // ==========================================
   // #new-leads
+  // ==========================================
   {
     id: 'msg-lead-1',
     channelId: 'new-leads',
@@ -149,6 +235,16 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'New lead: High net worth buyer looking for a 4-bedroom detached duplex in Lekki Phase 1, budget around 200 million naira.',
     createdAt: minutesFromNow(-4000),
+  },
+  // Thread reply for msg-lead-1
+  {
+    id: 'msg-lead-1-r1',
+    channelId: 'new-leads',
+    parentId: 'msg-lead-1',
+    senderId: 'chidi',
+    type: 'text',
+    text: 'Verified client budget. Ready to schedule first walkthrough.',
+    createdAt: minutesFromNow(-3950),
   },
   {
     id: 'msg-lead-2',
@@ -165,6 +261,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Assigned to @Chidi. Please call the client within the hour and update the notes.',
     createdAt: minutesFromNow(-3800),
+    reactions: {
+      '\u{1F44D}': ['chidi'],
+    },
   },
   {
     id: 'msg-lead-4',
@@ -173,6 +272,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Client contacted. Inspection scheduled for tomorrow at 2:00 PM.',
     createdAt: minutesFromNow(-2700),
+    reactions: {
+      '\u2705': ['funmilayo'],
+    },
   },
   {
     id: 'msg-lead-5',
@@ -197,6 +299,19 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Assigned to @Hauwa. Please send the floor plan and schedule a walkthrough.',
     createdAt: minutesFromNow(-1950),
+    reactions: {
+      '\u{1F44D}': ['hauwa'],
+    },
+  },
+  // Voice note in #new-leads
+  {
+    id: 'msg-lead-vn-1',
+    channelId: 'new-leads',
+    senderId: 'tunde',
+    type: 'voice',
+    durationSec: 42,
+    text: '',
+    createdAt: minutesFromNow(-1200),
   },
   {
     id: 'msg-lead-8',
@@ -215,7 +330,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-30),
   },
 
+  // ==========================================
   // #lagos-sales
+  // ==========================================
   {
     id: 'msg-ls-1',
     channelId: 'lagos-sales',
@@ -223,6 +340,10 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Lagos pipeline check: We have five active closing files this week.',
     createdAt: minutesFromNow(-4100),
+    pinned: true,
+    reactions: {
+      '\u{1F389}': ['adaeze', 'chidi'],
+    },
   },
   {
     id: 'msg-ls-2',
@@ -231,6 +352,16 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'The buyer for the Lekki terrace requested a slight reduction on the agency fee.',
     createdAt: minutesFromNow(-3600),
+  },
+  // Thread reply for msg-ls-2
+  {
+    id: 'msg-ls-2-r1',
+    channelId: 'lagos-sales',
+    parentId: 'msg-ls-2',
+    senderId: 'funmilayo',
+    type: 'text',
+    text: 'Explain that the fee covers comprehensive documentation assistance.',
+    createdAt: minutesFromNow(-3550),
   },
   {
     id: 'msg-ls-3',
@@ -255,6 +386,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: '@Tunde bring the file number to legal. We can run the Lagos Lands Bureau verification this afternoon.',
     createdAt: minutesFromNow(-2700),
+    reactions: {
+      '\u{1F44D}': ['tunde'],
+    },
   },
   {
     id: 'msg-ls-6',
@@ -271,6 +405,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Inspection at Lekki Phase 1 went very well. Buyer loved the master bedroom finish.',
     createdAt: minutesFromNow(-1500),
+    reactions: {
+      '\u2764\uFE0F': ['funmilayo'],
+    },
   },
   {
     id: 'msg-ls-8',
@@ -297,7 +434,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-50),
   },
 
+  // ==========================================
   // #abuja-sales
+  // ==========================================
   {
     id: 'msg-as-1',
     channelId: 'abuja-sales',
@@ -322,6 +461,16 @@ export const SEED_MESSAGES = [
     text: 'Good morning @Ibrahim. The buyer for the Maitama duplex is ready to inspect today.',
     createdAt: minutesFromNow(-3600),
   },
+  // Thread reply for msg-as-3
+  {
+    id: 'msg-as-3-r1',
+    channelId: 'abuja-sales',
+    parentId: 'msg-as-3',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Ensure the perimeter keys are collected before 1:00 PM.',
+    createdAt: minutesFromNow(-3500),
+  },
   {
     id: 'msg-as-4',
     channelId: 'abuja-sales',
@@ -337,6 +486,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Good work @Emeka. Please update the inspection sheet with the parking bay count.',
     createdAt: minutesFromNow(-2400),
+    reactions: {
+      '\u{1F44D}': ['emeka'],
+    },
   },
   {
     id: 'msg-as-6',
@@ -377,9 +529,14 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Please send the draft to @Adaeze and me before sharing with the embassy liaison.',
     createdAt: minutesFromNow(-75),
+    reactions: {
+      '\u2705': ['hauwa'],
+    },
   },
 
+  // ==========================================
   // #legal
+  // ==========================================
   {
     id: 'msg-leg-1',
     channelId: 'legal',
@@ -403,6 +560,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'The file has passed the assessment stage at Alausa. Awaiting the final letter of allocation endorsement.',
     createdAt: minutesFromNow(-3400),
+    reactions: {
+      '\u{1F44D}': ['funmilayo', 'adaeze'],
+    },
   },
   {
     id: 'msg-leg-4',
@@ -412,6 +572,16 @@ export const SEED_MESSAGES = [
     text: 'What is the update on the AGIS search report for the Maitama duplex?',
     createdAt: minutesFromNow(-2600),
   },
+  // Thread reply for msg-leg-4
+  {
+    id: 'msg-leg-4-r1',
+    channelId: 'legal',
+    parentId: 'msg-leg-4',
+    senderId: 'ngozi',
+    type: 'text',
+    text: 'Search report confirmed 100 percent unencumbered.',
+    createdAt: minutesFromNow(-2500),
+  },
   {
     id: 'msg-leg-5',
     channelId: 'legal',
@@ -419,6 +589,21 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: '@Ibrahim the search is clean. No encumbrances or caveats registered against the root title.',
     createdAt: minutesFromNow(-2300),
+    reactions: {
+      '\u{1F389}': ['ibrahim'],
+    },
+  },
+  // File 1 in #legal
+  {
+    id: 'msg-leg-f-1',
+    channelId: 'legal',
+    senderId: 'ngozi',
+    type: 'file',
+    fileName: 'Survey_Plan_Lekki.pdf',
+    fileSize: '3.1 MB',
+    fileKind: 'document',
+    text: 'Survey_Plan_Lekki.pdf',
+    createdAt: minutesFromNow(-2000),
   },
   {
     id: 'msg-leg-6',
@@ -435,6 +620,18 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Certificate prepared and placed in the compliance folder.',
     createdAt: minutesFromNow(-1100),
+  },
+  // File 2 in #legal
+  {
+    id: 'msg-leg-f-2',
+    channelId: 'legal',
+    senderId: 'ngozi',
+    type: 'file',
+    fileName: 'Deed_of_Assignment_Draft.pdf',
+    fileSize: '1.8 MB',
+    fileKind: 'document',
+    text: 'Deed_of_Assignment_Draft.pdf',
+    createdAt: minutesFromNow(-600),
   },
   {
     id: 'msg-leg-8',
@@ -453,7 +650,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-90),
   },
 
+  // ==========================================
   // #management
+  // ==========================================
   {
     id: 'msg-mgt-1',
     channelId: 'management',
@@ -461,6 +660,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Q3 revenue numbers are strong across both Lagos and Abuja. Let us maintain momentum.',
     createdAt: minutesFromNow(-4800),
+    reactions: {
+      '\u{1F389}': ['ibrahim', 'funmilayo'],
+    },
   },
   {
     id: 'msg-mgt-2',
@@ -525,9 +727,14 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Next management committee meets on Tuesday at 9:00 AM.',
     createdAt: minutesFromNow(-60),
+    reactions: {
+      '\u{1F44D}': ['ibrahim', 'funmilayo'],
+    },
   },
 
+  // ==========================================
   // #accounts
+  // ==========================================
   {
     id: 'msg-acc-1',
     channelId: 'accounts',
@@ -551,6 +758,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Yes, the transfer reflects and bank confirmation letter is attached to the deal record.',
     createdAt: minutesFromNow(-3700),
+    reactions: {
+      '\u{1F44D}': ['funmilayo'],
+    },
   },
   {
     id: 'msg-acc-4',
@@ -599,9 +809,14 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Invoice generated and sent to @Ibrahim for delivery to the client.',
     createdAt: minutesFromNow(-80),
+    reactions: {
+      '\u2705': ['adaeze', 'ibrahim'],
+    },
   },
 
+  // ==========================================
   // #maitama-duplex
+  // ==========================================
   {
     id: 'msg-md-1',
     channelId: 'maitama-duplex',
@@ -609,6 +824,10 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Listing active: 4-bedroom detached duplex in Maitama, asking price \u20A6450,000,000.',
     createdAt: minutesFromNow(-4300),
+    pinned: true,
+    reactions: {
+      '\u{1F44D}': ['hauwa', 'emeka'],
+    },
   },
   {
     id: 'msg-md-2',
@@ -617,6 +836,18 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Title documents on file: Federal C of O and approved building plan.',
     createdAt: minutesFromNow(-3800),
+  },
+  // File 1 in #maitama-duplex
+  {
+    id: 'msg-md-f-1',
+    channelId: 'maitama-duplex',
+    senderId: 'ibrahim',
+    type: 'file',
+    fileName: 'Brochure_Maitama_Duplex.pdf',
+    fileSize: '2.4 MB',
+    fileKind: 'document',
+    text: 'Brochure_Maitama_Duplex.pdf',
+    createdAt: minutesFromNow(-3500),
   },
   {
     id: 'msg-md-3',
@@ -633,6 +864,31 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Conducted a private viewing for an oil executive this morning. Buyer was impressed by the grounds.',
     createdAt: minutesFromNow(-2700),
+    reactions: {
+      '\u{1F389}': ['ibrahim'],
+    },
+  },
+  // Thread reply for msg-md-4
+  {
+    id: 'msg-md-4-r1',
+    channelId: 'maitama-duplex',
+    parentId: 'msg-md-4',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Did they ask about the security post installation?',
+    createdAt: minutesFromNow(-2600),
+  },
+  // File 2 in #maitama-duplex
+  {
+    id: 'msg-md-f-2',
+    channelId: 'maitama-duplex',
+    senderId: 'hauwa',
+    type: 'file',
+    fileName: 'Front_View.jpg',
+    fileSize: '4.2 MB',
+    fileKind: 'photo',
+    text: 'Front_View.jpg',
+    createdAt: minutesFromNow(-2500),
   },
   {
     id: 'msg-md-5',
@@ -657,6 +913,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'AGIS report confirmed no caveats or disputed boundaries on this parcel.',
     createdAt: minutesFromNow(-1200),
+    reactions: {
+      '\u2705': ['hauwa', 'ibrahim'],
+    },
   },
   {
     id: 'msg-md-8',
@@ -683,7 +942,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-40),
   },
 
+  // ==========================================
   // #lekki-terraces
+  // ==========================================
   {
     id: 'msg-lt-1',
     channelId: 'lekki-terraces',
@@ -715,6 +976,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'One buyer has placed a formal offer of \u20A6185,000,000 with a 10 percent deposit.',
     createdAt: minutesFromNow(-2900),
+    reactions: {
+      '\u{1F389}': ['funmilayo', 'tunde', 'adaeze'],
+    },
   },
   {
     id: 'msg-lt-5',
@@ -739,6 +1003,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Deposit payment confirmed in the trust account.',
     createdAt: minutesFromNow(-1400),
+    reactions: {
+      '\u{1F44D}': ['chidi'],
+    },
   },
   {
     id: 'msg-lt-8',
@@ -765,7 +1032,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-55),
   },
 
+  // ==========================================
   // #wuse-office-block
+  // ==========================================
   {
     id: 'msg-wob-1',
     channelId: 'wuse-office-block',
@@ -790,6 +1059,18 @@ export const SEED_MESSAGES = [
     text: 'We have an inquiry from a consulting firm seeking to acquire the entire property as headquarters.',
     createdAt: minutesFromNow(-3500),
   },
+  // File in #wuse-office-block
+  {
+    id: 'msg-wob-f-1',
+    channelId: 'wuse-office-block',
+    senderId: 'emeka',
+    type: 'file',
+    fileName: 'C_of_O_Scan.pdf',
+    fileSize: '5.6 MB',
+    fileKind: 'document',
+    text: 'C_of_O_Scan.pdf',
+    createdAt: minutesFromNow(-3000),
+  },
   {
     id: 'msg-wob-4',
     channelId: 'wuse-office-block',
@@ -813,6 +1094,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Title is an FCDA statutory right of occupancy with 65 years unexpired term.',
     createdAt: minutesFromNow(-1600),
+    reactions: {
+      '\u2705': ['ibrahim'],
+    },
   },
   {
     id: 'msg-wob-7',
@@ -839,7 +1123,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-70),
   },
 
+  // ==========================================
   // #vi-penthouse
+  // ==========================================
   {
     id: 'msg-vip-1',
     channelId: 'vi-penthouse',
@@ -847,6 +1133,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Exclusive listing: Luxury waterfront penthouse in Victoria Island, priced at \u20A61,250,000,000.',
     createdAt: minutesFromNow(-4900),
+    reactions: {
+      '\u2764\uFE0F': ['chidi', 'tunde'],
+    },
   },
   {
     id: 'msg-vip-2',
@@ -871,6 +1160,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: '@Chidi and @Funmilayo: This asset requires discreet marketing only to verified high net worth clients.',
     createdAt: minutesFromNow(-2900),
+    reactions: {
+      '\u{1F44D}': ['chidi', 'funmilayo'],
+    },
   },
   {
     id: 'msg-vip-5',
@@ -913,7 +1205,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-85),
   },
 
+  // ==========================================
   // #adaeze+funmilayo (DM)
+  // ==========================================
   {
     id: 'msg-dm-af-1',
     channelId: 'adaeze+funmilayo',
@@ -929,6 +1223,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Very healthy Adaeze. The Lekki terrace is virtually closed and we have strong traction on the VI penthouse.',
     createdAt: minutesFromNow(-3700),
+    reactions: {
+      '\u{1F44D}': ['adaeze'],
+    },
   },
   {
     id: 'msg-dm-af-3',
@@ -953,6 +1250,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Glad to hear. Let us pair him with @Chidi for some field inspections next week.',
     createdAt: minutesFromNow(-1700),
+    reactions: {
+      '\u{1F44D}': ['funmilayo'],
+    },
   },
   {
     id: 'msg-dm-af-6',
@@ -979,7 +1279,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-65),
   },
 
+  // ==========================================
   // #chidi+tunde (DM)
+  // ==========================================
   {
     id: 'msg-dm-ct-1',
     channelId: 'chidi+tunde',
@@ -1011,6 +1313,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'No problem, I will grab them and keep them in the field pouch.',
     createdAt: minutesFromNow(-2500),
+    reactions: {
+      '\u{1F44D}': ['chidi'],
+    },
   },
   {
     id: 'msg-dm-ct-5',
@@ -1045,7 +1350,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-70),
   },
 
+  // ==========================================
   // #hauwa+ibrahim (DM)
+  // ==========================================
   {
     id: 'msg-dm-hi-1',
     channelId: 'hauwa+ibrahim',
@@ -1061,6 +1368,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'The seller indicated they would accept 70 percent upfront and 30 percent upon delivery of Governor or Minister Consent.',
     createdAt: minutesFromNow(-3700),
+    reactions: {
+      '\u{1F44D}': ['hauwa'],
+    },
   },
   {
     id: 'msg-dm-hi-3',
@@ -1093,6 +1403,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Perfect. Let us keep @Adaeze in the loop on this deal size.',
     createdAt: minutesFromNow(-1000),
+    reactions: {
+      '\u2705': ['hauwa'],
+    },
   },
   {
     id: 'msg-dm-hi-7',
@@ -1111,7 +1424,9 @@ export const SEED_MESSAGES = [
     createdAt: minutesFromNow(-75),
   },
 
+  // ==========================================
   // #lekki-viewing-team (group)
+  // ==========================================
   {
     id: 'msg-grp-lvt-1',
     channelId: 'lekki-viewing-team',
@@ -1119,6 +1434,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Team, we have 4 group inspections scheduled this Saturday across Lekki Phase 1.',
     createdAt: minutesFromNow(-4000),
+    reactions: {
+      '\u{1F44D}': ['chidi', 'tunde'],
+    },
   },
   {
     id: 'msg-grp-lvt-2',
@@ -1143,6 +1461,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Please ensure the client visitor register is signed by every prospective buyer.',
     createdAt: minutesFromNow(-2100),
+    reactions: {
+      '\u2705': ['chidi'],
+    },
   },
   {
     id: 'msg-grp-lvt-5',
@@ -1151,6 +1472,16 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Visitor sheets and marketing brochures are packed in the car.',
     createdAt: minutesFromNow(-1500),
+  },
+  // Voice note in #lekki-viewing-team
+  {
+    id: 'msg-lvt-vn-1',
+    channelId: 'lekki-viewing-team',
+    senderId: 'chidi',
+    type: 'voice',
+    durationSec: 28,
+    text: '',
+    createdAt: minutesFromNow(-1100),
   },
   {
     id: 'msg-grp-lvt-6',
@@ -1167,6 +1498,9 @@ export const SEED_MESSAGES = [
     type: 'text',
     text: 'Great preparation. Let us provide prompt feedback right after each inspection.',
     createdAt: minutesFromNow(-350),
+    reactions: {
+      '\u{1F44D}': ['tunde', 'chidi'],
+    },
   },
   {
     id: 'msg-grp-lvt-8',

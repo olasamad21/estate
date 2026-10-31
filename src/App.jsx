@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import { safeLocalStorage } from './utils/storage.js';
 import { useApp } from './context/AppContext.jsx';
 import { useChat } from './context/ChatContext.jsx';
-import { ToastProvider } from './components/common/Toast.jsx';
 import { AppToastBridge } from './components/common/AppToastBridge.jsx';
 import { AppLayout } from './components/layout/AppLayout.jsx';
 import { LoginView } from './features/auth/LoginView.jsx';
@@ -17,7 +16,7 @@ function WorkspaceLayout() {
     <div className="h-full w-full flex flex-col lg:flex-row overflow-hidden">
       {/* Mobile view (< 1024px): single column */}
       <div className="lg:hidden h-full w-full overflow-hidden">
-        {channelId ? <ChatAreaView /> : <ChannelListView />}
+        {channelId ? <ChatAreaView key={channelId} /> : <ChannelListView />}
       </div>
 
       {/* Desktop view (>= 1024px): 320px sidebar + chat pane */}
@@ -26,7 +25,7 @@ function WorkspaceLayout() {
           <ChannelListView />
         </aside>
         <main className="flex-1 min-w-0 h-full overflow-hidden">
-          <ChatAreaView defaultChannelId="general" />
+          <ChatAreaView key={channelId || 'general'} defaultChannelId="general" />
         </main>
       </div>
     </div>
@@ -95,9 +94,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
-  );
+  return <AppContent />;
 }

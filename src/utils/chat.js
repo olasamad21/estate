@@ -144,3 +144,69 @@ export function mentionsUser(message, user) {
   const regex = new RegExp(`@(?:${firstName}|all)\\b`, 'i');
   return regex.test(message.text);
 }
+
+/**
+ * Determines whether a user can edit a message.
+ * Rules:
+ * - Must be user's own message
+ * - Must be a text message
+ * - Must not already be deleted
+ * - Must be within 15 minutes of creation
+ */
+export function canEdit(message, user) {
+  if (!message || !user || message.deletedAt) return false;
+  if (message.senderId !== user.id || message.type !== 'text') return false;
+  const createdAtMs = new Date(message.createdAt).getTime();
+  const diffMinutes = (Date.now() - createdAtMs) / (60 * 1000);
+  return diffMinutes <= 15;
+}
+
+/**
+ * Determines whether a user can delete a message.
+ * Rules:
+ * - Must not already be deleted
+ * - Admin can delete any message anytime
+ * - Author can delete their own message within 15 minutes
+ */
+export function canDelete(message, user) {
+  if (!message || !user || message.deletedAt) return false;
+  if (user.role === 'admin') return true;
+  if (message.senderId !== user.id) return false;
+  const createdAtMs = new Date(message.createdAt).getTime();
+  const diffMinutes = (Date.now() - createdAtMs) / (60 * 1000);
+  return diffMinutes <= 15;
+}
+
+/**
+ * Determines whether a user can pin or unpin a message.
+ * Rules:
+ * - Message must not be deleted
+ * - Admin, Manager, or author can pin/unpin
+ */
+export function canPin(message, user) {
+  if (!message || !user || message.deletedAt) return false;
+  return user.role === 'admin' || user.role === 'manager' || message.senderId === user.id;
+}
+
+/**
+ * Returns replies to a parent message.
+ */
+export function threadReplies(messages = [], parentId) {
+  if (!Array.isArray(messages) || !parentId) return [];
+  return messages.filter((m) => m.parentId === parentId);
+}
+
+/**
+ * Converts reactions object { [emoji]: [staffIds] } into a structured array.
+ */
+export function reactionList(reactions = {}, currentUserId = null) {
+  if (!reactions || typeof reactions !== 'object') return [];
+  return Object.entries(reactions)
+    .filter(([, staffIds]) => Array.isArray(staffIds) && staffIds.length > 0)
+    .map(([emoji, staffIds]) => ({
+      emoji,
+      count: staffIds.length,
+      staffIds,
+      userReacted: currentUserId ? staffIds.includes(currentUserId) : false,
+    }));
+}

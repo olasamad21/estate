@@ -1,11 +1,16 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users } from 'lucide-react';
+import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { channelDisplayName, visibleChannelsFor } from '../../utils/chat.js';
+import { channelDisplayName, visibleChannelsFor, threadReplies } from '../../utils/chat.js';
 import { formatNaira, formatDayLabelNg } from '../../utils/formatters.js';
 import { MessageRow } from './MessageRow.jsx';
 import { MessageComposer } from './MessageComposer.jsx';
+import { MessageActionDrawer } from './MessageActionDrawer.jsx';
+import { ThreadDrawer } from './ThreadDrawer.jsx';
+import { SeenByDrawer } from './SeenByDrawer.jsx';
+import { PinnedMessagesDrawer } from './PinnedMessagesDrawer.jsx';
+import { AttachmentDrawer } from './AttachmentDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
 
@@ -21,9 +26,25 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     currentUserId,
     staff,
     staffById,
+    typingStatus,
+    clearTypingTimer,
     sendMessage,
+    sendThreadReply,
+    sendVoiceNote,
+    sendFile,
+    editMessage,
+    deleteMessage,
+    togglePin,
+    toggleReaction,
     markChannelRead,
   } = useChat();
+
+  const [selectedActionMessage, setSelectedActionMessage] = useState(null);
+  const [selectedThreadMessage, setSelectedThreadMessage] = useState(null);
+  const [selectedAnnouncementMessage, setSelectedAnnouncementMessage] = useState(null);
+  const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
+  const [isAttachmentDrawerOpen, setIsAttachmentDrawerOpen] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(null);
 
   const scrollRef = useRef(null);
 
@@ -45,13 +66,43 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     return messages.filter((m) => m.channelId === channel.id);
   }, [messages, channel]);
 
-  // 4. Group messages by day
+  // Timeline shows top-level messages only
+  const timelineMessages = useMemo(() => {
+    return channelMessages.filter((m) => !m.parentId);
+  }, [channelMessages]);
+
+  // Pinned messages in this channel
+  const pinnedMessages = useMemo(() => {
+    return channelMessages.filter((m) => m.pinned && !m.deletedAt);
+  }, [channelMessages]);
+
+  // Channel members for mention autocomplete
+  const channelMembers = useMemo(() => {
+    if (channel?.members && channel.members.length > 0) {
+      return channel.members.map((id) => staffById[id]).filter(Boolean);
+    }
+    return staff;
+  }, [channel, staff, staffById]);
+
+  // Keep selected thread message updated from latest state
+  const currentThreadParentMessage = useMemo(() => {
+    if (!selectedThreadMessage) return null;
+    return messages.find((m) => m.id === selectedThreadMessage.id) || selectedThreadMessage;
+  }, [messages, selectedThreadMessage]);
+
+  // Keep selected announcement message updated from latest state
+  const currentAnnouncementMessage = useMemo(() => {
+    if (!selectedAnnouncementMessage) return null;
+    return messages.find((m) => m.id === selectedAnnouncementMessage.id) || selectedAnnouncementMessage;
+  }, [messages, selectedAnnouncementMessage]);
+
+  // 4. Group timeline messages by day
   const groupedByDay = useMemo(() => {
     const groups = [];
     let currentDay = null;
     let currentBatch = [];
 
-    channelMessages.forEach((msg) => {
+    timelineMessages.forEach((msg) => {
       const dayLabel = formatDayLabelNg(msg.createdAt);
       if (dayLabel !== currentDay) {
         if (currentBatch.length > 0) {
@@ -69,7 +120,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     }
 
     return groups;
-  }, [channelMessages]);
+  }, [timelineMessages]);
 
   // Mark channel as read on entry and when new messages arrive
   useEffect(() => {
@@ -78,12 +129,30 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     }
   }, [channel, isVisible, channelMessages.length, markChannelRead]);
 
-  // Scroll to bottom on load and new messages
+  // Clear typing indicator on channel change or unmount
+  useEffect(() => {
+    return () => {
+      clearTypingTimer();
+    };
+  }, [channelId, clearTypingTimer]);
+
+  // Scroll to bottom on channel change and new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [channelId, channelMessages.length]);
+  }, [channelId, timelineMessages.length]);
+
+  const handleJumpToMessage = (msgId) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('bg-brand/10');
+      setTimeout(() => {
+        el.classList.remove('bg-brand/10');
+      }, 1500);
+    }
+  };
 
   if (!channel || !isVisible) {
     return (
@@ -174,6 +243,46 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         </div>
       </div>
 
+      {/* Pinned Messages Banner */}
+      {pinnedMessages.length > 0 && (
+        <div
+          onClick={() => {
+            if (pinnedMessages.length === 1) {
+              handleJumpToMessage(pinnedMessages[0].id);
+            } else {
+              setIsPinnedDrawerOpen(true);
+            }
+          }}
+          className="px-3 sm:px-4 py-1.5 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors shrink-0 select-none"
+        >
+          <div className="flex items-center gap-2 min-w-0 pr-2">
+            <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
+            {pinnedMessages.length === 1 ? (
+              <div className="min-w-0 flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                <span className="font-bold text-ink shrink-0">
+                  {staffById[pinnedMessages[0].senderId]?.name || 'Staff'}:
+                </span>
+                <span className="text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
+                  {pinnedMessages[0].type === 'voice'
+                    ? 'Voice note'
+                    : pinnedMessages[0].type === 'file'
+                    ? `File: ${pinnedMessages[0].fileName || 'Attachment'}`
+                    : pinnedMessages[0].text}
+                </span>
+              </div>
+            ) : (
+              <span className="font-semibold text-ink">
+                {pinnedMessages.length} pinned messages
+              </span>
+            )}
+          </div>
+
+          <span className="text-xs text-brand font-medium shrink-0">
+            {pinnedMessages.length === 1 ? 'Jump' : 'View all'}
+          </span>
+        </div>
+      )}
+
       {/* Message Timeline */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
         {groupedByDay.map((group, groupIdx) => (
@@ -202,6 +311,13 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                   sender={staffById[msg.senderId] || null}
                   isConsecutive={isConsecutive}
                   currentUser={currentUser}
+                  channel={channel}
+                  repliesCount={threadReplies(messages, msg.id).length}
+                  totalStaffCount={staff.length}
+                  onOpenActions={() => setSelectedActionMessage(msg)}
+                  onOpenThread={() => setSelectedThreadMessage(msg)}
+                  onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}
+                  onOpenSeenBy={() => setSelectedAnnouncementMessage(msg)}
                 />
               );
             })}
@@ -209,11 +325,86 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         ))}
       </div>
 
+      {/* Typing Indicator */}
+      {typingStatus && typingStatus.channelId === channel.id && (
+        <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface shrink-0">
+          <span className="font-semibold text-ink">{typingStatus.staffName}</span>
+          <span>is typing...</span>
+        </div>
+      )}
+
       {/* Message Composer */}
       <MessageComposer
+        key={editingMessage ? editingMessage.id : 'composer'}
         channel={channel}
         currentUser={currentUser}
+        channelMembers={channelMembers}
+        editingMessage={editingMessage}
         onSendMessage={(text) => sendMessage(channel.id, text)}
+        onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
+        onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
+        onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
+        onCancelEdit={() => setEditingMessage(null)}
+      />
+
+      {/* Action Drawers */}
+      <MessageActionDrawer
+        isOpen={Boolean(selectedActionMessage)}
+        onClose={() => setSelectedActionMessage(null)}
+        message={selectedActionMessage}
+        currentUser={currentUser}
+        onReact={(emoji) => {
+          if (selectedActionMessage) {
+            toggleReaction(selectedActionMessage.id, emoji);
+          }
+        }}
+        onReplyInThread={(msg) => {
+          setSelectedThreadMessage(msg);
+        }}
+        onTogglePin={(msgId) => {
+          togglePin(msgId);
+        }}
+        onStartEdit={(msg) => {
+          setEditingMessage(msg);
+        }}
+        onDeleteMessage={(msgId) => {
+          deleteMessage(msgId);
+        }}
+      />
+
+      <ThreadDrawer
+        isOpen={Boolean(currentThreadParentMessage)}
+        onClose={() => setSelectedThreadMessage(null)}
+        parentMessage={currentThreadParentMessage}
+        allMessages={messages}
+        currentUser={currentUser}
+        staffById={staffById}
+        onSendReply={(chId, parentId, text) => {
+          sendThreadReply(chId, parentId, text);
+        }}
+      />
+
+      <SeenByDrawer
+        isOpen={Boolean(currentAnnouncementMessage)}
+        onClose={() => setSelectedAnnouncementMessage(null)}
+        message={currentAnnouncementMessage}
+        staffList={staff}
+      />
+
+      <PinnedMessagesDrawer
+        isOpen={isPinnedDrawerOpen}
+        onClose={() => setIsPinnedDrawerOpen(false)}
+        pinnedMessages={pinnedMessages}
+        staffById={staffById}
+        onJumpToMessage={handleJumpToMessage}
+      />
+
+      <AttachmentDrawer
+        isOpen={isAttachmentDrawerOpen}
+        onClose={() => setIsAttachmentDrawerOpen(false)}
+        onAttachFile={(fileData) => {
+          sendFile(channel.id, fileData);
+        }}
       />
     </div>
   );
