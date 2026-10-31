@@ -9,10 +9,10 @@ import {
   Building2,
   Megaphone,
   Archive,
-  ArchiveRestore,
   UserPlus,
   ChevronDown,
   ChevronUp,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../../components/common/useToast.js';
@@ -22,6 +22,7 @@ import { Avatar } from '../../components/common/Avatar.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { CreateChannelDrawer } from '../chat/CreateChannelDrawer.jsx';
+import { COMPANY_CONFIG } from '../../config/market.js';
 import {
   canUseAdmin,
   isStaffActive,
@@ -54,6 +55,13 @@ const AVAILABLE_OFFICES = [
   { id: 'lagos', label: 'Lagos office' },
   { id: 'abuja', label: 'Abuja office' },
 ];
+
+function renderChannelIcon(ch) {
+  if (ch.kind === 'announcement') return <Megaphone className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
+  if (ch.kind === 'private') return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
+  if (ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
+  return <Hash className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
+}
 
 function AddStaffForm({ staff, onSave, onClose }) {
   const [addName, setAddName] = useState('');
@@ -304,6 +312,112 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
   );
 }
 
+function ChannelRow({
+  channel,
+  onOpenSheet,
+  onArchive,
+  onUnarchive,
+}) {
+  const isAnnouncement = channel.kind === 'announcement';
+  const isListing = channel.kind === 'listing';
+  const isPrivate = channel.kind === 'private';
+  const isArchived = Boolean(channel.archived);
+
+  return (
+    <div
+      className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
+        isArchived ? 'bg-surface-raised/40' : 'hover:bg-surface-raised/40'
+      }`}
+    >
+      {/* Icon + Details */}
+      <div className="flex items-start gap-3 min-w-0 pr-2 flex-1">
+        <div className="mt-0.5">
+          {renderChannelIcon(channel)}
+        </div>
+        <div className="min-w-0 flex-1">
+          {/* Row 1: Name and kind badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`text-xs font-bold text-ink break-words ${
+                isArchived ? 'line-through opacity-70' : ''
+              }`}
+            >
+              #{channel.name}
+            </span>
+            {isAnnouncement && (
+              <Badge variant="neutral">Announcement</Badge>
+            )}
+            {isListing && (
+              <Badge variant="neutral">Listing</Badge>
+            )}
+          </div>
+
+          {/* Row 2: Description (line-clamp-2) */}
+          {channel.description && (
+            <p className="text-xs text-ink-muted break-words line-clamp-2 mt-0.5">
+              {channel.description}
+            </p>
+          )}
+
+          {/* Row 3: Quiet caption row when relevant */}
+          {isPrivate && Array.isArray(channel.members) && (
+            <div className="text-xs text-ink-muted mt-0.5">
+              {channel.members.length} members
+            </div>
+          )}
+          {isArchived && (
+            <div className="mt-0.5">
+              <Badge variant="neutral">Archived</Badge>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      {/* Mobile (<1024px): 44px MoreHorizontal button, or reserved 44px space for announcement */}
+      <div className="flex lg:hidden items-center shrink-0">
+        {isAnnouncement ? (
+          <div className="w-11 h-11 shrink-0" aria-hidden="true" />
+        ) : (
+          <button
+            type="button"
+            onClick={() => onOpenSheet(channel)}
+            aria-label={`Actions for #${channel.name}`}
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+          >
+            <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
+      {/* Desktop (>=1024px): Neutral secondary button on row, or reserved space for announcement */}
+      <div className="hidden lg:flex items-center shrink-0">
+        {isAnnouncement ? (
+          <div className="w-[74px] shrink-0" aria-hidden="true" />
+        ) : isArchived ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onUnarchive(channel)}
+            className="shrink-0"
+          >
+            Unarchive
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onArchive(channel)}
+            className="shrink-0"
+          >
+            Archive
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdminView() {
   const {
     currentUser,
@@ -328,28 +442,65 @@ export function AdminView() {
   }, [currentUser, navigate, showToast]);
 
   const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'channels'
+  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | 'lagos' | 'abuja' | 'deactivated'
   const [staffSearchQuery, setStaffSearchQuery] = useState('');
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [deactivatingStaff, setDeactivatingStaff] = useState(null);
   const [reactivatingStaff, setReactivatingStaff] = useState(null);
+  const [selectedStaffForSheet, setSelectedStaffForSheet] = useState(null);
 
   // Channels state
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [channelToArchive, setChannelToArchive] = useState(null);
+  const [selectedChannelForSheet, setSelectedChannelForSheet] = useState(null);
   const [isArchivedSectionOpen, setIsArchivedSectionOpen] = useState(false);
 
-  // Filtered staff list by search query
+  // Counts for staff filter chips
+  const staffCounts = useMemo(() => {
+    return {
+      all: staff.length,
+      lagos: staff.filter((s) => (s.officeId || s.office) === 'lagos').length,
+      abuja: staff.filter((s) => (s.officeId || s.office) === 'abuja').length,
+      deactivated: staff.filter((s) => !isStaffActive(s)).length,
+    };
+  }, [staff]);
+
+  // Combined search and chip filter for staff
   const filteredStaff = useMemo(() => {
+    let list = staff;
+    if (staffFilter === 'lagos') {
+      list = list.filter((s) => (s.officeId || s.office) === 'lagos');
+    } else if (staffFilter === 'abuja') {
+      list = list.filter((s) => (s.officeId || s.office) === 'abuja');
+    } else if (staffFilter === 'deactivated') {
+      list = list.filter((s) => !isStaffActive(s));
+    }
+
     const q = staffSearchQuery.trim().toLowerCase();
-    if (!q) return staff;
-    return staff.filter(
+    if (!q) return list;
+    return list.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         (ROLE_LABELS[s.role] || s.role).toLowerCase().includes(q) ||
         (s.phone && s.phone.includes(q))
     );
-  }, [staff, staffSearchQuery]);
+  }, [staff, staffFilter, staffSearchQuery]);
+
+  // Group filtered staff in COMPANY_CONFIG.offices order, hiding empty groups
+  const groupedStaff = useMemo(() => {
+    return COMPANY_CONFIG.offices
+      .map((office) => {
+        const officeMembers = filteredStaff.filter(
+          (s) => (s.officeId || s.office) === office.id
+        );
+        return {
+          office,
+          members: officeMembers,
+        };
+      })
+      .filter((group) => group.members.length > 0);
+  }, [filteredStaff]);
 
   const activeAdminCount = useMemo(() => {
     return staff.filter((s) => s.role === 'admin' && isStaffActive(s)).length;
@@ -401,7 +552,7 @@ export function AdminView() {
     showToast(getStaffDeactivatedMessage(target.name));
     setDeactivatingStaff(null);
 
-    // If deactivating oneself, navigate back to /channels as the new active admin
+    // If deactivating oneself, navigate back to /channels
     if (target.id === currentUserId) {
       navigate('/channels', { replace: true });
     }
@@ -431,13 +582,6 @@ export function AdminView() {
     showToast(getChannelUnarchivedMessage(channel.name));
   };
 
-  const renderChannelIcon = (ch) => {
-    if (ch.kind === 'announcement') return <Megaphone className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
-    if (ch.kind === 'private') return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
-    if (ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
-    return <Hash className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
-  };
-
   if (!currentUser || !canUseAdmin(currentUser)) {
     return null;
   }
@@ -446,7 +590,7 @@ export function AdminView() {
     <div className="h-full flex flex-col bg-canvas overflow-y-auto">
       {/* Top Header */}
       <header className="bg-surface border-b border-line px-4 sm:px-6 py-4 shrink-0">
-        <div className="max-w-5xl mx-auto space-y-3">
+        <div className="max-w-[56rem] mx-auto space-y-3">
           <Link
             to="/channels"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline"
@@ -456,9 +600,9 @@ export function AdminView() {
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-lg font-bold text-ink">Admin Workspace</h1>
+              <h1 className="text-lg font-bold text-ink">Admin</h1>
               <p className="text-xs text-ink-muted">
-                Manage staff accounts, credentials, and company channels.
+                Manage staff and channels.
               </p>
             </div>
             {/* Tab switch buttons */}
@@ -491,13 +635,13 @@ export function AdminView() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <main className="flex-1 p-4 sm:px-6 py-6">
+        <div className="max-w-[56rem] mx-auto space-y-6">
           {activeTab === 'staff' && (
             <div className="space-y-4">
-              {/* Controls bar: search input + Add Staff button */}
+              {/* Controls bar: search input (full width) + Add staff button */}
               <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-                <div className="relative flex-1 max-w-md">
+                <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
                     <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
                   </div>
@@ -506,7 +650,7 @@ export function AdminView() {
                     type="text"
                     value={staffSearchQuery}
                     onChange={(e) => setStaffSearchQuery(e.target.value)}
-                    placeholder="Search staff by name or role..."
+                    placeholder="Search staff by name, role, or phone..."
                     className="w-full h-11 pl-9 pr-3 text-xs bg-surface border border-line rounded-xl text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none"
                   />
                 </div>
@@ -518,132 +662,250 @@ export function AdminView() {
                 >
                   <span className="inline-flex items-center gap-1.5">
                     <UserPlus className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    <span>Add Staff</span>
+                    <span>Add staff</span>
                   </span>
                 </Button>
               </div>
 
-              {/* Staff table as hairline-separated rows */}
-              <div className="border border-line rounded-2xl bg-surface overflow-hidden shadow-2xs">
-                {filteredStaff.length === 0 ? (
-                  <div className="p-8 text-center space-y-2">
-                    <p className="text-xs text-ink-muted">
-                      No staff members found matching &quot;{staffSearchQuery}&quot;
-                    </p>
-                    {staffSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setStaffSearchQuery('')}
-                        className="text-xs font-semibold text-brand hover:underline cursor-pointer"
-                      >
-                        Clear search
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-line" role="list">
-                  {filteredStaff.map((member) => {
-                    const active = isStaffActive(member);
-                    const isSelf = member.id === currentUserId;
-                    const isOnlyAdmin = member.role === 'admin' && activeAdminCount <= 1;
-                    const canDeactivate = active && !isSelf && !isOnlyAdmin;
-
-                    let disableReason = '';
-                    if (isSelf) {
-                      disableReason = 'You cannot deactivate your own account.';
-                    } else if (isOnlyAdmin) {
-                      disableReason = 'Cannot deactivate the only active administrator.';
-                    }
-
-                    return (
-                      <div
-                        key={member.id}
-                        className={`p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
-                          active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/60 opacity-80'
+              {/* Filter chips: All, Lagos, Abuja, Deactivated */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  { id: 'all', label: 'All', count: staffCounts.all },
+                  { id: 'lagos', label: 'Lagos', count: staffCounts.lagos },
+                  { id: 'abuja', label: 'Abuja', count: staffCounts.abuja },
+                  { id: 'deactivated', label: 'Deactivated', count: staffCounts.deactivated },
+                ].map((chip) => {
+                  const isSelected = staffFilter === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setStaffFilter(chip.id)}
+                      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        isSelected
+                          ? 'bg-brand text-surface border-brand shadow-2xs'
+                          : 'bg-surface text-ink-soft border-line hover:text-ink hover:bg-surface-raised'
+                      }`}
+                    >
+                      <span>{chip.label}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-xs tabular-nums font-mono ${
+                          isSelected
+                            ? 'bg-surface/20 text-surface'
+                            : 'bg-surface-raised text-ink-muted'
                         }`}
                       >
-                        {/* Member Identity & Details */}
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Avatar
-                            role={member.role}
-                            initials={member.initials}
-                            name={member.name}
-                            isOnline={active && member.online}
-                            size="md"
-                          />
-                          <div className="min-w-0 space-y-0.5">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-ink">
-                                {member.name}
-                              </span>
-                              <Badge role={member.role} size="sm">
-                                {ROLE_LABELS[member.role] || member.role}
-                              </Badge>
-                              <Badge variant={active ? 'success' : 'neutral'} size="sm">
-                                {active ? 'Active' : 'Deactivated'}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-ink-muted flex-wrap">
-                              <span>{(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}</span>
-                              <span>·</span>
-                              <span className="font-mono">{formatPhoneNg(member.phone)}</span>
-                              <span>·</span>
-                              <span>{member.title}</span>
-                            </div>
-                            {disableReason && (
-                              <p className="text-xs text-status-warning font-medium">
-                                {disableReason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        {chip.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setEditingStaff(member)}
-                          >
-                            Edit
-                          </Button>
-                          {active ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={!canDeactivate}
-                              onClick={() => setDeactivatingStaff(member)}
-                              className="text-status-danger hover:bg-status-danger-bg"
-                            >
-                              Deactivate
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => setReactivatingStaff(member)}
-                              className="text-status-success hover:bg-status-success-bg"
-                            >
-                              Reactivate
-                            </Button>
-                          )}
-                        </div>
+              {/* Staff grouped under section headings "<Office name> office" with count */}
+              {groupedStaff.length === 0 ? (
+                <div className="p-8 text-center space-y-2 border border-line rounded-2xl bg-surface shadow-2xs">
+                  <p className="text-xs text-ink-muted">
+                    {staffSearchQuery
+                      ? `No staff members found matching "${staffSearchQuery}"`
+                      : 'No staff members found.'}
+                  </p>
+                  {staffSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setStaffSearchQuery('')}
+                      className="text-xs font-semibold text-brand hover:underline cursor-pointer"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {groupedStaff.map((group) => (
+                    <div key={group.office.id} className="space-y-2">
+                      <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                        {group.office.name} office ({group.members.length})
+                      </h2>
+                      <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
+                        {group.members.map((member) => {
+                          const active = isStaffActive(member);
+                          const isSelf = member.id === currentUserId;
+                          const isOnlyAdmin = member.role === 'admin' && activeAdminCount <= 1;
+                          const canDeactivate = active && !isSelf && !isOnlyAdmin;
+
+                          let disableReason = '';
+                          if (isSelf) {
+                            disableReason = 'You cannot deactivate your own account.';
+                          } else if (isOnlyAdmin) {
+                            disableReason = 'Cannot deactivate the only active administrator.';
+                          }
+
+                          return (
+                            <div key={member.id}>
+                              {/* Compact Row (below 1024px) */}
+                              <div
+                                className={`p-3.5 sm:p-4 min-h-[72px] sm:min-h-[76px] flex items-center justify-between gap-3 lg:hidden transition-colors ${
+                                  active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <Avatar
+                                    role={member.role}
+                                    initials={member.initials}
+                                    name={member.name}
+                                    isOnline={active && member.online}
+                                    size="md"
+                                  />
+                                  <div className="min-w-0 flex-1 space-y-0.5">
+                                    {/* Name and optional neutral "You" tag */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-xs font-semibold text-ink break-words">
+                                        {member.name}
+                                      </span>
+                                      {isSelf && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line">
+                                          You
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Role Badge and Office caption (and Deactivated badge if inactive) */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <Badge role={member.role}>
+                                        {ROLE_LABELS[member.role] || member.role}
+                                      </Badge>
+                                      <span className="text-xs text-ink-muted">
+                                        {(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}
+                                      </span>
+                                      {!active && (
+                                        <Badge variant="danger">
+                                          Deactivated
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    {/* Formatted phone (tabular figures, normal letter spacing) */}
+                                    <div className="text-xs text-ink-muted tabular-nums tracking-normal">
+                                      {formatPhoneNg(member.phone)}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* One 44px icon button (MoreHorizontal) */}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStaffForSheet(member)}
+                                  aria-label={`Actions for ${member.name}`}
+                                  className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+                                >
+                                  <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+                                </button>
+                              </div>
+
+                              {/* Desktop Row (from 1024px up) */}
+                              <div
+                                className={`p-3.5 hidden lg:flex items-center justify-between gap-4 transition-colors ${
+                                  active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
+                                }`}
+                              >
+                                {/* Avatar + Name with job title caption */}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <Avatar
+                                    role={member.role}
+                                    initials={member.initials}
+                                    name={member.name}
+                                    isOnline={active && member.online}
+                                    size="md"
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-xs font-semibold text-ink break-words">
+                                        {member.name}
+                                      </span>
+                                      {isSelf && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line">
+                                          You
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-ink-muted">
+                                      {member.title}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Role Badge */}
+                                <div className="shrink-0">
+                                  <Badge role={member.role}>
+                                    {ROLE_LABELS[member.role] || member.role}
+                                  </Badge>
+                                </div>
+
+                                {/* Office */}
+                                <div className="text-xs text-ink-muted shrink-0 w-24">
+                                  {(member.officeId || member.office) === 'abuja' ? 'Abuja' : 'Lagos'}
+                                </div>
+
+                                {/* Phone */}
+                                <div className="text-xs text-ink-muted tabular-nums tracking-normal shrink-0">
+                                  {formatPhoneNg(member.phone)}
+                                </div>
+
+                                {/* Status (only Deactivated gets a badge) */}
+                                <div className="w-24 shrink-0 flex items-center justify-start">
+                                  {!active && (
+                                    <Badge variant="danger">
+                                      Deactivated
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Actions: Edit and Deactivate/Reactivate as two secondary buttons */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setEditingStaff(member)}
+                                  >
+                                    Edit
+                                  </Button>
+                                  {active ? (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled={!canDeactivate}
+                                      title={disableReason || undefined}
+                                      onClick={() => setDeactivatingStaff(member)}
+                                    >
+                                      Deactivate
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => setReactivatingStaff(member)}
+                                    >
+                                      Reactivate
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
           {activeTab === 'channels' && (
             <div className="space-y-6">
-              {/* Channel header action */}
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-ink-muted">
-                  Create public or private branch channels, or archive retired rooms.
-                </p>
+              {/* Channel header action: New channel button aligned right */}
+              <div className="flex justify-end">
                 <Button
                   variant="primary"
                   size="sm"
@@ -660,51 +922,18 @@ export function AdminView() {
               {/* Company-wide Section */}
               {companyWideChannels.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    Company-wide Channels ({companyWideChannels.length})
-                  </div>
+                  <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                    Company-wide ({companyWideChannels.length})
+                  </h2>
                   <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                     {companyWideChannels.map((ch) => (
-                      <div
+                      <ChannelRow
                         key={ch.id}
-                        className="p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-surface-raised/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          {renderChannelIcon(ch)}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-ink break-words">
-                                #{ch.name}
-                              </span>
-                              <Badge variant="neutral" size="sm">
-                                {ch.kind === 'announcement' ? 'Announcement' : ch.kind === 'listing' ? 'Listing' : ch.kind === 'private' ? 'Private' : 'Public'}
-                              </Badge>
-                              {ch.kind === 'private' && Array.isArray(ch.members) && (
-                                <span className="text-xs text-ink-muted">
-                                  {ch.members.length} members
-                                </span>
-                              )}
-                            </div>
-                            {ch.description && (
-                              <p className="text-xs text-ink-muted break-words line-clamp-1 mt-0.5">
-                                {ch.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {ch.kind !== 'announcement' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setChannelToArchive(ch)}
-                            className="text-status-danger hover:bg-status-danger-bg shrink-0"
-                          >
-                            <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                            <span>Archive</span>
-                          </Button>
-                        )}
-                      </div>
+                        channel={ch}
+                        onOpenSheet={setSelectedChannelForSheet}
+                        onArchive={setChannelToArchive}
+                        onUnarchive={handleUnarchive}
+                      />
                     ))}
                   </div>
                 </div>
@@ -713,49 +942,18 @@ export function AdminView() {
               {/* Lagos Office Section */}
               {lagosChannels.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    Lagos Office ({lagosChannels.length})
-                  </div>
+                  <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                    Lagos office ({lagosChannels.length})
+                  </h2>
                   <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                     {lagosChannels.map((ch) => (
-                      <div
+                      <ChannelRow
                         key={ch.id}
-                        className="p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-surface-raised/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          {renderChannelIcon(ch)}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-ink break-words">
-                                #{ch.name}
-                              </span>
-                              <Badge variant="neutral" size="sm">
-                                {ch.kind === 'listing' ? 'Listing' : ch.kind === 'private' ? 'Private' : 'Public'}
-                              </Badge>
-                              {ch.kind === 'private' && Array.isArray(ch.members) && (
-                                <span className="text-xs text-ink-muted">
-                                  {ch.members.length} members
-                                </span>
-                              )}
-                            </div>
-                            {ch.description && (
-                              <p className="text-xs text-ink-muted break-words line-clamp-1 mt-0.5">
-                                {ch.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setChannelToArchive(ch)}
-                          className="text-status-danger hover:bg-status-danger-bg shrink-0"
-                        >
-                          <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                          <span>Archive</span>
-                        </Button>
-                      </div>
+                        channel={ch}
+                        onOpenSheet={setSelectedChannelForSheet}
+                        onArchive={setChannelToArchive}
+                        onUnarchive={handleUnarchive}
+                      />
                     ))}
                   </div>
                 </div>
@@ -764,49 +962,18 @@ export function AdminView() {
               {/* Abuja Office Section */}
               {abujaChannels.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    Abuja Office ({abujaChannels.length})
-                  </div>
+                  <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                    Abuja office ({abujaChannels.length})
+                  </h2>
                   <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                     {abujaChannels.map((ch) => (
-                      <div
+                      <ChannelRow
                         key={ch.id}
-                        className="p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-surface-raised/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          {renderChannelIcon(ch)}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-ink break-words">
-                                #{ch.name}
-                              </span>
-                              <Badge variant="neutral" size="sm">
-                                {ch.kind === 'listing' ? 'Listing' : ch.kind === 'private' ? 'Private' : 'Public'}
-                              </Badge>
-                              {ch.kind === 'private' && Array.isArray(ch.members) && (
-                                <span className="text-xs text-ink-muted">
-                                  {ch.members.length} members
-                                </span>
-                              )}
-                            </div>
-                            {ch.description && (
-                              <p className="text-xs text-ink-muted break-words line-clamp-1 mt-0.5">
-                                {ch.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setChannelToArchive(ch)}
-                          className="text-status-danger hover:bg-status-danger-bg shrink-0"
-                        >
-                          <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                          <span>Archive</span>
-                        </Button>
-                      </div>
+                        channel={ch}
+                        onOpenSheet={setSelectedChannelForSheet}
+                        onArchive={setChannelToArchive}
+                        onUnarchive={handleUnarchive}
+                      />
                     ))}
                   </div>
                 </div>
@@ -821,7 +988,7 @@ export function AdminView() {
                 >
                   <div className="flex items-center gap-2 text-xs font-bold text-ink-muted uppercase tracking-wider">
                     <Archive className="w-4 h-4 text-ink-muted" aria-hidden="true" />
-                    <span>Archived Channels ({archivedChannels.length})</span>
+                    <span>Archived ({archivedChannels.length})</span>
                   </div>
                   {isArchivedSectionOpen ? (
                     <ChevronUp className="w-4 h-4 text-ink-muted" aria-hidden="true" />
@@ -838,36 +1005,13 @@ export function AdminView() {
                       </p>
                     ) : (
                       archivedChannels.map((ch) => (
-                        <div
+                        <ChannelRow
                           key={ch.id}
-                          className="p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-surface-raised/40"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                            {renderChannelIcon(ch)}
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-ink break-words line-through opacity-70">
-                                  #{ch.name}
-                                </span>
-                                <Badge variant="neutral" size="sm">
-                                  Archived
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-ink-muted line-clamp-1 mt-0.5">
-                                {ch.description || 'Archived channel'}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleUnarchive(ch)}
-                            className="shrink-0"
-                          >
-                            <ArchiveRestore className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                            <span>Unarchive</span>
-                          </Button>
-                        </div>
+                          channel={ch}
+                          onOpenSheet={setSelectedChannelForSheet}
+                          onArchive={setChannelToArchive}
+                          onUnarchive={handleUnarchive}
+                        />
                       ))
                     )}
                   </div>
@@ -906,6 +1050,194 @@ export function AdminView() {
             onSave={handleEditStaff}
             onClose={() => setEditingStaff(null)}
           />
+        )}
+      </Drawer>
+
+      {/* Staff Action Sheet Drawer */}
+      <Drawer
+        isOpen={Boolean(selectedStaffForSheet)}
+        onClose={() => setSelectedStaffForSheet(null)}
+        title={selectedStaffForSheet?.name ?? ''}
+      >
+        {selectedStaffForSheet && (() => {
+          const member = selectedStaffForSheet;
+          const active = isStaffActive(member);
+          const isSelf = member.id === currentUserId;
+          const isOnlyAdmin = member.role === 'admin' && activeAdminCount <= 1;
+          const canDeactivate = active && !isSelf && !isOnlyAdmin;
+
+          let disableReason = '';
+          if (isSelf) {
+            disableReason = 'You cannot deactivate your own account.';
+          } else if (isOnlyAdmin) {
+            disableReason = 'Cannot deactivate the only active administrator.';
+          }
+
+          return (
+            <div className="space-y-4">
+              {/* Header: avatar, name, job title, role Badge, office, phone */}
+              <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
+                <Avatar
+                  role={member.role}
+                  initials={member.initials}
+                  name={member.name}
+                  isOnline={active && member.online}
+                  size="md"
+                />
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-ink">{member.name}</span>
+                    {isSelf && (
+                      <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface text-ink-muted border border-line">
+                        You
+                      </span>
+                    )}
+                    <Badge role={member.role}>
+                      {ROLE_LABELS[member.role] || member.role}
+                    </Badge>
+                    {!active && (
+                      <Badge variant="danger">
+                        Deactivated
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-ink-muted">
+                    {member.title}
+                  </div>
+                  <div className="text-xs text-ink-muted flex items-center gap-2">
+                    <span>{(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}</span>
+                    <span>·</span>
+                    <span className="tabular-nums tracking-normal">{formatPhoneNg(member.phone)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions as full-width rows (44px) */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = member;
+                    setSelectedStaffForSheet(null);
+                    setEditingStaff(target);
+                  }}
+                  className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  Edit role and office
+                </button>
+
+                {active ? (
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      disabled={!canDeactivate}
+                      onClick={() => {
+                        if (!canDeactivate) return;
+                        const target = member;
+                        setSelectedStaffForSheet(null);
+                        setDeactivatingStaff(target);
+                      }}
+                      className={`w-full h-11 px-4 rounded-xl border font-semibold text-xs flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        canDeactivate
+                          ? 'border-line bg-surface text-ink hover:bg-surface-raised cursor-pointer'
+                          : 'border-line bg-surface-raised text-ink-muted opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      Deactivate
+                    </button>
+                    {!canDeactivate && disableReason && (
+                      <p className="text-xs text-status-warning font-medium px-1 text-center">
+                        {disableReason}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = member;
+                      setSelectedStaffForSheet(null);
+                      setReactivatingStaff(target);
+                    }}
+                    className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    Reactivate
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </Drawer>
+
+      {/* Channel Action Sheet Drawer */}
+      <Drawer
+        isOpen={Boolean(selectedChannelForSheet)}
+        onClose={() => setSelectedChannelForSheet(null)}
+        title={`#${selectedChannelForSheet?.name ?? ''}`}
+      >
+        {selectedChannelForSheet && (
+          <div className="space-y-4">
+            {/* Channel details card */}
+            <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
+              {renderChannelIcon(selectedChannelForSheet)}
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-ink">
+                    #{selectedChannelForSheet.name}
+                  </span>
+                  {selectedChannelForSheet.kind === 'announcement' && (
+                    <Badge variant="neutral">Announcement</Badge>
+                  )}
+                  {selectedChannelForSheet.kind === 'listing' && (
+                    <Badge variant="neutral">Listing</Badge>
+                  )}
+                  {selectedChannelForSheet.archived && (
+                    <Badge variant="neutral">Archived</Badge>
+                  )}
+                </div>
+                {selectedChannelForSheet.description && (
+                  <p className="text-xs text-ink-muted break-words line-clamp-2">
+                    {selectedChannelForSheet.description}
+                  </p>
+                )}
+                {selectedChannelForSheet.kind === 'private' && Array.isArray(selectedChannelForSheet.members) && (
+                  <p className="text-xs text-ink-muted">
+                    {selectedChannelForSheet.members.length} members
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Action button */}
+            <div className="pt-1">
+              {selectedChannelForSheet.archived ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedChannelForSheet;
+                    setSelectedChannelForSheet(null);
+                    handleUnarchive(target);
+                  }}
+                  className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  Unarchive
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedChannelForSheet;
+                    setSelectedChannelForSheet(null);
+                    setChannelToArchive(target);
+                  }}
+                  className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  Archive
+                </button>
+              )}
+            </div>
+          </div>
         )}
       </Drawer>
 

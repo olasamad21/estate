@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Megaphone, Bell, X, WifiOff, Settings } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { MessageSquarePlus, Bell, X, WifiOff, Settings } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { visibleChannelsFor, mentionsUser, canUseAdmin } from '../../utils/chat.js';
@@ -13,6 +13,8 @@ import { ConfirmResetModal } from './ConfirmResetModal.jsx';
 
 export function AppLayout({ children }) {
   const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs } = useChat();
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin';
 
   // Drawer / Modal states
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -118,7 +120,12 @@ export function AppLayout({ children }) {
               to="/admin"
               aria-label="Admin settings"
               title="Admin settings"
-              className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+              aria-current={isAdminRoute ? 'page' : undefined}
+              className={`w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 ${
+                isAdminRoute
+                  ? 'bg-surface-raised text-brand'
+                  : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+              }`}
             >
               <Settings className="w-5 h-5" aria-hidden="true" />
             </Link>
@@ -131,7 +138,7 @@ export function AppLayout({ children }) {
             title="Give feedback"
             className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
           >
-            <Megaphone className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+            <MessageSquarePlus className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
           </button>
 
           <button
