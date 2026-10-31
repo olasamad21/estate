@@ -51,6 +51,8 @@ export function NotificationDrawer({ isOpen, onClose }) {
 
   messages.forEach((msg) => {
     if (!visibleChannelIds.has(msg.channelId)) return;
+    const ch = channels.find((c) => c.id === msg.channelId);
+    if (!ch || ch.archived) return;
     if (msg.senderId === currentUserId || msg.senderId === 'system') return;
 
     const isMention = mentionsUser(msg, currentUser);

@@ -8,6 +8,7 @@ import { AppLayout } from './components/layout/AppLayout.jsx';
 import { LoginView } from './features/auth/LoginView.jsx';
 import { ChannelListView } from './features/chat/ChannelListView.jsx';
 import { ChatAreaView } from './features/chat/ChatAreaView.jsx';
+import { AdminView } from './features/admin/AdminView.jsx';
 
 function WorkspaceLayout() {
   const { id: channelId } = useParams();
@@ -76,6 +77,19 @@ function AppContent() {
             isAuthenticated ? (
               <AppLayout>
                 <WorkspaceLayout />
+              </AppLayout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            isAuthenticated ? (
+              <AppLayout>
+                <AdminView />
               </AppLayout>
             ) : (
               <Navigate to="/login" replace />

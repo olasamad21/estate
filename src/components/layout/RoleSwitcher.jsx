@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check, ClipboardList, RotateCcw, LogOut, WifiOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
+import { isStaffActive } from '../../utils/chat.js';
 import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 
@@ -19,20 +20,21 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   const roleLabel = ROLE_LABELS[currentRole] || currentRole;
 
   const staffGroups = useMemo(() => {
+    const activeStaff = staff.filter((s) => isStaffActive(s));
     return [
       {
         label: 'All offices',
-        members: staff.filter((s) => s.role === 'admin'),
+        members: activeStaff.filter((s) => s.role === 'admin'),
       },
       {
         label: 'Lagos office',
-        members: staff.filter((s) => s.role !== 'admin' && (s.officeId === 'lagos' || s.office === 'lagos')),
+        members: activeStaff.filter((s) => s.role !== 'admin' && (s.officeId === 'lagos' || s.office === 'lagos')),
       },
       {
         label: 'Abuja office',
-        members: staff.filter((s) => s.role !== 'admin' && (s.officeId === 'abuja' || s.office === 'abuja')),
+        members: activeStaff.filter((s) => s.role !== 'admin' && (s.officeId === 'abuja' || s.office === 'abuja')),
       },
-    ];
+    ].filter((g) => g.members.length > 0);
   }, [staff]);
 
   // Close on Escape or click outside

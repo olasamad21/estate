@@ -14,6 +14,7 @@ export function ThreadDrawer({
   parentMessage,
   allMessages = [],
   staffById = {},
+  isArchived = false,
   onSendReply,
 }) {
   const [replyText, setReplyText] = useState('');
@@ -117,30 +118,36 @@ export function ThreadDrawer({
           )}
         </div>
 
-        {/* Thread reply composer */}
-        <form onSubmit={handleSubmit} className="p-3 bg-surface border-t border-line shrink-0">
-          <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-xl px-3 py-1.5 focus-within:border-brand">
-            <input
-              type="text"
-              name="thread_reply"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Reply in thread..."
-              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted focus:outline-none"
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              disabled={!replyText.trim()}
-              className="w-7 h-7 p-0 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
-              aria-label="Send thread reply"
-            >
-              <Send className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
+        {/* Thread reply composer or archived notice */}
+        {isArchived ? (
+          <div className="p-3 bg-surface-raised border-t border-line text-center text-xs text-ink-muted font-medium shrink-0">
+            This channel is archived
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-3 bg-surface border-t border-line shrink-0">
+            <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-xl px-3 py-1.5 focus-within:border-brand">
+              <input
+                type="text"
+                name="thread_reply"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Reply in thread..."
+                className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted focus:outline-none"
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={!replyText.trim()}
+                className="w-7 h-7 p-0 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                aria-label="Send thread reply"
+              >
+                <Send className="w-3.5 h-3.5" aria-hidden="true" />
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </Drawer>
   );

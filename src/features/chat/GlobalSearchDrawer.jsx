@@ -17,7 +17,7 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { visibleChannelsFor, channelDisplayName } from '../../utils/chat.js';
+import { visibleChannelsFor, channelDisplayName, isStaffActive } from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getNoDirectMessageToast } from '../../utils/messages.js';
@@ -116,8 +116,9 @@ export function GlobalSearchDrawer({
       return name.includes(q) || desc.includes(q) || loc.includes(q);
     });
 
-    // 2. People
+    // 2. People (skip deactivated staff)
     const matchedPeople = staff.filter((s) => {
+      if (!isStaffActive(s)) return false;
       const name = (s.name || '').toLowerCase();
       const role = (ROLE_LABELS[s.role] || s.role || '').toLowerCase();
       const title = (s.title || '').toLowerCase();
@@ -125,17 +126,21 @@ export function GlobalSearchDrawer({
       return name.includes(q) || role.includes(q) || title.includes(q) || office.includes(q);
     });
 
-    // 3. Messages
+    // 3. Messages (ignore archived channels)
     const matchedMessages = messages.filter((m) => {
       if (!visibleChannelIds.has(m.channelId)) return false;
+      const ch = channelMap[m.channelId];
+      if (!ch || ch.archived) return false;
       if (m.deletedAt) return false;
       if (m.type !== 'text') return false;
       return (m.text || '').toLowerCase().includes(q);
     });
 
-    // 4. Files
+    // 4. Files (ignore archived channels)
     const matchedFiles = messages.filter((m) => {
       if (!visibleChannelIds.has(m.channelId)) return false;
+      const ch = channelMap[m.channelId];
+      if (!ch || ch.archived) return false;
       if (m.deletedAt) return false;
       if (m.type !== 'file') return false;
       return (m.fileName || '').toLowerCase().includes(q);
@@ -148,7 +153,7 @@ export function GlobalSearchDrawer({
       files: matchedFiles,
       hasQuery: true,
     };
-  }, [query, visibleChannels, visibleChannelIds, staff, messages, currentUserId]);
+  }, [query, visibleChannels, visibleChannelIds, channelMap, staff, messages, currentUserId]);
 
   const totalResultsCount =
     results.channels.length +
@@ -285,6 +290,11 @@ export function GlobalSearchDrawer({
                           {ch.officeId && (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
                               {getOfficeName(ch.officeId)}
+                            </span>
+                          )}
+                          {ch.archived && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
+                              Archived
                             </span>
                           )}
                         </div>

@@ -209,11 +209,16 @@ export function MessageRow({
               <button
                 key={r.emoji}
                 type="button"
+                disabled={Boolean(channel?.archived)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onToggleReaction?.(message.id, r.emoji);
+                  if (!channel?.archived) {
+                    onToggleReaction?.(message.id, r.emoji);
+                  }
                 }}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border transition-all ${
+                  channel?.archived ? 'cursor-default opacity-80' : 'cursor-pointer'
+                } ${
                   r.userReacted
                     ? 'bg-brand/10 text-brand border-brand/40 shadow-xs'
                     : 'bg-surface border-line text-ink-muted hover:bg-surface-raised'

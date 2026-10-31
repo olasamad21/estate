@@ -67,3 +67,39 @@ export function getChannelMutedMessage(channelName = '') {
 export function getChannelUnmutedMessage(channelName = '') {
   return `Unmuted #${channelName}`;
 }
+
+export function getStaffAddedMessage(name = 'Staff member') {
+  return `${name} added to workspace`;
+}
+
+export function getStaffUpdatedMessage(name = 'Staff member') {
+  return `${name}'s role and office updated`;
+}
+
+export function getStaffDeactivatedMessage(name = 'Staff member') {
+  return `${name} deactivated`;
+}
+
+export function getStaffReactivatedMessage(name = 'Staff member') {
+  return `${name} reactivated`;
+}
+
+export function getChannelCreatedMessage(name = 'channel') {
+  return `#${name} created`;
+}
+
+export function getChannelArchivedMessage(name = 'channel') {
+  return `#${name} archived`;
+}
+
+export function getChannelUnarchivedMessage(name = 'channel') {
+  return `#${name} unarchived`;
+}
+
+export function getAdminAccessDeniedMessage() {
+  return 'Only administrators can access the admin workspace.';
+}
+
+export function getDeactivatedLoginErrorMessage() {
+  return 'This account has been deactivated. Please contact your admin.';
+}

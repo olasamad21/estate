@@ -53,7 +53,7 @@ export const Button = forwardRef(function Button(
       {loading && (
         <Loader2 className="w-4 h-4 animate-spin text-current shrink-0 opacity-100" aria-hidden="true" />
       )}
-      <span className="opacity-100">{children}</span>
+      <span className="inline-flex items-center justify-center gap-2 opacity-100">{children}</span>
     </button>
   );
 });

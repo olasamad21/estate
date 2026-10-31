@@ -415,19 +415,25 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         </div>
       )}
 
-      {/* Message Composer */}
-      <MessageComposer
-        key={editingMessage ? editingMessage.id : 'composer'}
-        channel={channel}
-        currentUser={currentUser}
-        channelMembers={channelMembers}
-        editingMessage={editingMessage}
-        onSendMessage={(text) => sendMessage(channel.id, text)}
-        onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
-        onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
-        onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
-        onCancelEdit={() => setEditingMessage(null)}
-      />
+      {/* Message Composer or Archived Notice */}
+      {channel?.archived ? (
+        <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium shrink-0">
+          This channel is archived
+        </div>
+      ) : (
+        <MessageComposer
+          key={editingMessage ? editingMessage.id : 'composer'}
+          channel={channel}
+          currentUser={currentUser}
+          channelMembers={channelMembers}
+          editingMessage={editingMessage}
+          onSendMessage={(text) => sendMessage(channel.id, text)}
+          onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
+          onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
+          onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
+          onCancelEdit={() => setEditingMessage(null)}
+        />
+      )}
 
       {/* Action Drawers */}
       <MessageActionDrawer
@@ -435,8 +441,9 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         onClose={() => setSelectedActionMessage(null)}
         message={selectedActionMessage}
         currentUser={currentUser}
+        isArchived={Boolean(channel?.archived)}
         onReact={(emoji) => {
-          if (selectedActionMessage) {
+          if (selectedActionMessage && !channel?.archived) {
             toggleReaction(selectedActionMessage.id, emoji);
           }
         }}
@@ -444,10 +451,14 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
           setSelectedThreadMessage(msg);
         }}
         onTogglePin={(msgId) => {
-          togglePin(msgId);
+          if (!channel?.archived) {
+            togglePin(msgId);
+          }
         }}
         onStartEdit={(msg) => {
-          setEditingMessage(msg);
+          if (!channel?.archived) {
+            setEditingMessage(msg);
+          }
         }}
         onDeleteMessage={(msgId) => {
           deleteMessage(msgId);
@@ -461,6 +472,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         allMessages={messages}
         currentUser={currentUser}
         staffById={staffById}
+        isArchived={Boolean(channel?.archived)}
         onSendReply={(chId, parentId, text) => {
           sendThreadReply(chId, parentId, text);
         }}

@@ -1,10 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Hash, Building2, MessageSquare } from 'lucide-react';
+import { Search, Hash, Building2, MessageSquare, Plus, Archive, ChevronDown, ChevronUp } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { visibleChannelsFor, groupChannels, unreadCount } from '../../utils/chat.js';
+import {
+  visibleChannelsFor,
+  groupChannels,
+  unreadCount,
+  canCreateChannels,
+  canUseAdmin,
+} from '../../utils/chat.js';
 import { ChannelRow } from './ChannelRow.jsx';
 import { GlobalSearchDrawer } from './GlobalSearchDrawer.jsx';
+import { CreateChannelDrawer } from './CreateChannelDrawer.jsx';
 
 const FILTER_TABS = [
   { id: 'all', label: 'All' },
@@ -30,6 +37,8 @@ export function ChannelListView() {
 
   const [activeFilter, setActiveFilter] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isArchivedOpen, setIsArchivedOpen] = useState(false);
 
   // Keyboard shortcut Ctrl/Cmd+K to open search
   useEffect(() => {
@@ -54,24 +63,26 @@ export function ChannelListView() {
 
   // 2. Filter by active category tab (All, Unread, Channels, Listings, Direct)
   const filteredChannels = useMemo(() => {
+    // Archived channels never appear in normal list tabs
+    const activeChannels = userVisibleChannels.filter((ch) => !ch.archived);
     if (activeFilter === 'unread') {
-      return userVisibleChannels.filter((ch) => {
+      return activeChannels.filter((ch) => {
         const count = unreadCount(ch.id, messages, userReadMap[ch.id], currentUserId);
         return count > 0;
       });
     }
     if (activeFilter === 'channels') {
-      return userVisibleChannels.filter(
+      return activeChannels.filter(
         (ch) => ch.kind === 'public' || ch.kind === 'announcement' || ch.kind === 'private'
       );
     }
     if (activeFilter === 'listings') {
-      return userVisibleChannels.filter((ch) => ch.kind === 'listing');
+      return activeChannels.filter((ch) => ch.kind === 'listing');
     }
     if (activeFilter === 'direct') {
-      return userVisibleChannels.filter((ch) => ch.kind === 'dm' || ch.kind === 'group');
+      return activeChannels.filter((ch) => ch.kind === 'dm' || ch.kind === 'group');
     }
-    return userVisibleChannels;
+    return activeChannels;
   }, [userVisibleChannels, activeFilter, messages, userReadMap, currentUserId]);
 
   // 3. Group channels into sections when on 'all' tab
@@ -91,22 +102,34 @@ export function ChannelListView() {
 
   return (
     <div className="h-full flex flex-col bg-surface select-none">
-      {/* Search Trigger Button */}
-      <div className="p-3 border-b border-line shrink-0">
+      {/* Search Trigger Button & New Channel Button (Admin and Manager only) */}
+      <div className="p-3 border-b border-line shrink-0 flex items-center gap-2">
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
           aria-label="Search workspace (Ctrl+K)"
-          className="w-full flex items-center justify-between pl-3 pr-3 py-1.5 text-xs bg-surface-raised border border-line rounded-lg text-ink-muted hover:border-brand hover:text-ink transition-colors cursor-pointer text-left"
+          className="flex-1 min-w-0 flex items-center justify-between pl-3 pr-3 py-1.5 text-xs bg-surface-raised border border-line rounded-lg text-ink-muted hover:border-brand hover:text-ink transition-colors cursor-pointer text-left"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Search channels & listings...</span>
           </div>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-2xs font-mono bg-surface border border-line rounded text-ink-muted">
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-mono bg-surface border border-line rounded text-ink-muted">
             ⌘K
           </kbd>
         </button>
+
+        {canCreateChannels(currentUser) && (
+          <button
+            type="button"
+            onClick={() => setIsCreateChannelOpen(true)}
+            aria-label="New channel"
+            title="New channel"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-raised border border-line text-ink hover:bg-surface hover:border-brand transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* Filter Chips */}
@@ -225,6 +248,42 @@ export function ChannelListView() {
                 ))}
               </div>
             )}
+
+            {/* Archived Channels (Admin only, collapsed by default) */}
+            {canUseAdmin(currentUser) && grouped.archived.length > 0 && (
+              <div className="space-y-1 pt-2 border-t border-line/60">
+                <button
+                  type="button"
+                  onClick={() => setIsArchivedOpen((prev) => !prev)}
+                  className="w-full flex items-center justify-between px-2 py-1 text-xs font-bold text-ink-muted uppercase tracking-wider hover:text-ink cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Archive className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Archived ({grouped.archived.length})</span>
+                  </div>
+                  {isArchivedOpen ? (
+                    <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
+                </button>
+                {isArchivedOpen &&
+                  grouped.archived.map((channel) => (
+                    <ChannelRow
+                      key={channel.id}
+                      channel={channel}
+                      isActive={channel.id === activeChannelId}
+                      onClick={() => handleSelectChannel(channel.id)}
+                      messages={messages}
+                      lastReadAt={userReadMap[channel.id]}
+                      currentUser={currentUser}
+                      staffList={staff}
+                      isMuted={isChannelMuted(channel.id)}
+                      notifyMode={notifyPrefs?.mode || 'all'}
+                    />
+                  ))}
+              </div>
+            )}
           </>
         ) : (
           <div className="space-y-1">
@@ -262,6 +321,15 @@ export function ChannelListView() {
         staffById={staffById}
         currentUser={currentUser}
       />
+
+      {/* Create Channel Drawer (Admin & Manager) */}
+      {canCreateChannels(currentUser) && (
+        <CreateChannelDrawer
+          key={currentUser?.id}
+          isOpen={isCreateChannelOpen}
+          onClose={() => setIsCreateChannelOpen(false)}
+        />
+      )}
     </div>
   );
 }

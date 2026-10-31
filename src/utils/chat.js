@@ -3,8 +3,68 @@
  */
 
 /**
+ * Checks if a staff user is active (not deactivated).
+ */
+export function isStaffActive(user) {
+  if (!user) return false;
+  return user.active !== false && user.status !== 'deactivated';
+}
+
+/**
+ * Pure helpers for role-based permissions and office choices.
+ */
+export function canUseAdmin(user) {
+  return Boolean(user && user.role === 'admin' && isStaffActive(user));
+}
+
+export function canCreateChannels(user) {
+  return Boolean(
+    user && (user.role === 'admin' || user.role === 'manager') && isStaffActive(user)
+  );
+}
+
+export function canArchiveChannels(user) {
+  return Boolean(user && user.role === 'admin' && isStaffActive(user));
+}
+
+export function slugify(text = '') {
+  return String(text)
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+export function isChannelNameValid(name = '') {
+  if (typeof name !== 'string') return false;
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 50) return false;
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmed);
+}
+
+export function officeChoicesFor(user) {
+  if (!user || !isStaffActive(user)) return [];
+  if (user.role === 'admin') {
+    return [
+      { id: null, label: 'Company-wide' },
+      { id: 'lagos', label: 'Lagos office' },
+      { id: 'abuja', label: 'Abuja office' },
+    ];
+  }
+  if (user.role === 'manager') {
+    const userOffice = user.officeId || user.office || 'lagos';
+    const label = userOffice === 'abuja' ? 'Abuja office' : 'Lagos office';
+    return [{ id: userOffice, label }];
+  }
+  return [];
+}
+
+/**
  * Exactly ONE function that decides whether a person can see a channel.
  * Rule:
+ * - Deactivated staff cannot see any channel.
  * - open kinds (public, announcement, listing) with officeId null: every active staff member;
  * - open kinds with an officeId: admin, or staff whose officeId equals the channel's officeId;
  * - private: members, and the admin;
@@ -12,6 +72,8 @@
  */
 export function canUserSeeChannel(user, channel) {
   if (!user || !channel) return false;
+  if (!isStaffActive(user)) return false;
+
   const isAdmin = user.role === 'admin';
   const kind = channel.kind || 'public';
   const userOffice = user.officeId || user.office || null;
@@ -31,10 +93,10 @@ export function canUserSeeChannel(user, channel) {
   if (kind === 'public' || kind === 'announcement' || kind === 'listing') {
     // with officeId null: every active staff member
     if (!channelOffice) {
-      return user.active !== false;
+      return true;
     }
     // with an officeId: admin, or staff whose officeId equals the channel's officeId
-    return isAdmin || (userOffice === channelOffice && user.active !== false);
+    return isAdmin || userOffice === channelOffice;
   }
 
   return false;
@@ -53,6 +115,7 @@ export function visibleChannelsFor(user, channels = []) {
  * - open channel with an officeId: active staff of that office plus the admin;
  * - open channel with officeId null: all active staff;
  * - private, dm and group: the memberIds.
+ * Skips deactivated staff.
  */
 export function channelMembersFor(channel, staffList = []) {
   if (!channel || !Array.isArray(staffList)) return [];
@@ -61,16 +124,16 @@ export function channelMembersFor(channel, staffList = []) {
 
   if (kind === 'private' || kind === 'dm' || kind === 'group') {
     const memberIds = Array.isArray(channel.members) ? channel.members : [];
-    return staffList.filter((s) => memberIds.includes(s.id) && s.active !== false);
+    return staffList.filter((s) => memberIds.includes(s.id) && isStaffActive(s));
   }
 
   // Open kinds (public, announcement, listing)
   if (!channelOffice) {
-    return staffList.filter((s) => s.active !== false);
+    return staffList.filter((s) => isStaffActive(s));
   }
 
   return staffList.filter((s) => {
-    if (s.active === false) return false;
+    if (!isStaffActive(s)) return false;
     const sOffice = s.officeId || s.office || null;
     return s.role === 'admin' || sOffice === channelOffice;
   });
@@ -131,9 +194,15 @@ export function groupChannels(channels = []) {
     private: [],
     listings: [],
     directMessages: [],
+    archived: [],
   };
 
   channels.forEach((ch) => {
+    if (!ch) return;
+    if (ch.archived) {
+      result.archived.push(ch);
+      return;
+    }
     if (ch.kind === 'public' || ch.kind === 'announcement') {
       result.channels.push(ch);
     } else if (ch.kind === 'private') {

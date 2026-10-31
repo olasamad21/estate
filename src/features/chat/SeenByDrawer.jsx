@@ -2,13 +2,15 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
+import { isStaffActive } from '../../utils/chat.js';
 
 export function SeenByDrawer({ isOpen, onClose, message, staffList = [] }) {
   if (!message) return null;
 
+  const activeStaffList = staffList.filter((s) => isStaffActive(s));
   const seenIds = Array.isArray(message.seenBy) ? message.seenBy : [];
-  const totalCount = staffList.length;
-  const seenCount = staffList.filter((s) => seenIds.includes(s.id)).length;
+  const totalCount = activeStaffList.length;
+  const seenCount = activeStaffList.filter((s) => seenIds.includes(s.id)).length;
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Announcement Read Receipts">
@@ -23,7 +25,7 @@ export function SeenByDrawer({ isOpen, onClose, message, staffList = [] }) {
 
         {/* Staff list */}
         <div className="space-y-1.5" role="list">
-          {staffList.map((member) => {
+          {activeStaffList.map((member) => {
             const hasSeen = seenIds.includes(member.id);
             return (
               <div

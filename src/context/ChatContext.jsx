@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { safeLocalStorage, safeSessionStorage } from '../utils/storage.js';
 import { normalisePhoneNg, minutesFromNow } from '../utils/formatters.js';
-import { STAFF, STAFF_BY_ID } from '../mock/staff.js';
+import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive } from '../utils/chat.js';
 import { useToast } from '../components/common/useToast.js';
 import {
   getBackOnlineMessage,
@@ -13,9 +13,10 @@ import {
   getMessageUnpinnedMessage,
   getChannelMutedMessage,
   getChannelUnmutedMessage,
+  getDeactivatedLoginErrorMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-5';
+const CHAT_STATE_VERSION = 'chat-6';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -24,12 +25,12 @@ const DEFAULT_USER_NOTIFY_PREFS = {
   quietEnd: '07:00',
 };
 
-function buildInitialReadState() {
+function buildInitialReadState(staffList = STAFF, channelList = CHANNELS) {
   const seedThreshold = minutesFromNow(-300);
   const state = {};
-  STAFF.forEach((member) => {
+  staffList.forEach((member) => {
     state[member.id] = {};
-    CHANNELS.forEach((ch) => {
+    channelList.forEach((ch) => {
       state[member.id][ch.id] = seedThreshold;
     });
   });
@@ -41,25 +42,15 @@ const ChatContext = createContext(null);
 export function ChatProvider({ children }) {
   const { showToast } = useToast();
 
-  // 1. Current logged-in staff id (persisted in safeLocalStorage as 'session_user')
-  const [currentUserId, setCurrentUserId] = useState(() => {
-    return safeLocalStorage.get('session_user', 'adaeze');
-  });
-
-  // 2. Offline simulation mode
-  const [isOffline, setIsOffline] = useState(false);
-
-  // 3. Typing indicator status: null or { channelId, staffName }
-  const [typingStatus, setTypingStatus] = useState(null);
-  const replyTimerRef = useRef(null);
-
-  // 4. Chat state (messages & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
+  // 1. Chat state (messages, staff, channels & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
   const [chatState, setChatState] = useState(() => {
     const stored = safeSessionStorage.get('chat_state', null);
     if (
       stored &&
       stored.version === CHAT_STATE_VERSION &&
       Array.isArray(stored.messages) &&
+      Array.isArray(stored.staff) &&
+      Array.isArray(stored.channels) &&
       stored.lastReadAtByUser
     ) {
       return stored;
@@ -67,12 +58,42 @@ export function ChatProvider({ children }) {
     return {
       version: CHAT_STATE_VERSION,
       messages: SEED_MESSAGES,
-      lastReadAtByUser: buildInitialReadState(),
+      staff: STAFF,
+      channels: CHANNELS,
+      lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
   });
 
+  const staff = chatState.staff;
+  const channels = chatState.channels;
   const messages = chatState.messages;
   const lastReadAtByUser = chatState.lastReadAtByUser;
+
+  // 2. Current logged-in staff id (persisted in safeLocalStorage as 'session_user')
+  const [currentUserId, setCurrentUserId] = useState(() => {
+    const saved = safeLocalStorage.get('session_user', 'adaeze');
+    const matched = staff.find((s) => s.id === saved);
+    if (matched && isStaffActive(matched)) {
+      return saved;
+    }
+    const firstAdmin = staff.find((s) => s.role === 'admin' && isStaffActive(s));
+    return firstAdmin ? firstAdmin.id : 'adaeze';
+  });
+
+  // 3. Offline simulation mode
+  const [isOffline, setIsOffline] = useState(false);
+
+  // 4. Typing indicator status: null or { channelId, staffName }
+  const [typingStatus, setTypingStatus] = useState(null);
+  const replyTimerRef = useRef(null);
+
+  const staffById = useMemo(() => {
+    return Object.fromEntries(staff.map((s) => [s.id, s]));
+  }, [staff]);
+
+  const channelsById = useMemo(() => {
+    return Object.fromEntries(channels.map((c) => [c.id, c]));
+  }, [channels]);
 
   // Persist chat state whenever it changes
   useEffect(() => {
@@ -129,8 +150,8 @@ export function ChatProvider({ children }) {
   }, [currentUserId, notifyPrefs.mutedChannelIds, updateNotifyPrefs, showToast]);
 
   const currentUser = useMemo(() => {
-    return currentUserId ? STAFF_BY_ID[currentUserId] || null : null;
-  }, [currentUserId]);
+    return currentUserId ? staffById[currentUserId] || null : null;
+  }, [currentUserId, staffById]);
 
   const clearTypingTimer = useCallback(() => {
     if (replyTimerRef.current) {
@@ -145,14 +166,17 @@ export function ChatProvider({ children }) {
     if (!normalised) {
       return { success: false, error: 'Please enter a valid Nigerian phone number.' };
     }
-    const matched = STAFF.find((s) => normalisePhoneNg(s.phone) === normalised);
+    const matched = staff.find((s) => normalisePhoneNg(s.phone) === normalised);
     if (!matched) {
       return { success: false, error: "This number hasn't been added by your admin." };
+    }
+    if (!isStaffActive(matched)) {
+      return { success: false, error: getDeactivatedLoginErrorMessage() };
     }
     setCurrentUserId(matched.id);
     safeLocalStorage.set('session_user', matched.id);
     return { success: true, user: matched };
-  }, []);
+  }, [staff]);
 
   const logout = useCallback(() => {
     clearTypingTimer();
@@ -161,12 +185,13 @@ export function ChatProvider({ children }) {
   }, [clearTypingTimer]);
 
   const switchUser = useCallback((id) => {
-    if (STAFF_BY_ID[id]) {
+    const target = staffById[id];
+    if (target && isStaffActive(target)) {
       clearTypingTimer();
       setCurrentUserId(id);
       safeLocalStorage.set('session_user', id);
     }
-  }, [clearTypingTimer]);
+  }, [clearTypingTimer, staffById]);
 
   const setOffline = useCallback((offline) => {
     setIsOffline(offline);
@@ -217,9 +242,9 @@ export function ChatProvider({ children }) {
 
     // Scripted colleague reply if online and not in announcements
     if (!isOffline && channelId !== 'announcements') {
-      const currentChannel = CHANNELS.find((c) => c.id === channelId);
+      const currentChannel = channels.find((c) => c.id === channelId);
       const candidates = currentChannel
-        ? channelMembersFor(currentChannel, STAFF).filter((s) => s.id !== currentUserId && s.online)
+        ? channelMembersFor(currentChannel, staff).filter((s) => s.id !== currentUserId && s.online && isStaffActive(s))
         : [];
 
       if (candidates.length > 0) {
@@ -248,7 +273,7 @@ export function ChatProvider({ children }) {
         }, delay);
       }
     }
-  }, [currentUserId, isOffline, clearTypingTimer]);
+  }, [currentUserId, isOffline, channels, staff, clearTypingTimer]);
 
   const sendThreadReply = useCallback((channelId, parentId, text) => {
     if (!text || !text.trim() || !currentUserId || !parentId) return;
@@ -436,7 +461,9 @@ export function ChatProvider({ children }) {
     const fresh = {
       version: CHAT_STATE_VERSION,
       messages: SEED_MESSAGES,
-      lastReadAtByUser: buildInitialReadState(),
+      staff: STAFF,
+      channels: CHANNELS,
+      lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
     setChatState(fresh);
     setCurrentUserId('adaeze');
@@ -444,12 +471,188 @@ export function ChatProvider({ children }) {
     safeLocalStorage.set('session_user', 'adaeze');
   }, [clearTypingTimer]);
 
+  const addStaff = useCallback(({ name, phone, role, office }) => {
+    const baseSlug = slugify(name);
+    let id = baseSlug || 'staff';
+    let counter = 2;
+    while (staff.some((s) => s.id === id)) {
+      id = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
+    const roleLabel = ROLE_LABELS[role] || role;
+    const officeName = office === 'abuja' ? 'Abuja' : 'Lagos';
+    const title = `${roleLabel}, ${officeName}`;
+    const normalisedPhone = normalisePhoneNg(phone);
+
+    const newPerson = {
+      id,
+      name: name.trim(),
+      role,
+      title,
+      office,
+      officeId: office,
+      phone: normalisedPhone,
+      initials,
+      online: false,
+      status: 'active',
+      active: true,
+    };
+
+    setChatState((prev) => {
+      const nextStaff = [...prev.staff, newPerson];
+      const nextReadState = { ...prev.lastReadAtByUser };
+      const seedThreshold = minutesFromNow(-300);
+      nextReadState[newPerson.id] = {};
+      prev.channels.forEach((ch) => {
+        nextReadState[newPerson.id][ch.id] = seedThreshold;
+      });
+
+      return {
+        ...prev,
+        staff: nextStaff,
+        lastReadAtByUser: nextReadState,
+      };
+    });
+
+    return newPerson;
+  }, [staff]);
+
+  const updateStaff = useCallback((staffId, { role, office }) => {
+    const roleLabel = ROLE_LABELS[role] || role;
+    const officeName = office === 'abuja' ? 'Abuja' : 'Lagos';
+    const title = `${roleLabel}, ${officeName}`;
+
+    setChatState((prev) => {
+      const nextStaff = prev.staff.map((s) => {
+        if (s.id !== staffId) return s;
+        return {
+          ...s,
+          role,
+          office,
+          officeId: office,
+          title,
+        };
+      });
+
+      return {
+        ...prev,
+        staff: nextStaff,
+      };
+    });
+  }, []);
+
+  const setStaffActive = useCallback((staffId, active) => {
+    setChatState((prev) => {
+      const nextStaff = prev.staff.map((s) => {
+        if (s.id !== staffId) return s;
+        return {
+          ...s,
+          active: Boolean(active),
+          status: active ? 'active' : 'deactivated',
+        };
+      });
+
+      return {
+        ...prev,
+        staff: nextStaff,
+      };
+    });
+
+    // If current user is being deactivated, switch to the first active admin
+    if (!active && staffId === currentUserId) {
+      const firstActiveAdmin = staff.find(
+        (s) => s.id !== staffId && s.role === 'admin' && isStaffActive(s)
+      );
+      if (firstActiveAdmin) {
+        setCurrentUserId(firstActiveAdmin.id);
+        safeLocalStorage.set('session_user', firstActiveAdmin.id);
+      }
+    }
+  }, [currentUserId, staff]);
+
+  const createChannel = useCallback(({ name, kind, officeId, description, memberIds }) => {
+    const channelSlug = slugify(name);
+    const newChannel = {
+      id: channelSlug,
+      name: channelSlug,
+      kind: kind || 'public',
+      officeId: officeId ?? null,
+      description: description ? description.trim() : '',
+      members: kind === 'private'
+        ? Array.from(new Set([currentUserId, ...(memberIds || [])]))
+        : undefined,
+      createdById: currentUserId,
+      createdAt: new Date().toISOString(),
+      archived: false,
+    };
+
+    const creatorName = currentUser?.name || 'Staff';
+    const systemMsg = {
+      id: `msg-${Date.now()}`,
+      channelId: newChannel.id,
+      senderId: 'system',
+      type: 'system',
+      text: `${creatorName} created this channel`,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const nextChannels = [...prev.channels, newChannel];
+      const nextMessages = [...prev.messages, systemMsg];
+      const nextReadState = { ...prev.lastReadAtByUser };
+      const seedThreshold = minutesFromNow(-60);
+
+      prev.staff.forEach((member) => {
+        if (!nextReadState[member.id]) {
+          nextReadState[member.id] = {};
+        }
+        nextReadState[member.id][newChannel.id] = seedThreshold;
+      });
+
+      return {
+        ...prev,
+        channels: nextChannels,
+        messages: nextMessages,
+        lastReadAtByUser: nextReadState,
+      };
+    });
+
+    return newChannel;
+  }, [currentUserId, currentUser]);
+
+  const setChannelArchived = useCallback((channelId, archived) => {
+    setChatState((prev) => {
+      const nextChannels = prev.channels.map((ch) => {
+        if (ch.id !== channelId) return ch;
+        return {
+          ...ch,
+          archived: Boolean(archived),
+        };
+      });
+
+      return {
+        ...prev,
+        channels: nextChannels,
+      };
+    });
+  }, []);
+
+  const activeStaff = useMemo(() => {
+    return staff.filter((s) => isStaffActive(s));
+  }, [staff]);
+
   const value = useMemo(() => ({
     currentUserId,
     currentUser,
-    staff: STAFF,
-    staffById: STAFF_BY_ID,
-    channels: CHANNELS,
+    staff,
+    staffById,
+    activeStaff,
+    channels,
+    channelsById,
     messages,
     lastReadAtByUser,
     isOffline,
@@ -472,9 +675,19 @@ export function ChatProvider({ children }) {
     notifyPrefs,
     updateNotifyPrefs,
     toggleMuteChannel,
+    addStaff,
+    updateStaff,
+    setStaffActive,
+    createChannel,
+    setChannelArchived,
   }), [
     currentUserId,
     currentUser,
+    staff,
+    staffById,
+    activeStaff,
+    channels,
+    channelsById,
     messages,
     lastReadAtByUser,
     isOffline,
@@ -497,6 +710,11 @@ export function ChatProvider({ children }) {
     notifyPrefs,
     updateNotifyPrefs,
     toggleMuteChannel,
+    addStaff,
+    updateStaff,
+    setStaffActive,
+    createChannel,
+    setChannelArchived,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

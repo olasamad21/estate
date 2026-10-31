@@ -1,25 +1,28 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { STAFF, ROLE_LABELS } from '../../mock/staff.js';
+import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 
-const DEMO_STAFF_MEMBERS = ['adaeze', 'ibrahim', 'hauwa', 'chidi']
-  .map((id) => STAFF.find((s) => s.id === id))
-  .filter(Boolean);
-
 export function LoginView() {
-  const { login } = useChat();
+  const { staff, login } = useChat();
   const navigate = useNavigate();
 
   const [phone, setPhone] = useState('+234 803 000 0101');
   const [code, setCode] = useState('123456');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const demoStaffMembers = useMemo(() => {
+    const list = Array.isArray(staff) ? staff : [];
+    return ['adaeze', 'ibrahim', 'hauwa', 'chidi']
+      .map((id) => list.find((s) => s.id === id))
+      .filter(Boolean);
+  }, [staff]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -145,7 +148,7 @@ export function LoginView() {
             <span>Click any staff member to test:</span>
           </div>
           <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto no-scrollbar pr-1">
-            {DEMO_STAFF_MEMBERS.map((member) => (
+            {demoStaffMembers.map((member) => (
               <button
                 key={member.id}
                 type="button"

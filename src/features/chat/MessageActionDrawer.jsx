@@ -21,6 +21,7 @@ export function MessageActionDrawer({
   onClose,
   message,
   currentUser,
+  isArchived = false,
   onReact,
   onReplyInThread,
   onTogglePin,
@@ -59,35 +60,37 @@ export function MessageActionDrawer({
     <>
       <Drawer isOpen={isOpen && !isDeleteModalOpen} onClose={onClose} title="Message Actions">
         <div className="space-y-4">
-          {/* Quick Reaction Bar */}
-          <div className="space-y-1.5">
-            <span className="text-xs font-bold text-ink-muted uppercase tracking-wider block">
-              Quick Reactions
-            </span>
-            <div className="flex items-center justify-between gap-1 p-1.5 rounded-xl bg-surface-raised border border-line">
-              {PRIMARY_REACTIONS.map((emoji, idx) => {
-                const userReacted = message.reactions?.[emoji]?.includes(currentUser?.id);
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      onReact(message.id, emoji);
-                      onClose();
-                    }}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all cursor-pointer ${
-                      userReacted
-                        ? 'bg-brand/10 border border-brand/40 scale-105'
-                        : 'hover:bg-surface border border-transparent'
-                    }`}
-                    aria-label={`React with ${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                );
-              })}
+          {/* Quick Reaction Bar (hidden when channel is archived) */}
+          {!isArchived && (
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-ink-muted uppercase tracking-wider block">
+                Quick Reactions
+              </span>
+              <div className="flex items-center justify-between gap-1 p-1.5 rounded-xl bg-surface-raised border border-line">
+                {PRIMARY_REACTIONS.map((emoji, idx) => {
+                  const userReacted = message.reactions?.[emoji]?.includes(currentUser?.id);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        onReact(message.id, emoji);
+                        onClose();
+                      }}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all cursor-pointer ${
+                        userReacted
+                          ? 'bg-brand/10 border border-brand/40 scale-105'
+                          : 'hover:bg-surface border border-transparent'
+                      }`}
+                      aria-label={`React with ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action List */}
           <div className="space-y-1">
@@ -104,8 +107,8 @@ export function MessageActionDrawer({
               <span>Reply in thread</span>
             </button>
 
-            {/* Pin / Unpin */}
-            {allowedToPin && (
+            {/* Pin / Unpin (hidden when channel is archived) */}
+            {!isArchived && allowedToPin && (
               <button
                 type="button"
                 onClick={() => {
@@ -128,8 +131,8 @@ export function MessageActionDrawer({
               </button>
             )}
 
-            {/* Edit */}
-            {allowedToEdit && (
+            {/* Edit (hidden when channel is archived) */}
+            {!isArchived && allowedToEdit && (
               <button
                 type="button"
                 onClick={() => {

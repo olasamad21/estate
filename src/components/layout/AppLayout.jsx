@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Megaphone, Bell, X, WifiOff } from 'lucide-react';
+import { Megaphone, Bell, X, WifiOff, Settings } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { visibleChannelsFor, mentionsUser } from '../../utils/chat.js';
+import { visibleChannelsFor, mentionsUser, canUseAdmin } from '../../utils/chat.js';
 import { safeSessionStorage } from '../../utils/storage.js';
 import { RoleSwitcher } from './RoleSwitcher.jsx';
 import { NotificationDrawer } from './NotificationDrawer.jsx';
@@ -53,7 +53,7 @@ export function AppLayout({ children }) {
     const visible = visibleChannelsFor(currentUser, channels);
     const mutedSet = new Set(notifyPrefs?.mutedChannelIds || []);
     const visibleUnmutedChannelIds = new Set(
-      visible.filter((c) => !mutedSet.has(c.id)).map((c) => c.id)
+      visible.filter((c) => !c.archived && !mutedSet.has(c.id)).map((c) => c.id)
     );
 
     return messages.filter((m) => {
@@ -106,12 +106,23 @@ export function AppLayout({ children }) {
           </div>
         </Link>
 
-        {/* Right Action Cluster: View As Switcher + Feedback Button + Notification Bell */}
+        {/* Right Action Cluster: View As Switcher + Admin Button (Admin only) + Feedback Button + Notification Bell */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <RoleSwitcher
             onOpenFeedbackLog={() => setIsFeedbackLogOpen(true)}
             onOpenResetModal={() => setIsResetModalOpen(true)}
           />
+
+          {canUseAdmin(currentUser) && (
+            <Link
+              to="/admin"
+              aria-label="Admin settings"
+              title="Admin settings"
+              className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+            >
+              <Settings className="w-5 h-5" aria-hidden="true" />
+            </Link>
+          )}
 
           <button
             type="button"
