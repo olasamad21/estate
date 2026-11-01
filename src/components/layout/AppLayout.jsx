@@ -15,6 +15,9 @@ export function AppLayout({ children }) {
   const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs } = useChat();
   const location = useLocation();
   const isAdminRoute = location.pathname === '/admin';
+  const isChannelChatRoute = Boolean(
+    location.pathname.startsWith('/channels/') && location.pathname !== '/channels'
+  );
 
   // Drawer / Modal states
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -71,7 +74,11 @@ export function AppLayout({ children }) {
     <div className="h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden">
       {/* Prototype Banner (Slim, monospaced, dismissible for session, returns on reload) */}
       {!isBannerDismissed && (
-        <header className="bg-brand text-surface px-4 py-1 text-xs flex items-center justify-between font-mono shrink-0 border-b border-line-strong">
+        <header
+          className={`bg-brand text-surface px-4 py-1 text-xs items-center justify-between font-mono shrink-0 border-b border-line-strong ${
+            isChannelChatRoute ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-1.5 h-1.5 rounded-full bg-status-warning shrink-0" aria-hidden="true" />
             <span className="tracking-tight">Prototype · sample data only</span>
@@ -88,7 +95,11 @@ export function AppLayout({ children }) {
       )}
 
       {/* Top Bar (56px sticky, wordmark left, RoleSwitcher pill + Feedback + Notifications right) */}
-      <header className="h-14 bg-surface border-b border-line px-2.5 sm:px-4 flex items-center justify-between shrink-0 z-20 relative">
+      <header
+        className={`h-14 bg-surface border-b border-line px-2.5 sm:px-4 items-center justify-between shrink-0 z-20 relative ${
+          isChannelChatRoute ? 'hidden lg:flex' : 'flex'
+        }`}
+      >
         {/* Wordmark */}
         <Link
           to="/channels"

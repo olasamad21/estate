@@ -181,7 +181,7 @@ export function MessageComposer({
   }
 
   return (
-    <div className="relative border-t border-line bg-surface">
+    <div className="relative border-t border-line bg-surface flex-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Mention Menu */}
       {mentionQuery !== null && (
         <MentionMenu
@@ -221,10 +221,10 @@ export function MessageComposer({
       )}
 
       {/* Composer Input Area */}
-      <form onSubmit={handleSubmit} className="p-2 sm:p-3">
+      <form onSubmit={handleSubmit} className="p-1.5 sm:p-2.5">
         {isRecording ? (
           /* Voice Recording Mode Bar */
-          <div className="flex items-center justify-between gap-3 bg-status-danger-bg border border-status-danger-line rounded-xl px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3 bg-status-danger-bg border border-status-danger-line rounded-xl px-4 py-2.5 min-h-[48px]">
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-status-danger animate-pulse shrink-0" />
               <Mic className="w-4 h-4 text-status-danger shrink-0" aria-hidden="true" />
@@ -261,13 +261,13 @@ export function MessageComposer({
           </div>
         ) : (
           /* Regular Message Bar */
-          <div className="flex items-end gap-1.5 sm:gap-2 bg-surface-raised border border-line rounded-xl px-2.5 py-1.5 sm:py-2 focus-within:border-brand transition-colors">
+          <div className="flex items-end gap-1 bg-surface-raised border border-line rounded-xl px-1.5 py-1 focus-within:border-brand transition-colors min-h-[48px]">
             {/* Attachment Button */}
             <button
               type="button"
               onClick={onOpenAttachDrawer}
               aria-label="Attach file or photo"
-              className="p-1.5 text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+              className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Paperclip className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -277,7 +277,7 @@ export function MessageComposer({
               type="button"
               onClick={() => setIsEmojiOpen((prev) => !prev)}
               aria-label="Insert reaction emoji"
-              className="p-1.5 text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+              className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Smile className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -290,8 +290,8 @@ export function MessageComposer({
               value={text}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
-              placeholder={editingMessage ? 'Edit your message...' : `Message #${channel?.name || 'channel'}... (@ to mention)`}
-              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-[24px] max-h-[120px] leading-relaxed py-1"
+              placeholder={editingMessage ? 'Edit your message...' : `Message #${channel?.name || 'channel'}`}
+              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-[28px] max-h-[120px] leading-snug py-1.5"
             />
 
             {/* Mic Button */}
@@ -300,7 +300,7 @@ export function MessageComposer({
                 type="button"
                 onClick={handleStartRecording}
                 aria-label="Record voice note"
-                className="p-1.5 text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+                className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
               >
                 <Mic className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -313,7 +313,7 @@ export function MessageComposer({
               size="sm"
               disabled={!text.trim()}
               aria-label={editingMessage ? 'Save changes' : 'Send message'}
-              className="rounded-lg shrink-0 p-1.5 h-8 w-8 flex items-center justify-center cursor-pointer"
+              className="rounded-lg shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer p-0"
             >
               <Send className="w-4 h-4" aria-hidden="true" />
             </Button>

@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Bell, BellOff } from 'lucide-react';
+import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies } from '../../utils/chat.js';
-import { formatNaira, formatDayLabelNg } from '../../utils/formatters.js';
+import { formatDayLabelNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getAccessDeniedMessage } from '../../utils/messages.js';
-import { Badge } from '../../components/common/Badge.jsx';
 import { MessageRow } from './MessageRow.jsx';
 import { MessageComposer } from './MessageComposer.jsx';
 import { MessageActionDrawer } from './MessageActionDrawer.jsx';
@@ -17,6 +16,7 @@ import { PinnedMessagesDrawer } from './PinnedMessagesDrawer.jsx';
 import { AttachmentDrawer } from './AttachmentDrawer.jsx';
 import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
 import { FileDetailDrawer } from './FileDetailDrawer.jsx';
+import { ChannelInfoDrawer } from './ChannelInfoDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { ListingCard } from './ListingCard.jsx';
@@ -59,6 +59,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const [isFilesDrawerOpen, setIsFilesDrawerOpen] = useState(false);
   const [selectedFileForPreview, setSelectedFileForPreview] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [isInfoDrawerOpen, setIsInfoDrawerOpen] = useState(false);
 
   const scrollRef = useRef(null);
 
@@ -225,6 +226,27 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const displayName = channelDisplayName(channel, currentUserId, staff);
   const isMuted = Boolean(notifyPrefs?.mutedChannelIds?.includes(channel.id));
 
+  const officeObj = channel.officeId
+    ? COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId)
+    : null;
+  const officeName = officeObj ? officeObj.name : 'All offices';
+
+  const headerCaption = (() => {
+    if (!channel) return '';
+    if (channel.kind === 'listing') {
+      return `${channel.location || 'Listing'} · ${officeName}`;
+    }
+    if (channel.kind === 'dm') {
+      const otherId = channel.members?.find((id) => id !== currentUserId) || channel.members?.[0];
+      const other = staffById[otherId];
+      return other?.title || 'Direct conversation';
+    }
+    if (channel.kind === 'group') {
+      return `${channelMembers.length} members`;
+    }
+    return `${channelMembers.length} members${channel.officeId ? ` · ${officeName}` : ' · All offices'}`;
+  })();
+
   const renderChannelIcon = () => {
     if (channel.kind === 'announcement') {
       return <Megaphone className="w-5 h-5 text-brand shrink-0" aria-hidden="true" />;
@@ -256,86 +278,71 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
   return (
     <div className="h-full flex flex-col bg-surface overflow-hidden">
-      {/* Channel Header (56px) */}
-      <div className="h-14 px-3 sm:px-4 border-b border-line flex items-center justify-between shrink-0 bg-surface">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Back button on smaller screens */}
+      {/* Channel Header (56px compact row, flex-none) */}
+      <div className="h-14 px-2 sm:px-4 border-b border-line flex items-center justify-between flex-none bg-surface">
+        <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+          {/* Back button on smaller screens (44px target) */}
           <button
             type="button"
             onClick={() => navigate('/channels')}
             aria-label="Back to channels"
-            className="lg:hidden p-1.5 -ml-1 text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised cursor-pointer"
+            className="lg:hidden w-11 h-11 flex items-center justify-center -ml-1 text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised cursor-pointer shrink-0"
           >
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
 
           {renderChannelIcon()}
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-              <h2 className="text-sm font-bold text-ink overflow-hidden text-ellipsis whitespace-nowrap">
-                {channel.kind === 'public' || channel.kind === 'private' || channel.kind === 'announcement'
-                  ? `#${displayName}`
-                  : displayName}
-              </h2>
-              {channel.kind !== 'dm' && channel.kind !== 'group' && channel.kind !== 'private' && (
-                <Badge variant="neutral" className="text-xs px-2 py-0.5 shrink-0">
-                  {channel.officeId
-                    ? COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId)?.name || 'Office'
-                    : 'All offices'}
-                </Badge>
-              )}
-              {channel.kind === 'listing' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
-                  {channel.status}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
-              {channel.kind === 'listing'
-                ? `${channel.location} · ${formatNaira(channel.price)} · ${channel.description}`
-                : channel.description || (channel.kind === 'dm' ? 'Direct conversation' : '')}
+          <div
+            onClick={() => setIsInfoDrawerOpen(true)}
+            className="min-w-0 cursor-pointer flex-1 py-1"
+          >
+            <h2 className="text-sm font-semibold text-ink line-clamp-1 leading-snug break-words">
+              {channel.kind === 'public' || channel.kind === 'private' || channel.kind === 'announcement'
+                ? `#${displayName}`
+                : displayName}
+            </h2>
+            <p className="text-xs text-ink-muted line-clamp-1 leading-normal">
+              {headerCaption}
             </p>
           </div>
         </div>
 
-        {/* Header Actions */}
+        {/* Header Actions: Files button (44px) + Info button (44px) */}
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => setIsFilesDrawerOpen(true)}
-            aria-label="Shared files"
-            title="Shared files"
-            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer"
+            aria-label="Files"
+            title="Files"
+            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer shrink-0"
           >
             <FolderOpen className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
             type="button"
-            onClick={() => toggleMuteChannel(channel.id, displayName)}
-            aria-label={isMuted ? 'Unmute channel' : 'Mute channel'}
-            title={isMuted ? 'Unmute channel' : 'Mute channel'}
-            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer"
+            onClick={() => setIsInfoDrawerOpen(true)}
+            aria-label="Channel info"
+            title="Channel info"
+            className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised transition-colors cursor-pointer shrink-0"
           >
-            {isMuted ? (
-              <BellOff className="w-5 h-5 text-ink-muted" aria-hidden="true" />
-            ) : (
-              <Bell className="w-5 h-5" aria-hidden="true" />
-            )}
+            <Info className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Listing Card directly under header for listing channels */}
+      {/* Listing Card directly under header for listing channels (flex-none) */}
       {channel.kind === 'listing' && (
-        <ListingCard
-          channel={channel}
-          currentUser={currentUser}
-          onSetListingStatus={setListingStatus}
-        />
+        <div className="flex-none">
+          <ListingCard
+            channel={channel}
+            currentUser={currentUser}
+            onSetListingStatus={setListingStatus}
+          />
+        </div>
       )}
 
-      {/* Pinned Messages Banner */}
+      {/* Pinned Messages Banner (flex-none, 40px tall) */}
       {pinnedMessages.length > 0 && (
         <div
           onClick={() => {
@@ -345,16 +352,16 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
               setIsPinnedDrawerOpen(true);
             }
           }}
-          className="px-3 sm:px-4 py-1.5 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors shrink-0 select-none"
+          className="h-10 px-3 sm:px-4 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors flex-none select-none"
         >
           <div className="flex items-center gap-2 min-w-0 pr-2">
             <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
             {pinnedMessages.length === 1 ? (
-              <div className="min-w-0 flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+              <div className="min-w-0 flex items-center gap-1.5 line-clamp-1">
                 <span className="font-bold text-ink shrink-0">
                   {staffById[pinnedMessages[0].senderId]?.name || 'Staff'}:
                 </span>
-                <span className="text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
+                <span className="text-ink-muted line-clamp-1">
                   {pinnedMessages[0].type === 'voice'
                     ? 'Voice note'
                     : pinnedMessages[0].type === 'file'
@@ -363,7 +370,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                 </span>
               </div>
             ) : (
-              <span className="font-semibold text-ink">
+              <span className="font-semibold text-ink line-clamp-1">
                 {pinnedMessages.length} pinned messages
               </span>
             )}
@@ -375,8 +382,12 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         </div>
       )}
 
-      {/* Message Timeline */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
+      {/* Message Timeline (flex-1, min-h-0, overflow-y-auto, overscroll-contain) */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-4 overscroll-contain"
+        style={{ overscrollBehavior: 'contain' }}
+      >
         {groupedByDay.map((group, groupIdx) => (
           <div key={group.day || groupIdx} className="space-y-1">
             {/* Day Divider */}
@@ -420,7 +431,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
       {/* Typing Indicator */}
       {typingStatus && typingStatus.channelId === channel.id && (
-        <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface shrink-0">
+        <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface flex-none">
           <span className="font-semibold text-ink">{typingStatus.staffName}</span>
           <span>is typing...</span>
         </div>
@@ -428,22 +439,24 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
       {/* Message Composer or Archived Notice */}
       {channel?.archived ? (
-        <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium shrink-0">
+        <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium flex-none">
           This channel is archived
         </div>
       ) : (
-        <MessageComposer
-          key={editingMessage ? editingMessage.id : 'composer'}
-          channel={channel}
-          currentUser={currentUser}
-          channelMembers={channelMembers}
-          editingMessage={editingMessage}
-          onSendMessage={(text) => sendMessage(channel.id, text)}
-          onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
-          onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
-          onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
-          onCancelEdit={() => setEditingMessage(null)}
-        />
+        <div className="flex-none">
+          <MessageComposer
+            key={editingMessage ? editingMessage.id : 'composer'}
+            channel={channel}
+            currentUser={currentUser}
+            channelMembers={channelMembers}
+            editingMessage={editingMessage}
+            onSendMessage={(text) => sendMessage(channel.id, text)}
+            onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
+            onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
+            onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
+            onCancelEdit={() => setEditingMessage(null)}
+          />
+        </div>
       )}
 
       {/* Action Drawers */}
@@ -527,6 +540,19 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         fileItem={selectedFileForPreview}
         staffById={staffById}
         showInChat={false}
+      />
+
+      <ChannelInfoDrawer
+        isOpen={isInfoDrawerOpen}
+        onClose={() => setIsInfoDrawerOpen(false)}
+        channel={channel}
+        currentUser={currentUser}
+        currentUserId={currentUserId}
+        staff={staff}
+        staffById={staffById}
+        isMuted={isMuted}
+        onToggleMute={() => toggleMuteChannel(channel.id, displayName)}
+        displayName={displayName}
       />
     </div>
   );
