@@ -5,6 +5,7 @@ import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { visibleChannelsFor, mentionsUser, canUseAdmin, pendingRequests } from '../../utils/chat.js';
 import { safeSessionStorage } from '../../utils/storage.js';
+import { BrandMark } from '../common/BrandMark.jsx';
 import { RoleSwitcher } from './RoleSwitcher.jsx';
 import { AccountMenu } from './AccountMenu.jsx';
 import { NotificationDrawer } from './NotificationDrawer.jsx';
@@ -81,7 +82,7 @@ export function AppLayout({ children }) {
       {/* Prototype Banner (Slim, monospaced, dismissible for session, returns on reload) */}
       {!isBannerDismissed && (
         <header
-          className={`bg-brand text-surface px-4 py-1 text-xs items-center justify-between font-mono shrink-0 border-b border-line-strong ${
+          className={`bg-ink text-surface px-4 py-1 text-xs items-center justify-between font-mono shrink-0 border-b border-line-strong ${
             isChannelChatRoute ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -109,14 +110,12 @@ export function AppLayout({ children }) {
         {/* Wordmark */}
         <Link
           to="/channels"
-          aria-label="Crestview Properties Workspace"
-          className="flex items-center gap-2 text-ink font-bold text-base tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded shrink min-w-0 pr-1"
+          aria-label={`${COMPANY_CONFIG.name} Workspace`}
+          className="flex items-center gap-2 text-ink font-semibold text-base tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded shrink min-w-0 pr-1"
         >
-          <div className="w-7 h-7 rounded-lg bg-brand text-surface flex items-center justify-center font-mono text-xs font-black shadow-xs shrink-0">
-            CP
-          </div>
+          <BrandMark variant="tile" />
           <div className="flex flex-col min-w-0">
-            <span className="leading-tight text-xs sm:text-sm font-bold text-ink break-words line-clamp-2 sm:line-clamp-none sm:whitespace-nowrap">
+            <span className="leading-tight text-xs sm:text-sm font-semibold text-ink break-words line-clamp-2 sm:line-clamp-none sm:whitespace-nowrap">
               {COMPANY_CONFIG.name}
             </span>
             <span className="hidden sm:inline text-xs text-ink-muted font-normal mt-0.5">
@@ -153,7 +152,7 @@ export function AppLayout({ children }) {
               aria-current={isAdminRoute ? 'page' : undefined}
               className={`w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 relative ${
                 isAdminRoute
-                  ? 'bg-surface-raised text-brand'
+                  ? 'bg-brand-bg text-brand-ink'
                   : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
               }`}
             >

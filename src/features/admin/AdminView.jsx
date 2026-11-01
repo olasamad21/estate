@@ -663,7 +663,7 @@ export function AdminView() {
         <div className="max-w-[56rem] mx-auto space-y-3">
           <Link
             to="/channels"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             <span>Back to Channels</span>

@@ -376,7 +376,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
             )}
           </div>
 
-          <span className="text-xs text-brand font-medium shrink-0">
+          <span className="text-xs text-brand-ink font-semibold shrink-0">
             {pinnedMessages.length === 1 ? 'Jump' : 'View all'}
           </span>
         </div>

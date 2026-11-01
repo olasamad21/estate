@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { COMPANY_CONFIG } from '../../config/market.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
 import { getUnregisteredPhoneLoginErrorMessage } from '../../utils/messages.js';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
+import { BrandMark } from '../../components/common/BrandMark.jsx';
 import { RequestAccessForm } from './RequestAccessForm.jsx';
 import { TextSizeDrawer } from '../settings/TextSizeDrawer.jsx';
 
@@ -63,35 +63,36 @@ export function LoginView() {
   };
 
   return (
-    <div className="min-h-dvh bg-canvas flex flex-col justify-center items-center px-4 py-8 relative">
-      {/* Accessibility text size button (Aa) */}
-      <div className="absolute top-4 right-4 z-10">
-        <button
-          type="button"
-          onClick={() => setIsTextSizeOpen(true)}
-          aria-label="Text size"
-          title="Text size"
-          className="w-11 h-11 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center shadow-2xs hover:bg-surface-raised hover:border-brand cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        >
-          <span className="font-bold text-xs tracking-tight">Aa</span>
-        </button>
-      </div>
-
-      <div className="w-full max-w-md bg-surface border border-line rounded-2xl shadow-xs p-6 sm:p-8 space-y-6">
-        {/* Brand header */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-brand text-surface flex items-center justify-center font-mono text-base font-black mx-auto shadow-xs">
-            CP
-          </div>
-          <h1 className="text-xl font-bold text-ink tracking-tight">
-            {COMPANY_CONFIG.name}
-          </h1>
-          <p className="text-xs text-ink-muted">
-            Internal Staff Workspace · Lagos & Abuja
-          </p>
+    <div className="min-h-dvh bg-canvas flex flex-col justify-between items-center relative">
+      {/* Full-width header band in bg-brand-bright (144px on phones, 176px from 1024px up) */}
+      <div className="w-full h-36 lg:h-44 bg-brand-bright flex items-center justify-center px-4 relative shrink-0">
+        {/* Accessibility text size button (Aa) */}
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            type="button"
+            onClick={() => setIsTextSizeOpen(true)}
+            aria-label="Text size"
+            title="Text size"
+            className="w-11 h-11 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center shadow-xs hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+          >
+            <span className="font-bold text-xs tracking-tight">Aa</span>
+          </button>
         </div>
 
-        {mode === 'request' ? (
+        <BrandMark variant="wordmark" size="xl" className="text-surface" />
+      </div>
+
+      {/* Centered Form Card Area */}
+      <div className="flex-1 flex flex-col justify-center items-center px-4 py-6 sm:py-8 w-full">
+        <div className="w-full max-w-[28rem] bg-surface border border-line rounded-2xl shadow-xs p-6 sm:p-8 space-y-6">
+          {/* Card header: "Staff workspace" in ink-muted at 14px or larger */}
+          <div className="text-center space-y-1">
+            <h1 className="text-sm sm:text-base font-medium text-ink-muted">
+              Staff workspace
+            </h1>
+          </div>
+
+          {mode === 'request' ? (
           <RequestAccessForm
             key={requestFormKey}
             onBackToSignIn={() => {
@@ -240,6 +241,7 @@ export function LoginView() {
             </div>
           </>
         )}
+      </div>
       </div>
 
       {/* Text Size Drawer */}

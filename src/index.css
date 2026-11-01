@@ -11,7 +11,11 @@
   --color-ink: #111827;
   --color-ink-soft: #374151;
   --color-ink-muted: #5F6775;
-  --color-brand: #0F172A;
+  --color-brand: #0E7C8B;
+  --color-brand-bright: #1FA3B3;
+  --color-brand-bg: #E8F6F8;
+  --color-brand-line: #A9DCE3;
+  --color-brand-ink: #0B5C68;
 
   /* Semantic status tokens */
   --color-status-success: #065F46;
@@ -49,11 +53,11 @@
   --color-role-agent-line: #CBD5E1;
   --color-role-agent-ink: #1E293B;
 
-  /* Support staff: Teal */
-  --color-role-support-solid: #0F766E;
-  --color-role-support-bg: #F0FDFA;
-  --color-role-support-line: #99F6E4;
-  --color-role-support-ink: #115E59;
+  /* Support staff: Warm orange */
+  --color-role-support-solid: #9A3412;
+  --color-role-support-bg: #FFF7ED;
+  --color-role-support-line: #FED7AA;
+  --color-role-support-ink: #7C2D12;
 
   /* Intern: Neutral */
   --color-role-intern-solid: #5F6775;
@@ -67,10 +71,10 @@
   --color-role-buyer-line: #BFDBFE;
   --color-role-buyer-ink: #1E40AF;
 
-  --color-role-seller-solid: #0F766E;
-  --color-role-seller-bg: #F0FDFA;
-  --color-role-seller-line: #99F6E4;
-  --color-role-seller-ink: #115E59;
+  --color-role-seller-solid: #9A3412;
+  --color-role-seller-bg: #FFF7ED;
+  --color-role-seller-line: #FED7AA;
+  --color-role-seller-ink: #7C2D12;
 
   --color-role-lender-solid: #4338CA;
   --color-role-lender-bg: #EEF2FF;

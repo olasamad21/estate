@@ -1,4 +1,6 @@
-# Crestview Properties Staff Workspace
+# Da Ace Cribs Staff Workspace
+
+Sample data only. The people, offices and listings are invented.
 
 A Slack-style staff messaging web prototype for a Nigerian real estate company with offices in Lagos and Abuja. Front-end only, sample data, nothing is sent anywhere.
 

@@ -80,7 +80,7 @@ export function ChannelRow({
       onClick={onClick}
       className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors cursor-pointer border ${
         isActive
-          ? 'bg-surface-raised border-line-strong text-ink shadow-xs'
+          ? 'bg-brand-bg border-brand-line text-ink shadow-xs'
           : 'bg-surface border-transparent hover:bg-surface-raised/70 text-ink-soft hover:text-ink'
       }`}
     >

@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const VARIANTS = {
-  primary: 'bg-brand text-surface hover:opacity-90 active:scale-[0.98]',
+  primary: 'bg-brand text-surface hover:bg-brand-ink active:scale-[0.98]',
   secondary: 'bg-surface text-ink border border-line-strong hover:bg-surface-raised active:scale-[0.98]',
   ghost: 'bg-transparent text-ink hover:bg-surface-raised active:scale-[0.98]',
   danger: 'bg-status-danger-bg text-status-danger border border-status-danger-line hover:opacity-95 active:scale-[0.98]',

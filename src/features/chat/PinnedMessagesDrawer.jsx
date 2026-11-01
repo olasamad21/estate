@@ -55,7 +55,7 @@ export function PinnedMessagesDrawer({
                     : msg.text}
                 </p>
 
-                <div className="flex items-center gap-1 text-xs text-brand font-medium pt-1">
+                <div className="flex items-center gap-1 text-xs text-brand-ink font-semibold pt-1">
                   <span>Jump to message</span>
                   <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                 </div>

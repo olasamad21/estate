@@ -25,7 +25,7 @@ import {
   getListingStatusUpdatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-9';
+const CHAT_STATE_VERSION = 'chat-10';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],

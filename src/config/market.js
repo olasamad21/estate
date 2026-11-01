@@ -67,7 +67,7 @@ export default MARKET_CONFIG;
 
 // Placeholder company configuration values to be swapped
 export const COMPANY_CONFIG = {
-  name: 'Crestview Properties',
+  name: 'Da Ace Cribs',
   currency: 'NGN',
   currencySymbol: '\u20A6',
   locale: 'en-NG',
