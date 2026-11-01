@@ -115,3 +115,11 @@ export function getLeadSimulatedMessage(area = '') {
 export function getListingStatusUpdatedMessage(status = '') {
   return status ? `Listing status updated to ${status}` : 'Listing status updated';
 }
+
+export function getLoggedOutMessage() {
+  return 'You have been logged out';
+}
+
+export function getSwitchedPersonaMessage(name = '') {
+  return name ? `Switched to ${name}` : 'Switched persona';
+}

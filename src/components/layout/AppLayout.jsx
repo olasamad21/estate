@@ -6,6 +6,7 @@ import { COMPANY_CONFIG } from '../../config/market.js';
 import { visibleChannelsFor, mentionsUser, canUseAdmin } from '../../utils/chat.js';
 import { safeSessionStorage } from '../../utils/storage.js';
 import { RoleSwitcher } from './RoleSwitcher.jsx';
+import { AccountMenu } from './AccountMenu.jsx';
 import { NotificationDrawer } from './NotificationDrawer.jsx';
 import { FeedbackModal } from './FeedbackModal.jsx';
 import { FeedbackLogDrawer } from './FeedbackLogDrawer.jsx';
@@ -104,13 +105,13 @@ export function AppLayout({ children }) {
         <Link
           to="/channels"
           aria-label="Crestview Properties Workspace"
-          className="flex items-center gap-2 sm:gap-2.5 text-ink font-bold text-base tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded shrink min-w-0 pr-1"
+          className="flex items-center gap-2 text-ink font-bold text-base tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded shrink min-w-0 pr-1"
         >
           <div className="w-7 h-7 rounded-lg bg-brand text-surface flex items-center justify-center font-mono text-xs font-black shadow-xs shrink-0">
             CP
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="leading-tight text-xs sm:text-sm font-bold text-ink sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap">
+            <span className="leading-tight text-xs sm:text-sm font-bold text-ink break-words line-clamp-2 sm:line-clamp-none sm:whitespace-nowrap">
               {COMPANY_CONFIG.name}
             </span>
             <span className="hidden sm:inline text-xs text-ink-muted font-normal mt-0.5">
@@ -119,12 +120,22 @@ export function AppLayout({ children }) {
           </div>
         </Link>
 
-        {/* Right Action Cluster: View As Switcher + Admin Button (Admin only) + Feedback Button + Notification Bell */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Right Action Cluster: Demo tools -> Feedback -> Admin (admins only) -> Notifications bell -> Account avatar */}
+        <div className="flex items-center gap-1 shrink-0">
           <RoleSwitcher
             onOpenFeedbackLog={() => setIsFeedbackLogOpen(true)}
             onOpenResetModal={() => setIsResetModalOpen(true)}
           />
+
+          <button
+            type="button"
+            onClick={() => setIsFeedbackOpen(true)}
+            aria-label="Give feedback"
+            title="Give feedback"
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+          >
+            <MessageSquarePlus className="w-5 h-5" aria-hidden="true" />
+          </button>
 
           {canUseAdmin(currentUser) && (
             <Link
@@ -144,29 +155,21 @@ export function AppLayout({ children }) {
 
           <button
             type="button"
-            onClick={() => setIsFeedbackOpen(true)}
-            aria-label="Give feedback"
-            title="Give feedback"
-            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
-          >
-            <MessageSquarePlus className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
             onClick={() => setIsNotificationsOpen(true)}
             aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
             title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
           >
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+            <Bell className="w-5 h-5" aria-hidden="true" />
             {unreadCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 rounded-full bg-status-danger ring-2 ring-surface"
+                className="absolute top-2 right-2 w-2 h-2 rounded-full bg-status-danger ring-2 ring-surface"
                 aria-hidden="true"
               />
             )}
           </button>
+
+          <AccountMenu />
         </div>
       </header>
 

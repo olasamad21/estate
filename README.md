@@ -23,7 +23,7 @@ Use any 6-digit verification code to sign in with any seeded phone number.
 | Chidi Eze | Agent | Lagos | +234 803 000 0104 |
 | Ngozi Nwosu | Support staff | Lagos | +234 803 000 0108 |
 
-You can also switch personas at any point using the top-right View as pill.
+You can also switch personas at any point: open Demo tools, then View as. To reset the prototype, open Demo tools, then Reset demo. To log out, tap your avatar, then Log out.
 
 ## 5-Minute Click-Through Walkthrough
 
@@ -31,15 +31,15 @@ Follow these steps in order to tour the core workspace features:
 
 1. Log in as Adaeze Okonkwo (admin has visibility across both Lagos and Abuja branches).
 2. Open #announcements to review broadcast notices and tap Seen by to inspect read receipts.
-3. Switch to Hauwa Sani via the View as menu to inspect Abuja branch channels.
+3. Open Demo tools, then View as to switch to Hauwa Sani and inspect Abuja branch channels.
 4. Claim a lead in #abuja-leads by tapping "I've got this" on an unclaimed lead card.
 5. Open #maitama-duplex, review the pinned listing card, open Files & Media, and preview a photo.
 6. Open a PDF document attachment in chat or from the files tab to test the multi-page viewer.
 7. Send a message in #abuja-sales mentioning @Ibrahim and watch the scripted colleague reply appear.
 8. Add an emoji reaction to a message and post a reply inside a message thread.
-9. Switch to Chidi Eze (Lagos only) and compare his visible channel list with Hauwa's.
-10. Open the View as menu, toggle Simulate offline, and send a message to observe offline queueing.
-11. Switch back to Adaeze Okonkwo, open Admin from the top bar, and add a new staff member.
+9. Open Demo tools, then View as to switch to Chidi Eze (Lagos only) and compare his visible channel list with Hauwa's.
+10. Open Demo tools, toggle Simulate offline, and send a message to observe offline queueing.
+11. Open Demo tools, then View as to switch back to Adaeze Okonkwo, open Admin from the top bar, and add a new staff member. To finish, tap your avatar, then Log out.
 
 ## What is Simulated
 

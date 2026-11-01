@@ -1,0 +1,159 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Settings, LogOut } from 'lucide-react';
+import { useChat } from '../../context/ChatContext.jsx';
+import { useToast } from '../common/useToast.js';
+import { getLoggedOutMessage } from '../../utils/messages.js';
+import { canUseAdmin } from '../../utils/chat.js';
+import { ROLE_LABELS } from '../../mock/staff.js';
+import { COMPANY_CONFIG } from '../../config/market.js';
+import { formatPhoneNg } from '../../utils/formatters.js';
+import { Drawer } from '../common/Drawer.jsx';
+import { Avatar } from '../common/Avatar.jsx';
+import { Badge } from '../common/Badge.jsx';
+import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
+
+export function AccountMenu() {
+  const { currentUser, logout } = useChat();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+
+  const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'User';
+
+  const officeObj = currentUser?.officeId || currentUser?.office
+    ? COMPANY_CONFIG.offices.find(
+        (o) => o.id === (currentUser.officeId || currentUser.office)
+      )
+    : null;
+  const officeName = officeObj ? officeObj.name : 'Lagos';
+  const officeLine = currentUser?.role === 'admin' ? 'All offices' : `${officeName} office`;
+
+  const handleOpenNotificationSettings = () => {
+    setIsOpen(false);
+    setIsNotificationSettingsOpen(true);
+  };
+
+  const handleGoToAdmin = () => {
+    setIsOpen(false);
+    navigate('/admin');
+  };
+
+  const handleLogout = () => {
+    setIsOpen(false);
+    logout();
+    navigate('/login');
+    showToast(getLoggedOutMessage());
+  };
+
+  return (
+    <>
+      {/* 44px round avatar button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-label={`Account menu for ${firstName}`}
+        title={`Account menu for ${currentUser?.name || 'User'}`}
+        className="w-11 h-11 flex items-center justify-center rounded-full hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer shrink-0 transition-opacity"
+      >
+        <Avatar
+          role={currentUser?.role || 'agent'}
+          initials={currentUser?.initials}
+          name={currentUser?.name}
+          size="sm"
+        />
+      </button>
+
+      {/* Account Drawer */}
+      <Drawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Account"
+        panelClassName="h-full max-h-[92dvh] lg:max-h-[80dvh] lg:max-w-md lg:rounded-2xl lg:border lg:self-center"
+      >
+        <div className="space-y-6">
+          {/* Profile block */}
+          <div className="p-4 rounded-xl bg-surface-raised border border-line flex items-start gap-3.5">
+            <Avatar
+              role={currentUser?.role || 'agent'}
+              initials={currentUser?.initials}
+              name={currentUser?.name}
+              size="lg"
+            />
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base font-bold text-ink leading-tight">
+                  {currentUser?.name || 'Unknown Staff'}
+                </span>
+                {currentUser?.role && (
+                  <Badge role={currentUser.role} size="sm">
+                    {ROLE_LABELS[currentUser.role] || currentUser.role}
+                  </Badge>
+                )}
+              </div>
+              <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap">
+                <span>{officeLine}</span>
+                {currentUser?.phone && (
+                  <>
+                    <span>·</span>
+                    <span className="font-mono">{formatPhoneNg(currentUser.phone)}</span>
+                  </>
+                )}
+              </div>
+              {currentUser?.title && (
+                <div className="text-xs text-ink-soft pt-0.5">
+                  {currentUser.title}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action rows (44px, icon at left, hairline separated) */}
+          <div className="divide-y divide-line border border-line rounded-xl overflow-hidden bg-surface">
+            {/* Notification settings */}
+            <button
+              type="button"
+              onClick={handleOpenNotificationSettings}
+              className="w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <Bell className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Notification settings</span>
+            </button>
+
+            {/* Admin (Admins only) */}
+            {canUseAdmin(currentUser) && (
+              <button
+                type="button"
+                onClick={handleGoToAdmin}
+                className="w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+              >
+                <Settings className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+                <span>Admin</span>
+              </button>
+            )}
+
+            {/* Log out (neutral text, no red) */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <LogOut className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Log out</span>
+            </button>
+          </div>
+        </div>
+      </Drawer>
+
+      {/* Notification Settings Drawer */}
+      <NotificationSettingsDrawer
+        isOpen={isNotificationSettingsOpen}
+        onClose={() => setIsNotificationSettingsOpen(false)}
+      />
+    </>
+  );
+}
+
+export default AccountMenu;
