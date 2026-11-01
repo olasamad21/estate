@@ -4,7 +4,7 @@ import { formatNaira } from '../../utils/formatters.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
-import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
 import { ListingDetailsDrawer, StatusChangeDrawer } from './ListingDetailsDrawer.jsx';
 
 export function ListingCard({ channel, currentUser, onSetListingStatus }) {
@@ -49,7 +49,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {/* 40px Thumbnail */}
             <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised shadow-2xs">
-              <PhotoPlaceholder fileName={`${channel.id}.jpg`} className="w-full h-full object-cover" />
+              <ListingPhoto channel={channel} className="w-full h-full object-cover" />
             </div>
 
             {/* Metadata: Line 1 price + status, Line 2 area + office */}

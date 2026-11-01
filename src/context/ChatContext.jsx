@@ -7,9 +7,10 @@ import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LAGOS_LEADS_POOL, ABUJA_LEADS_POOL } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
+import { formatNaira } from '../utils/formatters.js';
 import {
   getBackOnlineMessage,
   getMessagePinnedMessage,
@@ -23,9 +24,10 @@ import {
   getLeadClaimedMessage,
   getLeadSimulatedMessage,
   getListingStatusUpdatedMessage,
+  getListingDetailsUpdatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-10';
+const CHAT_STATE_VERSION = 'chat-11';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -709,29 +711,66 @@ export function ChatProvider({ children }) {
     });
   }, []);
 
-  const createChannel = useCallback(({ name, kind, officeId, description, memberIds }) => {
-    const channelSlug = slugify(name);
-    const newChannel = {
-      id: channelSlug,
-      name: channelSlug,
-      kind: kind || 'public',
-      officeId: officeId ?? null,
-      description: description ? description.trim() : '',
-      members: kind === 'private'
-        ? Array.from(new Set([currentUserId, ...(memberIds || [])]))
-        : undefined,
-      createdById: currentUserId,
-      createdAt: new Date().toISOString(),
-      archived: false,
-    };
-
+  const createChannel = useCallback(({ name, kind, officeId, description, memberIds, title, area, priceNgn, status }) => {
+    const isListing = kind === 'listing';
     const creatorName = currentUser?.name || 'Staff';
+    const creatorFirstName = creatorName.split(' ')[0];
+
+    let newChannel;
+
+    if (isListing) {
+      const channelSlug = generateUniqueListingSlug(title || name, chatState.channels);
+      const formattedPrice = formatNaira(priceNgn);
+      const generatedDesc = `${area || ''} · ${formattedPrice}`.slice(0, 100);
+
+      newChannel = {
+        id: channelSlug,
+        name: channelSlug,
+        title: title ? title.trim() : (name || 'Listing'),
+        kind: 'listing',
+        officeId: officeId || (currentUser?.office || 'lagos'),
+        location: area || '',
+        area: area || '',
+        price: Number(priceNgn) || 0,
+        priceNgn: Number(priceNgn) || 0,
+        status: status || 'Available',
+        description: generatedDesc,
+        members: [],
+        createdById: currentUserId,
+        createdAt: new Date().toISOString(),
+        archived: false,
+        listing: {
+          officeId: officeId || (currentUser?.office || 'lagos'),
+          area: area || '',
+          priceNgn: Number(priceNgn) || 0,
+          status: status || 'Available',
+        },
+      };
+    } else {
+      const channelSlug = slugify(name);
+      newChannel = {
+        id: channelSlug,
+        name: channelSlug,
+        kind: kind || 'public',
+        officeId: officeId ?? null,
+        description: description ? description.trim() : '',
+        members: kind === 'private'
+          ? Array.from(new Set([currentUserId, ...(memberIds || [])]))
+          : undefined,
+        createdById: currentUserId,
+        createdAt: new Date().toISOString(),
+        archived: false,
+      };
+    }
+
     const systemMsg = {
       id: `msg-${Date.now()}`,
       channelId: newChannel.id,
       senderId: 'system',
       type: 'system',
-      text: `${creatorName} created this channel`,
+      text: isListing
+        ? `${creatorFirstName} created this listing room`
+        : `${creatorName} created this channel`,
       createdAt: new Date().toISOString(),
       status: 'sent',
     };
@@ -758,7 +797,102 @@ export function ChatProvider({ children }) {
     });
 
     return newChannel;
-  }, [currentUserId, currentUser]);
+  }, [currentUserId, currentUser, chatState.channels]);
+
+  const updateListingDetails = useCallback((channelId, { title, area, priceNgn, status }) => {
+    if (!channelId) return;
+
+    setChatState((prev) => {
+      const target = prev.channels.find((c) => c.id === channelId);
+      if (!target || target.kind !== 'listing') return prev;
+
+      if (!canManageListing(currentUser, target)) {
+        return prev;
+      }
+
+      const priceChanged = priceNgn !== undefined && Number(priceNgn) !== Number(target.price);
+      const statusChanged = status !== undefined && status !== target.status;
+      const detailsChanged =
+        (title !== undefined && title.trim() !== target.title) ||
+        (area !== undefined && area.trim() !== (target.area || target.location));
+
+      const newTitle = title !== undefined ? title.trim() : target.title;
+      const newArea = area !== undefined ? area.trim() : (target.area || target.location);
+      const newPrice = priceNgn !== undefined ? Number(priceNgn) : target.price;
+      const newStatus = status !== undefined ? status : target.status;
+      const newDesc = `${newArea} · ${formatNaira(newPrice)}`.slice(0, 100);
+
+      const sysMessages = [];
+      const now = new Date().toISOString();
+      let offset = 0;
+
+      if (priceChanged) {
+        sysMessages.push({
+          id: `msg-sys-${Date.now()}-${offset++}`,
+          channelId,
+          senderId: 'system',
+          type: 'system',
+          text: `Price updated to ${formatNaira(newPrice)}`,
+          createdAt: now,
+          status: 'sent',
+        });
+      }
+
+      if (statusChanged) {
+        sysMessages.push({
+          id: `msg-sys-${Date.now()}-${offset++}`,
+          channelId,
+          senderId: 'system',
+          type: 'system',
+          text: `Status changed to ${newStatus}`,
+          createdAt: now,
+          status: 'sent',
+        });
+      }
+
+      if (detailsChanged) {
+        sysMessages.push({
+          id: `msg-sys-${Date.now()}-${offset}`,
+          channelId,
+          senderId: 'system',
+          type: 'system',
+          text: 'Details updated',
+          createdAt: now,
+          status: 'sent',
+        });
+      }
+
+      const updatedChannels = prev.channels.map((ch) => {
+        if (ch.id === channelId) {
+          return {
+            ...ch,
+            title: newTitle,
+            area: newArea,
+            location: newArea,
+            price: newPrice,
+            priceNgn: newPrice,
+            status: newStatus,
+            description: newDesc,
+            listing: {
+              ...(ch.listing || {}),
+              area: newArea,
+              priceNgn: newPrice,
+              status: newStatus,
+            },
+          };
+        }
+        return ch;
+      });
+
+      return {
+        ...prev,
+        channels: updatedChannels,
+        messages: sysMessages.length > 0 ? [...prev.messages, ...sysMessages] : prev.messages,
+      };
+    });
+
+    showToast(getListingDetailsUpdatedMessage());
+  }, [currentUser, showToast]);
 
   const setChannelArchived = useCallback((channelId, archived) => {
     setChatState((prev) => {
@@ -929,6 +1063,7 @@ export function ChatProvider({ children }) {
     setChannelArchived,
     claimLead,
     setListingStatus,
+    updateListingDetails,
     simulateNewLead,
     accessRequests,
     submitAccessRequest,
@@ -971,6 +1106,7 @@ export function ChatProvider({ children }) {
     setChannelArchived,
     claimLead,
     setListingStatus,
+    updateListingDetails,
     simulateNewLead,
     accessRequests,
     submitAccessRequest,

@@ -45,6 +45,32 @@ export function isChannelNameValid(name = '') {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmed);
 }
 
+export function generateUniqueListingSlug(title = '', existingChannels = []) {
+  const baseSlug = slugify(title) || 'listing';
+  const existingSlugs = new Set(
+    (existingChannels || []).map((c) => (c.name || c.id || '').toLowerCase())
+  );
+  if (!existingSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+  let counter = 2;
+  while (existingSlugs.has(`${baseSlug}-${counter}`)) {
+    counter++;
+  }
+  return `${baseSlug}-${counter}`;
+}
+
+export function canManageListing(user, channel) {
+  if (!user || !channel || !isStaffActive(user)) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'manager') {
+    const userOffice = user.officeId || user.office || null;
+    const channelOffice = channel.officeId || null;
+    return userOffice === channelOffice || !channelOffice;
+  }
+  return false;
+}
+
 export function officeChoicesFor(user) {
   if (!user || !isStaffActive(user)) return [];
   if (user.role === 'admin') {

@@ -4,7 +4,8 @@ import { COMPANY_CONFIG } from '../../config/market.js';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
-import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
+import { EditListingDrawer } from './EditListingDrawer.jsx';
 
 const STATUS_OPTIONS = [
   {
@@ -102,6 +103,7 @@ export function ListingDetailsDrawer({
   onSetListingStatus,
 }) {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   if (!channel) return null;
 
@@ -131,8 +133,8 @@ export function ListingDetailsDrawer({
         <div className="space-y-4">
           {/* 4:3 Image */}
           <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-line bg-surface-raised">
-            <PhotoPlaceholder
-              fileName={`${channel.id}.jpg`}
+            <ListingPhoto
+              channel={channel}
               className="w-full h-full object-cover"
             />
           </div>
@@ -169,9 +171,16 @@ export function ListingDetailsDrawer({
             </div>
           )}
 
-          {/* Change Status Action - only for permitted roles */}
+          {/* Actions - only for permitted roles */}
           {canChangeStatus && (
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                Edit details
+              </button>
               <button
                 type="button"
                 onClick={() => setIsStatusOpen(true)}
@@ -192,6 +201,16 @@ export function ListingDetailsDrawer({
           onClose={() => setIsStatusOpen(false)}
           channel={channel}
           onSaveStatus={handleSaveStatus}
+        />
+      )}
+
+      {/* Nested Edit Listing Details Drawer */}
+      {canChangeStatus && isEditOpen && (
+        <EditListingDrawer
+          key={`edit-${channel.id}-${channel.title}-${channel.price}-${channel.status}`}
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          channel={channel}
         />
       )}
     </>

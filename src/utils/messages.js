@@ -136,6 +136,14 @@ export function getListingStatusUpdatedMessage(status = '') {
   return status ? `Listing status updated to ${status}` : 'Listing status updated';
 }
 
+export function getListingRoomCreatedMessage(title = '') {
+  return title ? `Listing room created for ${title}` : 'Listing room created';
+}
+
+export function getListingDetailsUpdatedMessage() {
+  return 'Listing details updated';
+}
+
 export function getLoggedOutMessage() {
   return 'You have been logged out';
 }

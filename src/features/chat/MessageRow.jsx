@@ -8,7 +8,7 @@ import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { VoiceBubble } from './VoiceBubble.jsx';
 import { AttachmentCard } from './AttachmentCard.jsx';
-import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
 
 function renderFormattedText(text, currentUser) {
   if (!text) return null;
@@ -270,8 +270,9 @@ export function MessageRow({
               <div className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised shadow-2xs">
-                    <PhotoPlaceholder
-                      fileName={`${message.listingChannelId}.jpg`}
+                    <ListingPhoto
+                      channel={listingChannel}
+                      channelId={message.listingChannelId}
                       className="w-full h-full object-cover"
                     />
                   </div>
