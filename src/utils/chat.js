@@ -173,6 +173,10 @@ export function canPost(user, channel) {
 export function channelDisplayName(channel, viewerId, staffList = []) {
   if (!channel) return '';
 
+  if (channel.kind === 'listing' && channel.title) {
+    return channel.title;
+  }
+
   if (channel.kind === 'dm' && Array.isArray(channel.members)) {
     const otherId = channel.members.find((id) => id !== viewerId) || channel.members[0];
     const staffMap = Array.isArray(staffList)
@@ -321,4 +325,70 @@ export function reactionList(reactions = {}, currentUserId = null) {
       staffIds,
       userReacted: currentUserId ? staffIds.includes(currentUserId) : false,
     }));
+}
+
+const LISTING_TITLES = {
+  'maitama-duplex': 'Maitama Duplex',
+  'lekki-terraces': 'Lekki Terraces',
+  'wuse-office-block': 'Wuse Office Block',
+  'vi-penthouse': 'Victoria Island Penthouse',
+};
+
+/**
+ * Returns a concise single-line preview string for any message type.
+ */
+export function messagePreview(message, staff) {
+  if (!message) return '';
+
+  if (message.deletedAt || message.type === 'deleted') {
+    return 'This message was deleted';
+  }
+
+  if (message.type === 'system') {
+    return message.text || '';
+  }
+
+  if (message.type === 'lead') {
+    if (message.claimedById) {
+      let claimerName = '';
+      if (staff) {
+        if (Array.isArray(staff)) {
+          const s = staff.find((member) => member.id === message.claimedById);
+          if (s?.name) claimerName = s.name;
+        } else if (typeof staff === 'object') {
+          const s = staff[message.claimedById];
+          if (s?.name) claimerName = s.name;
+        }
+      }
+      const firstName = claimerName ? claimerName.split(' ')[0] : (message.claimedById || 'Agent');
+      return `Lead taken by ${firstName}: ${message.clientName || 'Client'}`;
+    }
+    return `New lead: ${message.clientName || 'Client'}, ${message.area || 'Area'}`;
+  }
+
+  if (message.type === 'listing') {
+    const title =
+      message.title ||
+      LISTING_TITLES[message.listingChannelId] ||
+      (message.listingChannel ? message.listingChannel.title : '') ||
+      'Listing';
+    return `Listing: ${title}`;
+  }
+
+  if (message.fileKind === 'photo' || (message.type === 'file' && message.fileKind === 'photo')) {
+    return 'Photo';
+  }
+
+  if (message.type === 'file') {
+    return message.fileName || 'File';
+  }
+
+  if (message.type === 'voice') {
+    const totalSec = typeof message.durationSec === 'number' ? message.durationSec : 15;
+    const mins = Math.floor(totalSec / 60);
+    const secs = String(Math.floor(totalSec % 60)).padStart(2, '0');
+    return `Voice note, ${mins}:${secs}`;
+  }
+
+  return (message.text || '').replace(/[\r\n]+/g, ' ').trim();
 }

@@ -1,4 +1,5 @@
 import { minutesFromNow } from '../utils/formatters.js';
+import { STAFF_BY_ID } from './staff.js';
 
 const RAW_SEED_MESSAGES = [
   // ==========================================
@@ -339,7 +340,7 @@ const RAW_SEED_MESSAGES = [
     channelId: 'lagos-leads',
     senderId: 'system',
     type: 'system',
-    text: 'Chidi Okeke took this lead',
+    text: `${STAFF_BY_ID['chidi']?.name || 'Chidi Eze'} took this lead`,
     createdAt: minutesFromNow(-2500),
   },
   {
@@ -420,7 +421,7 @@ const RAW_SEED_MESSAGES = [
     channelId: 'abuja-leads',
     senderId: 'system',
     type: 'system',
-    text: 'Hauwa Sani took this lead',
+    text: `${STAFF_BY_ID['hauwa']?.name || 'Hauwa Sani'} took this lead`,
     createdAt: minutesFromNow(-2400),
   },
   {
@@ -1921,9 +1922,6 @@ export function retimeToOfficeHours(messages = []) {
   const channelDayGroups = {};
 
   messages.forEach((msg, idx) => {
-    // Lead messages are timed with minutesFromNow as usual, do not retime
-    if (msg.type === 'lead') return;
-
     const d = new Date(msg.createdAt);
     const y = d.getFullYear();
     const m = d.getMonth();
@@ -2002,7 +2000,7 @@ export function retimeToOfficeHours(messages = []) {
   });
 
   // Return rewritten messages with updated timestamps
-  return messages.map((msg) => {
+  const retimed = messages.map((msg) => {
     if (updatedTimestamps.has(msg.id)) {
       return {
         ...msg,
@@ -2011,6 +2009,29 @@ export function retimeToOfficeHours(messages = []) {
     }
     return msg;
   });
+
+  // Ensure claimed leads have claimedAt set from retimed claim system message
+  for (let i = 0; i < retimed.length; i++) {
+    const msg = retimed[i];
+    if (msg.type === 'lead' && msg.claimedById) {
+      const claimer = STAFF_BY_ID[msg.claimedById];
+      const claimerName = claimer ? claimer.name : msg.claimedById;
+
+      const sysMsg = retimed.find(
+        (m, idx) =>
+          idx > i &&
+          m.channelId === msg.channelId &&
+          m.type === 'system' &&
+          m.text.includes('took this lead')
+      );
+      if (sysMsg) {
+        sysMsg.text = `${claimerName} took this lead`;
+        msg.claimedAt = sysMsg.createdAt;
+      }
+    }
+  }
+
+  return retimed;
 }
 
 export const SEED_MESSAGES = retimeToOfficeHours(RAW_SEED_MESSAGES);

@@ -62,7 +62,7 @@ export function ThreadDrawer({
                 <span className="text-xs font-bold text-ink">
                   {parentSender?.name || 'Staff'}
                 </span>
-                {parentSender?.role && (
+                {(parentSender?.role === 'admin' || parentSender?.role === 'manager') && (
                   <Badge role={parentSender.role} size="sm">
                     {ROLE_LABELS[parentSender.role] || parentSender.role}
                   </Badge>
@@ -104,6 +104,11 @@ export function ThreadDrawer({
                       <span className="text-xs font-bold text-ink">
                         {replySender?.name || 'Staff'}
                       </span>
+                      {(replySender?.role === 'admin' || replySender?.role === 'manager') && (
+                        <Badge role={replySender.role} size="sm">
+                          {ROLE_LABELS[replySender.role] || replySender.role}
+                        </Badge>
+                      )}
                       <span className="text-xs text-ink-muted tabular-nums">
                         {formatTimeNg(reply.createdAt)}
                       </span>

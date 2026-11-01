@@ -42,14 +42,14 @@ export function ChannelInfoDrawer({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title={isDm ? displayName : `#${channel.name}`}
+      title={isDm || channel.kind === 'listing' ? displayName : `#${channel.name}`}
     >
       <div className="space-y-5">
         {/* Channel / DM Header Summary */}
         <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-bold text-ink">
-              {isDm ? displayName : `#${channel.name}`}
+              {isDm || channel.kind === 'listing' ? displayName : `#${channel.name}`}
             </h3>
             {!isDm && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">

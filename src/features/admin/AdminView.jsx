@@ -342,7 +342,7 @@ function ChannelRow({
                 isArchived ? 'line-through opacity-70' : ''
               }`}
             >
-              #{channel.name}
+              {channel.kind === 'listing' ? (channel.title || channel.name) : `#${channel.name}`}
             </span>
             {isAnnouncement && (
               <Badge variant="neutral">Announcement</Badge>
@@ -382,7 +382,7 @@ function ChannelRow({
           <button
             type="button"
             onClick={() => onOpenSheet(channel)}
-            aria-label={`Actions for #${channel.name}`}
+            aria-label={`Actions for ${channel.kind === 'listing' ? (channel.title || channel.name) : `#${channel.name}`}`}
             className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
           >
             <MoreHorizontal className="w-5 h-5" aria-hidden="true" />

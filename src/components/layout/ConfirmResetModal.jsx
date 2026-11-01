@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { Modal } from '../common/Modal.jsx';
@@ -6,6 +7,7 @@ import { useToast } from '../common/useToast.js';
 import { getDemoResetMessage } from '../../utils/messages.js';
 
 export function ConfirmResetModal({ isOpen, onClose }) {
+  const navigate = useNavigate();
   const { resetDemo: resetAppDemo } = useApp();
   const { resetDemo: resetChatDemo } = useChat();
   const { showToast } = useToast();
@@ -15,6 +17,7 @@ export function ConfirmResetModal({ isOpen, onClose }) {
     resetChatDemo();
     showToast(getDemoResetMessage(), 'info');
     onClose();
+    navigate('/login');
   };
 
   return (

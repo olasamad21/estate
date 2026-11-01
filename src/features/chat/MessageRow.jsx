@@ -154,7 +154,7 @@ export function MessageRow({
             <span className="text-xs font-bold text-ink">
               {sender?.name || 'Unknown Staff'}
             </span>
-            {sender?.role && (
+            {(sender?.role === 'admin' || sender?.role === 'manager') && (
               <Badge role={sender.role} size="sm">
                 {sender.role.charAt(0).toUpperCase() + sender.role.slice(1)}
               </Badge>

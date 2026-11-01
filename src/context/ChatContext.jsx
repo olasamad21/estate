@@ -20,7 +20,7 @@ import {
   getListingStatusUpdatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-7';
+const CHAT_STATE_VERSION = 'chat-8';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -75,13 +75,13 @@ export function ChatProvider({ children }) {
 
   // 2. Current logged-in staff id (persisted in safeLocalStorage as 'session_user')
   const [currentUserId, setCurrentUserId] = useState(() => {
-    const saved = safeLocalStorage.get('session_user', 'adaeze');
+    const saved = safeLocalStorage.get('session_user', null);
+    if (!saved) return null;
     const matched = staff.find((s) => s.id === saved);
     if (matched && isStaffActive(matched)) {
       return saved;
     }
-    const firstAdmin = staff.find((s) => s.role === 'admin' && isStaffActive(s));
-    return firstAdmin ? firstAdmin.id : 'adaeze';
+    return null;
   });
 
   // 3. Offline simulation mode
@@ -470,9 +470,9 @@ export function ChatProvider({ children }) {
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
     setChatState(fresh);
-    setCurrentUserId('adaeze');
+    setCurrentUserId(null);
     setIsOffline(false);
-    safeLocalStorage.set('session_user', 'adaeze');
+    safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
 
   const addStaff = useCallback(({ name, phone, role, office }) => {

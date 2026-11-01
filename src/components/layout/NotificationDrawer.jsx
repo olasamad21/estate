@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, ChevronRight, Megaphone, AtSign, Settings, Moon } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { visibleChannelsFor, mentionsUser } from '../../utils/chat.js';
+import { visibleChannelsFor, mentionsUser, messagePreview, channelDisplayName } from '../../utils/chat.js';
 import { formatTimeNg, formatTimeInput12h } from '../../utils/formatters.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { useToast } from '../common/useToast.js';
@@ -32,6 +32,7 @@ export function NotificationDrawer({ isOpen, onClose }) {
     currentUserId,
     lastReadAtByUser,
     markChannelRead,
+    staff,
     staffById,
     notifyPrefs,
   } = useChat();
@@ -64,10 +65,15 @@ export function NotificationDrawer({ isOpen, onClose }) {
         id: msg.id,
         channelId: msg.channelId,
         sender: staffById[msg.senderId],
-        text: msg.text,
+        text: messagePreview(msg, staff),
         createdAt: msg.createdAt,
         type: isMention ? 'mention' : 'announcement',
         isUnread,
+        channelLabel: ch
+          ? ch.kind === 'listing'
+            ? channelDisplayName(ch, currentUserId, staff)
+            : `#${channelDisplayName(ch, currentUserId, staff)}`
+          : `#${msg.channelId}`,
       });
     }
   });
@@ -192,7 +198,7 @@ export function NotificationDrawer({ isOpen, onClose }) {
                     </p>
 
                     <div className="mt-2 flex items-center gap-1 text-xs text-ink-muted group-hover:text-brand font-medium">
-                      <span>Open #{item.channelId}</span>
+                      <span>Open {item.channelLabel}</span>
                       <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     </div>
                   </div>

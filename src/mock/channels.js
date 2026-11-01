@@ -75,6 +75,7 @@ export const CHANNELS = [
   {
     id: 'maitama-duplex',
     name: 'maitama-duplex',
+    title: 'Maitama Duplex',
     kind: 'listing',
     officeId: 'abuja',
     location: 'Maitama',
@@ -85,6 +86,7 @@ export const CHANNELS = [
   {
     id: 'lekki-terraces',
     name: 'lekki-terraces',
+    title: 'Lekki Terraces',
     kind: 'listing',
     officeId: 'lagos',
     location: 'Lekki',
@@ -95,6 +97,7 @@ export const CHANNELS = [
   {
     id: 'wuse-office-block',
     name: 'wuse-office-block',
+    title: 'Wuse Office Block',
     kind: 'listing',
     officeId: 'abuja',
     location: 'Wuse 2',
@@ -105,6 +108,7 @@ export const CHANNELS = [
   {
     id: 'vi-penthouse',
     name: 'vi-penthouse',
+    title: 'Victoria Island Penthouse',
     kind: 'listing',
     officeId: 'lagos',
     location: 'Victoria Island',

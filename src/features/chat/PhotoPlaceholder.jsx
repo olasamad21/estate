@@ -121,8 +121,8 @@ export function PhotoPlaceholder({ fileName = '', className = 'w-full h-full' })
           <rect x="135" y="110" width="8" height="10" className="fill-surface" />
 
           {/* Terrace Floor */}
-          <rect y="235" width="400" height="65" className="fill-surface" />
-          <line x1="0" y1="235" x2="400" y2="235" className="stroke-line" strokeWidth="2" />
+          <rect y="235" width="400" height="65" className="fill-line" />
+          <line x1="0" y1="235" x2="400" y2="235" className="stroke-line-strong" strokeWidth="2" />
 
           {/* Terrace Railing */}
           <line x1="0" y1="210" x2="400" y2="210" className="stroke-ink-muted" strokeWidth="3" />

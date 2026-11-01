@@ -395,7 +395,7 @@ export function GlobalSearchDrawer({
                       >
                         <div className="flex items-center justify-between gap-2 text-xs text-ink-muted">
                           <span className="font-semibold text-brand">
-                            #{chName}
+                            {ch?.kind === 'listing' ? chName : `#${chName}`}
                             {ch?.officeId && ` · ${getOfficeName(ch.officeId)}`}
                           </span>
                           <span className="tabular-nums">
@@ -456,7 +456,7 @@ export function GlobalSearchDrawer({
                               <HighlightMatch text={file.fileName} query={query} />
                             </div>
                             <div className="text-xs text-ink-muted">
-                              #{chName}
+                              {ch?.kind === 'listing' ? chName : `#${chName}`}
                               {ch?.officeId && ` · ${getOfficeName(ch.officeId)}`} · {firstName} · {formatListTimeNg(file.createdAt)}
                             </div>
                           </div>

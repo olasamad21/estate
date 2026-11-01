@@ -1,6 +1,6 @@
 import { Hash, Lock, Megaphone, Building2, Users, BellOff } from 'lucide-react';
-import { channelDisplayName, lastMessage, unreadCount, mentionsUser } from '../../utils/chat.js';
-import { formatNaira, formatListTimeNg } from '../../utils/formatters.js';
+import { channelDisplayName, lastMessage, unreadCount, mentionsUser, messagePreview } from '../../utils/chat.js';
+import { formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 
 export function ChannelRow({
@@ -18,6 +18,21 @@ export function ChannelRow({
   const displayName = channelDisplayName(channel, currentUserId, staffList);
   const unread = unreadCount(channel.id, messages, lastReadAt, currentUserId);
   const latestMsg = lastMessage(channel.id, messages);
+
+  const previewText = (() => {
+    if (!latestMsg) {
+      return 'No messages yet';
+    }
+    const preview = messagePreview(latestMsg, staffList);
+    if (latestMsg.type === 'system' || latestMsg.senderId === 'system') {
+      return preview;
+    }
+    const sender = Array.isArray(staffList)
+      ? staffList.find((s) => s.id === latestMsg.senderId)
+      : staffList?.[latestMsg.senderId];
+    const firstName = sender?.name ? sender.name.split(' ')[0] : '';
+    return firstName ? `${firstName}: ${preview}` : preview;
+  })();
 
   // Check if any unread message mentions the current user
   const hasMention = unread > 0 && messages.some((m) => {
@@ -92,11 +107,7 @@ export function ChannelRow({
             )}
           </div>
           <p className="text-xs text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
-            {channel.kind === 'listing'
-              ? `${channel.location} · ${formatNaira(channel.price)}`
-              : latestMsg
-              ? latestMsg.text
-              : channel.description}
+            {previewText}
           </p>
         </div>
       </div>

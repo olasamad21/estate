@@ -63,7 +63,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
                 </Badge>
               </div>
               <div className="text-xs text-ink-muted line-clamp-1 mt-0.5">
-                {channel.location || 'Listing'} · {officeName}
+                {channel.title || channel.location || 'Listing'} · {officeName}
               </div>
             </div>
           </div>
