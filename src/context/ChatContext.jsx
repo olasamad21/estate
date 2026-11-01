@@ -7,7 +7,7 @@ import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LAGOS_LEADS_POOL, ABUJA_LEADS_POOL } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -25,6 +25,9 @@ import {
   getLeadSimulatedMessage,
   getListingStatusUpdatedMessage,
   getListingDetailsUpdatedMessage,
+  getLeadPostedMessage,
+  getListingSharedMessage,
+  getListingSharedInChannelMessage,
 } from '../utils/messages.js';
 
 const CHAT_STATE_VERSION = 'chat-11';
@@ -1022,6 +1025,95 @@ export function ChatProvider({ children }) {
     showToast(getLeadSimulatedMessage(sample.area));
   }, [currentUser, currentUserId, showToast]);
 
+  const postLead = useCallback(
+    (channelId, { clientName, enquiry, area, budgetNgn }) => {
+      if (!channelId || !currentUserId) return null;
+      const channel = channels.find((c) => c.id === channelId);
+      if (!channel || !canPostLead(currentUser, channel)) return null;
+
+      const nowIso = new Date().toISOString();
+      const newLeadMessage = {
+        id: `msg-lead-${Date.now()}`,
+        channelId,
+        senderId: currentUserId,
+        type: 'lead',
+        clientName: (clientName || '').trim(),
+        enquiry: (enquiry || '').trim(),
+        area: (area || '').trim(),
+        budgetNgn: Number(budgetNgn) || 0,
+        claimedById: null,
+        claimedAt: null,
+        createdAt: nowIso,
+        status: isOffline ? 'queued' : 'sent',
+      };
+
+      setChatState((prev) => {
+        const currentReadState = prev.lastReadAtByUser || {};
+        const userReadMap = { ...(currentReadState[currentUserId] || {}) };
+        userReadMap[channelId] = nowIso;
+
+        return {
+          ...prev,
+          messages: [...prev.messages, newLeadMessage],
+          lastReadAtByUser: {
+            ...currentReadState,
+            [currentUserId]: userReadMap,
+          },
+        };
+      });
+
+      showToast(getLeadPostedMessage());
+      return newLeadMessage;
+    },
+    [channels, currentUser, currentUserId, isOffline, showToast]
+  );
+
+  const shareListing = useCallback(
+    (channelId, listingChannelId, note = '', targetChannelDisplayName = '') => {
+      if (!channelId || !listingChannelId || !currentUserId) return null;
+      const targetChannel = channels.find((c) => c.id === channelId);
+      if (!targetChannel || !canShareListing(currentUser, targetChannel)) return null;
+
+      const allowed = shareableListings(currentUser, channels);
+      if (!allowed.some((l) => l.id === listingChannelId)) return null;
+
+      const nowIso = new Date().toISOString();
+      const newListingMessage = {
+        id: `msg-listing-${Date.now()}`,
+        channelId,
+        senderId: currentUserId,
+        type: 'listing',
+        listingChannelId,
+        note: (note || '').trim(),
+        createdAt: nowIso,
+        status: isOffline ? 'queued' : 'sent',
+      };
+
+      setChatState((prev) => {
+        const currentReadState = prev.lastReadAtByUser || {};
+        const userReadMap = { ...(currentReadState[currentUserId] || {}) };
+        userReadMap[channelId] = nowIso;
+
+        return {
+          ...prev,
+          messages: [...prev.messages, newListingMessage],
+          lastReadAtByUser: {
+            ...currentReadState,
+            [currentUserId]: userReadMap,
+          },
+        };
+      });
+
+      if (targetChannelDisplayName) {
+        showToast(getListingSharedInChannelMessage(targetChannelDisplayName));
+      } else {
+        showToast(getListingSharedMessage());
+      }
+      return newListingMessage;
+    },
+    [channels, currentUser, currentUserId, isOffline, showToast]
+  );
+
   const activeStaff = useMemo(() => {
     return staff.filter((s) => isStaffActive(s));
   }, [staff]);
@@ -1065,6 +1157,8 @@ export function ChatProvider({ children }) {
     setListingStatus,
     updateListingDetails,
     simulateNewLead,
+    postLead,
+    shareListing,
     accessRequests,
     submitAccessRequest,
     approveAccessRequest,
@@ -1108,6 +1202,8 @@ export function ChatProvider({ children }) {
     setListingStatus,
     updateListingDetails,
     simulateNewLead,
+    postLead,
+    shareListing,
     accessRequests,
     submitAccessRequest,
     approveAccessRequest,

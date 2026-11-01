@@ -14,6 +14,8 @@ import { ThreadDrawer } from './ThreadDrawer.jsx';
 import { SeenByDrawer } from './SeenByDrawer.jsx';
 import { PinnedMessagesDrawer } from './PinnedMessagesDrawer.jsx';
 import { AttachmentDrawer } from './AttachmentDrawer.jsx';
+import { PostLeadDrawer } from './PostLeadDrawer.jsx';
+import { ShareListingDrawer } from './ShareListingDrawer.jsx';
 import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
 import { FileDetailDrawer } from './FileDetailDrawer.jsx';
 import { ChannelInfoDrawer } from './ChannelInfoDrawer.jsx';
@@ -56,6 +58,8 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const [selectedAnnouncementMessage, setSelectedAnnouncementMessage] = useState(null);
   const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
   const [isAttachmentDrawerOpen, setIsAttachmentDrawerOpen] = useState(false);
+  const [isPostLeadOpen, setIsPostLeadOpen] = useState(false);
+  const [isShareListingOpen, setIsShareListingOpen] = useState(false);
   const [isFilesDrawerOpen, setIsFilesDrawerOpen] = useState(false);
   const [selectedFileForPreview, setSelectedFileForPreview] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
@@ -520,9 +524,24 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
       <AttachmentDrawer
         isOpen={isAttachmentDrawerOpen}
         onClose={() => setIsAttachmentDrawerOpen(false)}
+        channel={channel}
+        onOpenPostLead={() => setIsPostLeadOpen(true)}
+        onOpenShareListing={() => setIsShareListingOpen(true)}
         onAttachFile={(fileData) => {
           return sendFile(channel.id, fileData);
         }}
+      />
+
+      <PostLeadDrawer
+        isOpen={isPostLeadOpen}
+        onClose={() => setIsPostLeadOpen(false)}
+        channel={channel}
+      />
+
+      <ShareListingDrawer
+        isOpen={isShareListingOpen}
+        onClose={() => setIsShareListingOpen(false)}
+        channel={channel}
       />
 
       <ChannelFilesDrawer

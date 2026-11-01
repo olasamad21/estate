@@ -155,3 +155,16 @@ export function getTextSizeChangedMessage(label = 'Standard') {
 export function getSwitchedPersonaMessage(name = '') {
   return name ? `Switched to ${name}` : 'Switched persona';
 }
+
+export function getLeadPostedMessage() {
+  return 'Lead posted';
+}
+
+export function getListingSharedMessage() {
+  return 'Listing shared';
+}
+
+export function getListingSharedInChannelMessage(channelName = '') {
+  const clean = String(channelName || '').replace(/^#/, '').trim();
+  return clean ? `Listing shared in #${clean}` : 'Listing shared in channel';
+}

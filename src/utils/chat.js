@@ -194,6 +194,49 @@ export function canPost(user, channel) {
 }
 
 /**
+ * Determines whether a channel is a leads channel.
+ * True for a non-archived public channel whose name is exactly 'leads' or ends with '-leads'.
+ */
+export function isLeadsChannel(channel) {
+  if (!channel || channel.archived) return false;
+  const kind = channel.kind || 'public';
+  if (kind !== 'public') return false;
+  const name = (channel.name || '').toLowerCase();
+  return name === 'leads' || name.endsWith('-leads');
+}
+
+/**
+ * Determines whether a user can post a lead card to a channel.
+ * True when the user is an admin or manager, canPost(user, channel) is true, and isLeadsChannel(channel).
+ */
+export function canPostLead(user, channel) {
+  if (!user || !channel || !isStaffActive(user)) return false;
+  const isPermitted = user.role === 'admin' || user.role === 'manager';
+  return isPermitted && canPost(user, channel) && isLeadsChannel(channel);
+}
+
+/**
+ * Determines whether a user can share a listing card into a channel.
+ * True when the user is an admin or manager, canPost(user, channel) is true, and the channel is not archived.
+ */
+export function canShareListing(user, channel) {
+  if (!user || !channel || !isStaffActive(user) || channel.archived) return false;
+  const isPermitted = user.role === 'admin' || user.role === 'manager';
+  return isPermitted && canPost(user, channel);
+}
+
+/**
+ * Returns listing rooms the user can see (using the single visibility function),
+ * not archived, in channel-list order.
+ */
+export function shareableListings(user, channels = []) {
+  if (!user || !Array.isArray(channels)) return [];
+  return channels.filter(
+    (ch) => ch && ch.kind === 'listing' && !ch.archived && canUserSeeChannel(user, ch)
+  );
+}
+
+/**
  * Resolves the user-facing display name of a channel for a specific viewer.
  * Direct messages show the OTHER person's name.
  */

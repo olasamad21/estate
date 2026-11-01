@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { ListingPhoto } from './ListingPhoto.jsx';
 import { EditListingDrawer } from './EditListingDrawer.jsx';
+import { ShareToListingChannelDrawer } from './ShareToListingChannelDrawer.jsx';
 
 const STATUS_OPTIONS = [
   {
@@ -104,6 +105,7 @@ export function ListingDetailsDrawer({
 }) {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isShareInChannelOpen, setIsShareInChannelOpen] = useState(false);
 
   if (!channel) return null;
 
@@ -116,6 +118,8 @@ export function ListingDetailsDrawer({
       : channel.status === 'Under offer'
       ? 'warning'
       : 'neutral';
+
+  const canShareInChannel = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
   const canChangeStatus =
     currentUser?.role === 'admin' ||
@@ -171,27 +175,49 @@ export function ListingDetailsDrawer({
             </div>
           )}
 
-          {/* Actions - only for permitted roles */}
-          {canChangeStatus && (
+          {/* Actions */}
+          {(canShareInChannel || canChangeStatus) && (
             <div className="pt-2 space-y-2">
-              <button
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                Edit details
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsStatusOpen(true)}
-                className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                Change status
-              </button>
+              {canShareInChannel && (
+                <button
+                  type="button"
+                  onClick={() => setIsShareInChannelOpen(true)}
+                  className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  Share in a channel
+                </button>
+              )}
+              {canChangeStatus && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditOpen(true)}
+                    className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    Edit details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsStatusOpen(true)}
+                    className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    Change status
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
       </Drawer>
+
+      {/* Nested Share to Listing Channel Drawer */}
+      {canShareInChannel && isShareInChannelOpen && (
+        <ShareToListingChannelDrawer
+          isOpen={isShareInChannelOpen}
+          onClose={() => setIsShareInChannelOpen(false)}
+          channel={channel}
+        />
+      )}
 
       {/* Nested Status Change Drawer */}
       {canChangeStatus && isStatusOpen && (

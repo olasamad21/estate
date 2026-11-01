@@ -1,7 +1,9 @@
 import { useRef } from 'react';
-import { Image, FileText, Sparkles } from 'lucide-react';
+import { Image, FileText, Sparkles, UserPlus, Building2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { setPreviewUrl } from '../../utils/previewUrls.js';
+import { useChat } from '../../context/ChatContext.jsx';
+import { canPostLead, canShareListing } from '../../utils/chat.js';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -11,9 +13,20 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
+export function AttachmentDrawer({
+  isOpen,
+  onClose,
+  onAttachFile,
+  channel,
+  onOpenPostLead,
+  onOpenShareListing,
+}) {
+  const { currentUser } = useChat();
   const photoInputRef = useRef(null);
   const docInputRef = useRef(null);
+
+  const showPostLead = canPostLead(currentUser, channel);
+  const showShareListing = canShareListing(currentUser, channel);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
@@ -141,6 +154,46 @@ export function AttachmentDrawer({ isOpen, onClose, onAttachFile }) {
             <p className="text-xs text-ink-muted">Brochure_Maitama_Duplex.pdf (2.4 MB)</p>
           </div>
         </button>
+
+        {/* Option 5: Post a lead (Admin/Manager only on leads channels) */}
+        {showPostLead && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenPostLead?.();
+            }}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand group-hover:scale-105 transition-transform">
+              <UserPlus className="w-5 h-5 text-brand" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-ink">Post a lead</p>
+              <p className="text-xs text-ink-muted">Share client enquiry with budget and requirements</p>
+            </div>
+          </button>
+        )}
+
+        {/* Option 6: Share a listing (Admin/Manager only) */}
+        {showShareListing && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenShareListing?.();
+            }}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand group-hover:scale-105 transition-transform">
+              <Building2 className="w-5 h-5 text-brand" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-ink">Share a listing</p>
+              <p className="text-xs text-ink-muted">Share an existing property listing room into this channel</p>
+            </div>
+          </button>
+        )}
       </div>
     </Drawer>
   );
