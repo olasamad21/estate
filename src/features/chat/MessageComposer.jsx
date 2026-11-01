@@ -261,13 +261,13 @@ export function MessageComposer({
           </div>
         ) : (
           /* Regular Message Bar */
-          <div className="flex items-end gap-1 bg-surface-raised border border-line rounded-xl px-1.5 py-1 focus-within:border-brand transition-colors min-h-12">
+          <div className="flex items-end gap-1.5 bg-surface-raised border border-line rounded-xl px-2 py-1 focus-within:border-brand transition-colors min-h-12">
             {/* Attachment Button */}
             <button
               type="button"
               onClick={onOpenAttachDrawer}
               aria-label="Attach file or photo"
-              className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Paperclip className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -277,7 +277,7 @@ export function MessageComposer({
               type="button"
               onClick={() => setIsEmojiOpen((prev) => !prev)}
               aria-label="Insert reaction emoji"
-              className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Smile className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -291,7 +291,7 @@ export function MessageComposer({
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={editingMessage ? 'Edit your message...' : `Message #${channel?.name || 'channel'}`}
-              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-[1.75rem] max-h-[7.5rem] leading-snug py-1.5"
+              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-11 max-h-[7.5rem] leading-5 py-3 px-2 overflow-y-auto"
             />
 
             {/* Mic Button */}
@@ -300,7 +300,7 @@ export function MessageComposer({
                 type="button"
                 onClick={handleStartRecording}
                 aria-label="Record voice note"
-                className="w-11 h-11 flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
               >
                 <Mic className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -309,11 +309,15 @@ export function MessageComposer({
             {/* Submit Button */}
             <Button
               type="submit"
-              variant="primary"
+              variant={text.trim() ? 'primary' : 'ghost'}
               size="sm"
               disabled={!text.trim()}
               aria-label={editingMessage ? 'Save changes' : 'Send message'}
-              className="rounded-lg shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer p-0"
+              className={`rounded-lg shrink-0 w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center p-0 transition-colors ${
+                text.trim()
+                  ? 'cursor-pointer'
+                  : 'text-ink-muted/50 hover:bg-transparent active:scale-100 cursor-not-allowed'
+              }`}
             >
               <Send className="w-4 h-4" aria-hidden="true" />
             </Button>
