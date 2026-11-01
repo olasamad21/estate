@@ -1,6 +1,7 @@
 /**
  * Pure utility functions for staff messaging, channel visibility, and unread computation.
  */
+import { normalisePhoneNg } from './formatters.js';
 
 /**
  * Checks if a staff user is active (not deactivated).
@@ -391,4 +392,22 @@ export function messagePreview(message, staff) {
   }
 
   return (message.text || '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+/**
+ * Returns only pending access requests from a requests list.
+ */
+export function pendingRequests(requests = []) {
+  if (!Array.isArray(requests)) return [];
+  return requests.filter((r) => r && r.status === 'pending');
+}
+
+/**
+ * Finds an access request matching the given normalised phone number.
+ */
+export function requestForPhone(requests = [], phone = '') {
+  if (!Array.isArray(requests)) return null;
+  const normalised = normalisePhoneNg(phone);
+  if (!normalised) return null;
+  return requests.find((r) => r && normalisePhoneNg(r.phone) === normalised) ?? null;
 }

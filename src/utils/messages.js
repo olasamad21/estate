@@ -104,6 +104,26 @@ export function getDeactivatedLoginErrorMessage() {
   return 'This account has been deactivated. Please contact your admin.';
 }
 
+export function getPendingRequestLoginErrorMessage() {
+  return 'Your request is waiting for approval.';
+}
+
+export function getDeclinedRequestLoginErrorMessage() {
+  return 'Your request was not approved. Please contact your admin.';
+}
+
+export function getUnregisteredPhoneLoginErrorMessage() {
+  return 'This number is not registered. Request access below.';
+}
+
+export function getAccessRequestApprovedMessage(name = '') {
+  return name ? `${name} approved and added to workspace` : 'Access request approved';
+}
+
+export function getAccessRequestDeclinedMessage(name = '') {
+  return name ? `${name}'s request declined` : 'Access request declined';
+}
+
 export function getLeadClaimedMessage(clientName = '') {
   return clientName ? `Lead for ${clientName} claimed` : 'Lead claimed';
 }

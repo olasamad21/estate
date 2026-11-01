@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { safeLocalStorage, safeSessionStorage } from '../utils/storage.js';
-import { normalisePhoneNg, minutesFromNow } from '../utils/formatters.js';
+import { normalisePhoneNg, isValidPhoneNg, minutesFromNow } from '../utils/formatters.js';
 import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
+import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LAGOS_LEADS_POOL, ABUJA_LEADS_POOL } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone } from '../utils/chat.js';
+import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import {
   getBackOnlineMessage,
@@ -15,12 +17,15 @@ import {
   getChannelMutedMessage,
   getChannelUnmutedMessage,
   getDeactivatedLoginErrorMessage,
+  getPendingRequestLoginErrorMessage,
+  getDeclinedRequestLoginErrorMessage,
+  getUnregisteredPhoneLoginErrorMessage,
   getLeadClaimedMessage,
   getLeadSimulatedMessage,
   getListingStatusUpdatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-8';
+const CHAT_STATE_VERSION = 'chat-9';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -46,7 +51,7 @@ const ChatContext = createContext(null);
 export function ChatProvider({ children }) {
   const { showToast } = useToast();
 
-  // 1. Chat state (messages, staff, channels & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
+  // 1. Chat state (messages, staff, channels, accessRequests & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
   const [chatState, setChatState] = useState(() => {
     const stored = safeSessionStorage.get('chat_state', null);
     if (
@@ -55,6 +60,7 @@ export function ChatProvider({ children }) {
       Array.isArray(stored.messages) &&
       Array.isArray(stored.staff) &&
       Array.isArray(stored.channels) &&
+      Array.isArray(stored.accessRequests) &&
       stored.lastReadAtByUser
     ) {
       return stored;
@@ -64,6 +70,7 @@ export function ChatProvider({ children }) {
       messages: SEED_MESSAGES,
       staff: STAFF,
       channels: CHANNELS,
+      accessRequests: SEED_ACCESS_REQUESTS,
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
   });
@@ -71,6 +78,7 @@ export function ChatProvider({ children }) {
   const staff = chatState.staff;
   const channels = chatState.channels;
   const messages = chatState.messages;
+  const accessRequests = chatState.accessRequests;
   const lastReadAtByUser = chatState.lastReadAtByUser;
 
   // 2. Current logged-in staff id (persisted in safeLocalStorage as 'session_user')
@@ -171,16 +179,25 @@ export function ChatProvider({ children }) {
       return { success: false, error: 'Please enter a valid Nigerian phone number.' };
     }
     const matched = staff.find((s) => normalisePhoneNg(s.phone) === normalised);
-    if (!matched) {
-      return { success: false, error: "This number hasn't been added by your admin." };
+    if (matched) {
+      if (!isStaffActive(matched)) {
+        return { success: false, error: getDeactivatedLoginErrorMessage() };
+      }
+      setCurrentUserId(matched.id);
+      safeLocalStorage.set('session_user', matched.id);
+      return { success: true, user: matched };
     }
-    if (!isStaffActive(matched)) {
-      return { success: false, error: getDeactivatedLoginErrorMessage() };
+    const req = requestForPhone(accessRequests, normalised);
+    if (req) {
+      if (req.status === 'pending') {
+        return { success: false, error: getPendingRequestLoginErrorMessage() };
+      }
+      if (req.status === 'declined') {
+        return { success: false, error: getDeclinedRequestLoginErrorMessage() };
+      }
     }
-    setCurrentUserId(matched.id);
-    safeLocalStorage.set('session_user', matched.id);
-    return { success: true, user: matched };
-  }, [staff]);
+    return { success: false, error: getUnregisteredPhoneLoginErrorMessage() };
+  }, [staff, accessRequests]);
 
   const logout = useCallback(() => {
     clearTypingTimer();
@@ -467,6 +484,7 @@ export function ChatProvider({ children }) {
       messages: SEED_MESSAGES,
       staff: STAFF,
       channels: CHANNELS,
+      accessRequests: SEED_ACCESS_REQUESTS,
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
     setChatState(fresh);
@@ -576,6 +594,120 @@ export function ChatProvider({ children }) {
       }
     }
   }, [currentUserId, staff]);
+
+  const submitAccessRequest = useCallback(({ name, phone, officeId, requestedRole }) => {
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return { ok: false, field: 'name', message: 'Full name is required (at least 2 characters).' };
+    }
+
+    const normalised = normalisePhoneNg(phone);
+    if (!normalised || !isValidPhoneNg(phone)) {
+      return { ok: false, field: 'phone', message: 'Please enter a valid Nigerian phone number (+234 80X XXX XXXX).' };
+    }
+
+    // Phone must not belong to an existing staff member (any status)
+    const staffMatch = staff.some((s) => normalisePhoneNg(s.phone) === normalised);
+    if (staffMatch) {
+      return { ok: false, field: 'phone', message: 'This number already has an account or a pending request.' };
+    }
+
+    // Phone must not belong to a pending request
+    const existingReq = requestForPhone(accessRequests, normalised);
+    if (existingReq) {
+      if (existingReq.status === 'pending' || existingReq.status === 'approved') {
+        return { ok: false, field: 'phone', message: 'This number already has an account or a pending request.' };
+      }
+      // If status is 'declined', we will replace that request!
+    }
+
+    const allowedRoles = ['agent', 'support', 'intern'];
+    if (!allowedRoles.includes(requestedRole)) {
+      return { ok: false, field: 'requestedRole', message: 'Role must be Agent, Support staff, or Intern.' };
+    }
+
+    const allowedOfficeIds = (COMPANY_CONFIG?.offices || []).map((o) => o.id);
+    if (!allowedOfficeIds.includes(officeId)) {
+      return { ok: false, field: 'officeId', message: 'Please select a valid office.' };
+    }
+
+    const baseSlug = slugify(name);
+    let id = baseSlug || 'applicant';
+    let counter = 2;
+    const otherReqs = accessRequests.filter((r) => !existingReq || r.id !== existingReq.id);
+    while (otherReqs.some((r) => r.id === id)) {
+      id = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    const newRequest = {
+      id,
+      name: name.trim(),
+      phone: normalised,
+      officeId,
+      requestedRole,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      decidedAt: null,
+    };
+
+    setChatState((prev) => {
+      const prevReqs = Array.isArray(prev.accessRequests) ? prev.accessRequests : [];
+      let nextReqs;
+      if (existingReq && existingReq.status === 'declined') {
+        nextReqs = prevReqs.map((r) => (r.id === existingReq.id ? newRequest : r));
+      } else {
+        nextReqs = [newRequest, ...prevReqs];
+      }
+      return {
+        ...prev,
+        accessRequests: nextReqs,
+      };
+    });
+
+    return { ok: true };
+  }, [staff, accessRequests]);
+
+  const approveAccessRequest = useCallback((id, { role, officeId } = {}) => {
+    const targetReq = accessRequests.find((r) => r.id === id);
+    if (!targetReq) return null;
+    const chosenRole = role || targetReq.requestedRole;
+    const chosenOffice = officeId || targetReq.officeId;
+
+    const newPerson = addStaff({
+      name: targetReq.name,
+      phone: targetReq.phone,
+      role: chosenRole,
+      office: chosenOffice,
+    });
+
+    const decidedAt = new Date().toISOString();
+    setChatState((prev) => {
+      const prevReqs = Array.isArray(prev.accessRequests) ? prev.accessRequests : [];
+      return {
+        ...prev,
+        accessRequests: prevReqs.map((r) =>
+          r.id === id
+            ? { ...r, status: 'approved', decidedAt }
+            : r
+        ),
+      };
+    });
+
+    return newPerson;
+  }, [accessRequests, addStaff]);
+
+  const declineAccessRequest = useCallback((id) => {
+    const decidedAt = new Date().toISOString();
+    setChatState((prev) => {
+      const prevReqs = Array.isArray(prev.accessRequests) ? prev.accessRequests : [];
+      return {
+        ...prev,
+        accessRequests: prevReqs.map((r) =>
+          r.id === id ? { ...r, status: 'declined', decidedAt } : r
+        ),
+      };
+    });
+  }, []);
 
   const createChannel = useCallback(({ name, kind, officeId, description, memberIds }) => {
     const channelSlug = slugify(name);
@@ -798,6 +930,10 @@ export function ChatProvider({ children }) {
     claimLead,
     setListingStatus,
     simulateNewLead,
+    accessRequests,
+    submitAccessRequest,
+    approveAccessRequest,
+    declineAccessRequest,
   }), [
     currentUserId,
     currentUser,
@@ -836,6 +972,10 @@ export function ChatProvider({ children }) {
     claimLead,
     setListingStatus,
     simulateNewLead,
+    accessRequests,
+    submitAccessRequest,
+    approveAccessRequest,
+    declineAccessRequest,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Settings, LogOut } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
-import { canUseAdmin } from '../../utils/chat.js';
+import { canUseAdmin, pendingRequests } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
@@ -14,12 +14,16 @@ import { Badge } from '../common/Badge.jsx';
 import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
 
 export function AccountMenu() {
-  const { currentUser, logout } = useChat();
+  const { currentUser, logout, accessRequests } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+
+  const pendingRequestsCount = useMemo(() => {
+    return canUseAdmin(currentUser) ? pendingRequests(accessRequests).length : 0;
+  }, [currentUser, accessRequests]);
 
   const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'User';
 
@@ -127,10 +131,17 @@ export function AccountMenu() {
               <button
                 type="button"
                 onClick={handleGoToAdmin}
-                className="w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+                className="w-full min-h-[44px] px-3.5 py-3 flex items-center justify-between text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
               >
-                <Settings className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
-                <span>Admin</span>
+                <div className="flex items-center gap-3">
+                  <Settings className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+                  <span>Admin</span>
+                </div>
+                {pendingRequestsCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-status-danger-bg border border-status-danger-line text-status-danger tabular-nums">
+                    {pendingRequestsCount}
+                  </span>
+                )}
               </button>
             )}
 

@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { MessageSquarePlus, Bell, X, WifiOff, Settings } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { visibleChannelsFor, mentionsUser, canUseAdmin } from '../../utils/chat.js';
+import { visibleChannelsFor, mentionsUser, canUseAdmin, pendingRequests } from '../../utils/chat.js';
 import { safeSessionStorage } from '../../utils/storage.js';
 import { RoleSwitcher } from './RoleSwitcher.jsx';
 import { AccountMenu } from './AccountMenu.jsx';
@@ -13,12 +13,16 @@ import { FeedbackLogDrawer } from './FeedbackLogDrawer.jsx';
 import { ConfirmResetModal } from './ConfirmResetModal.jsx';
 
 export function AppLayout({ children }) {
-  const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs } = useChat();
+  const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs, accessRequests } = useChat();
   const location = useLocation();
   const isAdminRoute = location.pathname === '/admin';
   const isChannelChatRoute = Boolean(
     location.pathname.startsWith('/channels/') && location.pathname !== '/channels'
   );
+
+  const pendingRequestsCount = useMemo(() => {
+    return canUseAdmin(currentUser) ? pendingRequests(accessRequests).length : 0;
+  }, [currentUser, accessRequests]);
 
   // Drawer / Modal states
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -140,16 +144,22 @@ export function AppLayout({ children }) {
           {canUseAdmin(currentUser) && (
             <Link
               to="/admin"
-              aria-label="Admin settings"
+              aria-label={pendingRequestsCount > 0 ? `Admin settings (${pendingRequestsCount} pending requests)` : 'Admin settings'}
               title="Admin settings"
               aria-current={isAdminRoute ? 'page' : undefined}
-              className={`w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 ${
+              className={`w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 relative ${
                 isAdminRoute
                   ? 'bg-surface-raised text-brand'
                   : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
               }`}
             >
               <Settings className="w-5 h-5" aria-hidden="true" />
+              {pendingRequestsCount > 0 && (
+                <span
+                  className="absolute top-2 right-2 w-2 h-2 rounded-full bg-status-danger ring-2 ring-surface"
+                  aria-hidden="true"
+                />
+              )}
             </Link>
           )}
 

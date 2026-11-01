@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, ChevronRight, Megaphone, AtSign, Settings, Moon } from 'lucide-react';
+import { Bell, CheckCheck, ChevronRight, Megaphone, AtSign, Settings, Moon, UserPlus } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { visibleChannelsFor, mentionsUser, messagePreview, channelDisplayName } from '../../utils/chat.js';
+import { visibleChannelsFor, mentionsUser, messagePreview, channelDisplayName, canUseAdmin, pendingRequests } from '../../utils/chat.js';
 import { formatTimeNg, formatTimeInput12h } from '../../utils/formatters.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { useToast } from '../common/useToast.js';
@@ -35,6 +35,7 @@ export function NotificationDrawer({ isOpen, onClose }) {
     staff,
     staffById,
     notifyPrefs,
+    accessRequests,
   } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -42,6 +43,14 @@ export function NotificationDrawer({ isOpen, onClose }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const quietActive = checkQuietHours(notifyPrefs?.quietStart, notifyPrefs?.quietEnd);
+
+  const pendingRequestsList = canUseAdmin(currentUser) ? pendingRequests(accessRequests) : [];
+  const pendingRequestsCount = pendingRequestsList.length;
+
+  const handlePendingRequestsClick = () => {
+    onClose();
+    navigate('/admin?tab=requests', { state: { tab: 'requests' } });
+  };
 
   const userReadMap = lastReadAtByUser?.[currentUserId] || {};
   const visible = visibleChannelsFor(currentUser, channels);
@@ -138,6 +147,27 @@ export function NotificationDrawer({ isOpen, onClose }) {
             </button>
           </div>
         </div>
+
+        {/* Admin Attention Cue: Waiting for approval banner */}
+        {canUseAdmin(currentUser) && pendingRequestsCount > 0 && (
+          <button
+            type="button"
+            onClick={handlePendingRequestsClick}
+            className="w-full min-h-[44px] p-3 rounded-xl border border-line bg-surface-raised hover:bg-surface hover:border-brand transition-colors flex items-center justify-between cursor-pointer text-left group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-status-danger-bg border border-status-danger-line text-status-danger flex items-center justify-center shrink-0">
+                <UserPlus className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <span className="text-xs font-semibold text-ink group-hover:text-brand">
+                {pendingRequestsCount === 1
+                  ? '1 person is waiting for approval'
+                  : `${pendingRequestsCount} people are waiting for approval`}
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-ink-muted group-hover:text-brand shrink-0" aria-hidden="true" />
+          </button>
+        )}
 
         {/* Notifications List */}
         {notifications.length === 0 ? (

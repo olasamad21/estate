@@ -40,10 +40,12 @@ Follow these steps in order to tour the core workspace features:
 9. Open Demo tools, then View as to switch to Chidi Eze (Lagos only) and compare his visible channel list with Hauwa's.
 10. Open Demo tools, toggle Simulate offline, and send a message to observe offline queueing.
 11. Open Demo tools, then View as to switch back to Adaeze Okonkwo, open Admin from the top bar, and add a new staff member. To finish, tap your avatar, then Log out.
+12. On the login screen choose Request access, submit a request, log in as Adaeze, open Admin, then Requests, and approve it.
 
 ## What is Simulated
 
 - Login code verification (any 6-digit OTP accepted).
+- Phone verification (a real app would send a code by SMS).
 - Colleague replies (scripted responses triggered by @mentions).
 - File and photo uploads (local in-memory cards with SVG placeholders).
 - Voice notes (in-browser mock recorder and playback timer).

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft,
   Search,
@@ -26,11 +26,14 @@ import { COMPANY_CONFIG } from '../../config/market.js';
 import {
   canUseAdmin,
   isStaffActive,
+  pendingRequests,
 } from '../../utils/chat.js';
 import {
   formatPhoneNg,
   isValidPhoneNg,
   normalisePhoneNg,
+  formatDateNg,
+  formatListTimeNg,
 } from '../../utils/formatters.js';
 import {
   getAdminAccessDeniedMessage,
@@ -40,6 +43,8 @@ import {
   getStaffReactivatedMessage,
   getChannelArchivedMessage,
   getChannelUnarchivedMessage,
+  getAccessRequestApprovedMessage,
+  getAccessRequestDeclinedMessage,
 } from '../../utils/messages.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 
@@ -428,9 +433,14 @@ export function AdminView() {
     updateStaff,
     setStaffActive,
     setChannelArchived,
+    accessRequests,
+    approveAccessRequest,
+    declineAccessRequest,
   } = useChat();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
   // Route protection: Admins only
@@ -441,7 +451,39 @@ export function AdminView() {
     }
   }, [currentUser, navigate, showToast]);
 
-  const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'channels'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (location.state?.tab === 'requests' || searchParams.get('tab') === 'requests') {
+      return 'requests';
+    }
+    return 'staff';
+  });
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'requests') {
+      const next = new URLSearchParams(searchParams);
+      next.delete('tab');
+      setSearchParams(next, { replace: true });
+    }
+    if (location.state?.tab) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, searchParams, setSearchParams]);
+
+  // Access requests state
+  const pending = useMemo(() => {
+    return pendingRequests(accessRequests);
+  }, [accessRequests]);
+
+  const decidedRequests = useMemo(() => {
+    const list = Array.isArray(accessRequests) ? accessRequests : [];
+    return list.filter((r) => r && r.status !== 'pending');
+  }, [accessRequests]);
+
+  const [reviewingRequest, setReviewingRequest] = useState(null);
+  const [reviewRole, setReviewRole] = useState('agent');
+  const [reviewOffice, setReviewOffice] = useState('lagos');
+  const [declineModalRequest, setDeclineModalRequest] = useState(null);
+  const [isDecidedOpen, setIsDecidedOpen] = useState(false);
   const [staffFilter, setStaffFilter] = useState('all'); // 'all' | 'lagos' | 'abuja' | 'deactivated'
   const [staffSearchQuery, setStaffSearchQuery] = useState('');
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
@@ -582,6 +624,34 @@ export function AdminView() {
     showToast(getChannelUnarchivedMessage(channel.name));
   };
 
+  // Review request handlers
+  const handleOpenReview = (req) => {
+    setReviewingRequest(req);
+    setReviewRole(req.requestedRole || 'agent');
+    setReviewOffice(req.officeId || 'lagos');
+  };
+
+  const handleApprove = () => {
+    if (!reviewingRequest) return;
+    const req = reviewingRequest;
+    approveAccessRequest(req.id, { role: reviewRole, officeId: reviewOffice });
+    setReviewingRequest(null);
+    showToast(getAccessRequestApprovedMessage(req.name));
+  };
+
+  const handleStartDecline = () => {
+    setDeclineModalRequest(reviewingRequest);
+  };
+
+  const handleConfirmDecline = () => {
+    if (!declineModalRequest) return;
+    const req = declineModalRequest;
+    declineAccessRequest(req.id);
+    setDeclineModalRequest(null);
+    setReviewingRequest(null);
+    showToast(getAccessRequestDeclinedMessage(req.name));
+  };
+
   if (!currentUser || !canUseAdmin(currentUser)) {
     return null;
   }
@@ -617,6 +687,20 @@ export function AdminView() {
                 }`}
               >
                 Staff ({staff.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('requests')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'requests'
+                    ? 'bg-surface text-ink shadow-2xs'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                <span>Requests ({pending.length})</span>
+                {pending.length > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-status-danger" aria-hidden="true" />
+                )}
               </button>
               <button
                 type="button"
@@ -897,6 +981,148 @@ export function AdminView() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'requests' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-ink">Access Requests</h2>
+                  <p className="text-xs text-ink-muted">
+                    Review and approve new team members requesting to join the workspace.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pending requests section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-ink-muted px-1">
+                  <span>Waiting for approval ({pending.length})</span>
+                </div>
+
+                {pending.length === 0 ? (
+                  <div className="border border-line rounded-xl bg-surface p-8 text-center space-y-2">
+                    <p className="text-sm font-semibold text-ink">No requests waiting.</p>
+                    <p className="text-xs text-ink-muted">
+                      New access requests submitted from the login screen will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-line rounded-xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
+                    {pending.map((req) => {
+                      const words = req.name.trim().split(/\s+/).filter(Boolean);
+                      const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
+                      const officeLabel = req.officeId === 'abuja' ? 'Abuja' : 'Lagos';
+                      const roleLabel = ROLE_LABELS[req.requestedRole] || req.requestedRole;
+
+                      return (
+                        <div
+                          key={req.id}
+                          className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-surface-raised transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar name={req.name} initials={initials} role={req.requestedRole} size="md" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-ink text-xs sm:text-sm">
+                                  {req.name}
+                                </span>
+                                <span className="text-xs font-mono text-ink-muted">
+                                  {formatPhoneNg(req.phone)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span>{officeLabel} office · wants to join as {roleLabel}</span>
+                                <span>·</span>
+                                <span className="tabular-nums">{formatListTimeNg(req.createdAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReview(req)}
+                            className="min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold bg-surface-raised border border-line hover:border-brand hover:text-brand cursor-pointer transition-colors shrink-0"
+                          >
+                            Review
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Decided section (collapsed group) */}
+              {decidedRequests.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDecidedOpen((open) => !open)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors cursor-pointer text-left min-h-[44px]"
+                  >
+                    <span className="text-xs font-semibold text-ink">
+                      Decided ({decidedRequests.length})
+                    </span>
+                    {isDecidedOpen ? (
+                      <ChevronUp className="w-4 h-4 text-ink-muted" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-ink-muted" aria-hidden="true" />
+                    )}
+                  </button>
+
+                  {isDecidedOpen && (
+                    <div className="border border-line rounded-xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
+                      {decidedRequests.map((req) => {
+                        const words = req.name.trim().split(/\s+/).filter(Boolean);
+                        const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
+                        const officeLabel = req.officeId === 'abuja' ? 'Abuja' : 'Lagos';
+                        const roleLabel = ROLE_LABELS[req.requestedRole] || req.requestedRole;
+                        const isApproved = req.status === 'approved';
+
+                        return (
+                          <div
+                            key={req.id}
+                            className="p-3 sm:p-4 flex items-center justify-between gap-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Avatar name={req.name} initials={initials} role={req.requestedRole} size="sm" />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-ink text-xs">
+                                    {req.name}
+                                  </span>
+                                  <span className="text-xs font-mono text-ink-muted">
+                                    {formatPhoneNg(req.phone)}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap mt-0.5">
+                                  <span>{officeLabel} office · {roleLabel}</span>
+                                  <span>·</span>
+                                  <span className="tabular-nums">
+                                    {formatDateNg(req.decidedAt || req.createdAt)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {isApproved ? (
+                              <Badge variant="success" size="sm">
+                                Approved
+                              </Badge>
+                            ) : (
+                              <Badge variant="neutral" size="sm">
+                                Declined
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1318,6 +1544,166 @@ export function AdminView() {
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
       />
+
+      {/* Review Access Request Drawer */}
+      <Drawer
+        isOpen={Boolean(reviewingRequest)}
+        onClose={() => setReviewingRequest(null)}
+        title="Review Access Request"
+      >
+        {reviewingRequest && (
+          <div className="space-y-6">
+            {/* Person details */}
+            <div className="p-4 rounded-xl border border-line bg-surface-raised space-y-3">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  name={reviewingRequest.name}
+                  initials={
+                    reviewingRequest.name
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((w) => w[0].toUpperCase())
+                      .join('') || 'ST'
+                  }
+                  role={reviewingRequest.requestedRole}
+                  size="lg"
+                />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-ink">{reviewingRequest.name}</h3>
+                  <p className="text-xs font-mono text-ink-muted">
+                    {formatPhoneNg(reviewingRequest.phone)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-xs text-ink-muted pt-1 border-t border-line">
+                <span>Requested: <strong className="text-ink font-semibold">{ROLE_LABELS[reviewingRequest.requestedRole] || reviewingRequest.requestedRole}</strong></span>
+                <span>·</span>
+                <span>{reviewingRequest.officeId === 'abuja' ? 'Abuja' : 'Lagos'} office</span>
+                <span>·</span>
+                <span className="tabular-nums">{formatListTimeNg(reviewingRequest.createdAt)}</span>
+              </div>
+            </div>
+
+            {/* Role choices (5 radio rows) */}
+            <div className="space-y-2">
+              <span className="block text-xs font-semibold text-ink">Role</span>
+              <div className="space-y-1.5">
+                {AVAILABLE_ROLES.map((r) => {
+                  const isChecked = reviewRole === r.id;
+                  return (
+                    <label
+                      key={r.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'border-brand bg-brand/5 text-ink'
+                          : 'border-line bg-surface hover:bg-surface-raised text-ink-soft'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="review_role_choice"
+                        value={r.id}
+                        checked={isChecked}
+                        onChange={() => setReviewRole(r.id)}
+                        className="accent-brand cursor-pointer"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold">{ROLE_LABELS[r.id] || r.id}</div>
+                        <div className="text-xs text-ink-muted">{r.label}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Office choices (2 radio rows) */}
+            <div className="space-y-2">
+              <span className="block text-xs font-semibold text-ink">Office</span>
+              <div className="grid grid-cols-2 gap-2">
+                {AVAILABLE_OFFICES.map((off) => {
+                  const isChecked = reviewOffice === off.id;
+                  return (
+                    <label
+                      key={off.id}
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'border-brand bg-brand/5 text-ink'
+                          : 'border-line bg-surface hover:bg-surface-raised text-ink-soft'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="review_office_choice"
+                        value={off.id}
+                        checked={isChecked}
+                        onChange={() => setReviewOffice(off.id)}
+                        className="accent-brand cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold">{off.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2 pt-2 border-t border-line">
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                onClick={handleApprove}
+                className="min-h-[44px]"
+              >
+                Approve
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth
+                onClick={handleStartDecline}
+                className="min-h-[44px]"
+              >
+                Decline
+              </Button>
+            </div>
+          </div>
+        )}
+      </Drawer>
+
+      {/* Decline Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(declineModalRequest)}
+        onClose={() => setDeclineModalRequest(null)}
+        title="Decline access request?"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-ink leading-relaxed">
+            Are you sure you want to decline {declineModalRequest?.name}&apos;s request to join?
+            They will not be able to sign in to the workspace.
+          </p>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeclineModalRequest(null)}
+              className="min-h-[44px]"
+            >
+              Keep request
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleConfirmDecline}
+              className="min-h-[44px]"
+            >
+              Decline request
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
