@@ -25,6 +25,8 @@ Use any 6-digit verification code to sign in with any seeded phone number.
 
 You can also switch personas at any point: open Demo tools, then View as. To reset the prototype, open Demo tools, then Reset demo. To log out, tap your avatar, then Log out.
 
+Text size: tap your avatar, then Text size (or Aa on the login screen) to switch between Standard, Large and Extra large.
+
 ## 5-Minute Click-Through Walkthrough
 
 Follow these steps in order to tour the core workspace features:

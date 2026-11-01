@@ -29,6 +29,7 @@ export function AppLayout({ children }) {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isFeedbackLogOpen, setIsFeedbackLogOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDemoToolsOpen, setIsDemoToolsOpen] = useState(false);
 
   // Prototype banner: dismissible for session via safeSessionStorage, returns on full reload
   const [isBannerDismissed, setIsBannerDismissed] = useState(() => {
@@ -99,9 +100,9 @@ export function AppLayout({ children }) {
         </header>
       )}
 
-      {/* Top Bar (56px sticky, wordmark left, RoleSwitcher pill + Feedback + Notifications right) */}
+      {/* Top Bar (min 56px sticky, wordmark left, RoleSwitcher pill + Feedback + Notifications right) */}
       <header
-        className={`h-14 bg-surface border-b border-line px-2.5 sm:px-4 items-center justify-between shrink-0 z-20 relative ${
+        className={`min-h-14 py-1.5 bg-surface border-b border-line px-2.5 sm:px-4 items-center justify-between shrink-0 z-20 relative ${
           isChannelChatRoute ? 'hidden lg:flex' : 'flex'
         }`}
       >
@@ -127,6 +128,9 @@ export function AppLayout({ children }) {
         {/* Right Action Cluster: Demo tools -> Feedback -> Admin (admins only) -> Notifications bell -> Account avatar */}
         <div className="flex items-center gap-1 shrink-0">
           <RoleSwitcher
+            triggerClassName="topbar-compact-hide"
+            isOpen={isDemoToolsOpen}
+            onOpenChange={setIsDemoToolsOpen}
             onOpenFeedbackLog={() => setIsFeedbackLogOpen(true)}
             onOpenResetModal={() => setIsResetModalOpen(true)}
           />
@@ -136,7 +140,7 @@ export function AppLayout({ children }) {
             onClick={() => setIsFeedbackOpen(true)}
             aria-label="Give feedback"
             title="Give feedback"
-            className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+            className="topbar-compact-hide w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
           >
             <MessageSquarePlus className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -179,7 +183,10 @@ export function AppLayout({ children }) {
             )}
           </button>
 
-          <AccountMenu />
+          <AccountMenu
+            onOpenDemoTools={() => setIsDemoToolsOpen(true)}
+            onOpenFeedback={() => setIsFeedbackOpen(true)}
+          />
         </div>
       </header>
 

@@ -38,7 +38,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
 
   return (
     <>
-      <div className="bg-surface border-b border-line px-3 sm:px-4 py-2 flex items-center justify-between gap-3 shrink-0 select-none max-h-[64px] min-h-[56px]">
+      <div className="bg-surface border-b border-line px-3 sm:px-4 py-2 flex items-center justify-between gap-3 shrink-0 select-none min-h-14">
         {/* Clickable Strip Button */}
         <button
           type="button"

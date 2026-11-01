@@ -7,6 +7,9 @@ import { AppProvider } from './context/AppContext.jsx'
 import { ChatProvider } from './context/ChatContext.jsx'
 import App from './App.jsx'
 import './index.css'
+import { getTextSize, applyTextSize } from './utils/textSize.js'
+
+applyTextSize(getTextSize())
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

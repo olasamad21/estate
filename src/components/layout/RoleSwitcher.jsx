@@ -10,12 +10,28 @@ import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 import { Drawer } from '../common/Drawer.jsx';
 
-export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
+export function RoleSwitcher({
+  onOpenFeedbackLog,
+  onOpenResetModal,
+  isOpen: externalIsOpen,
+  onOpenChange,
+  triggerClassName = '',
+}) {
   const { currentUser, staff, switchUser, isOffline, setOffline, simulateNewLead } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = typeof externalIsOpen === 'boolean';
+  const isOpen = isControlled ? externalIsOpen : internalIsOpen;
+
+  const handleSetOpen = (open) => {
+    if (isControlled) {
+      onOpenChange?.(open);
+    } else {
+      setInternalIsOpen(open);
+    }
+  };
 
   const staffGroups = useMemo(() => {
     const activeStaff = staff.filter((s) => isStaffActive(s));
@@ -38,7 +54,7 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   const handleSelectStaff = (staffId) => {
     const target = staff.find((s) => s.id === staffId);
     switchUser(staffId);
-    setIsOpen(false);
+    handleSetOpen(false);
     navigate('/channels');
     if (target?.name) {
       showToast(getSwitchedPersonaMessage(target.name));
@@ -50,17 +66,17 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
   };
 
   const handleFeedbackLog = () => {
-    setIsOpen(false);
+    handleSetOpen(false);
     onOpenFeedbackLog?.();
   };
 
   const handleResetDemo = () => {
-    setIsOpen(false);
+    handleSetOpen(false);
     onOpenResetModal?.();
   };
 
   const handleSimulateNewLead = () => {
-    setIsOpen(false);
+    handleSetOpen(false);
     simulateNewLead?.();
   };
 
@@ -69,10 +85,10 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
       {/* 44px Demo Tools Icon Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => handleSetOpen(true)}
         aria-label="Demo tools"
         title="Demo tools"
-        className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+        className={`w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 ${triggerClassName}`}
       >
         <Wrench className="w-5 h-5" aria-hidden="true" />
       </button>
@@ -80,7 +96,7 @@ export function RoleSwitcher({ onOpenFeedbackLog, onOpenResetModal }) {
       {/* Demo Tools Drawer */}
       <Drawer
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => handleSetOpen(false)}
         title="Demo Tools"
         panelClassName="h-full max-h-[92dvh] lg:max-h-[85dvh] lg:max-w-md lg:rounded-2xl lg:border lg:self-center"
       >

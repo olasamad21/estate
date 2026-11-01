@@ -261,7 +261,7 @@ export function MessageComposer({
           </div>
         ) : (
           /* Regular Message Bar */
-          <div className="flex items-end gap-1 bg-surface-raised border border-line rounded-xl px-1.5 py-1 focus-within:border-brand transition-colors min-h-[48px]">
+          <div className="flex items-end gap-1 bg-surface-raised border border-line rounded-xl px-1.5 py-1 focus-within:border-brand transition-colors min-h-12">
             {/* Attachment Button */}
             <button
               type="button"
@@ -291,7 +291,7 @@ export function MessageComposer({
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={editingMessage ? 'Edit your message...' : `Message #${channel?.name || 'channel'}`}
-              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-[28px] max-h-[120px] leading-snug py-1.5"
+              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-[1.75rem] max-h-[7.5rem] leading-snug py-1.5"
             />
 
             {/* Mic Button */}

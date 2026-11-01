@@ -278,8 +278,8 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
   return (
     <div className="h-full flex flex-col bg-surface overflow-hidden">
-      {/* Channel Header (56px compact row, flex-none) */}
-      <div className="h-14 px-2 sm:px-4 border-b border-line flex items-center justify-between flex-none bg-surface">
+      {/* Channel Header (min 56px compact row, flex-none) */}
+      <div className="min-h-14 py-1.5 px-2 sm:px-4 border-b border-line flex items-center justify-between flex-none bg-surface">
         <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
           {/* Back button on smaller screens (44px target) */}
           <button
@@ -352,7 +352,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
               setIsPinnedDrawerOpen(true);
             }
           }}
-          className="h-10 px-3 sm:px-4 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors flex-none select-none"
+          className="min-h-10 py-1.5 px-3 sm:px-4 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors flex-none select-none"
         >
           <div className="flex items-center gap-2 min-w-0 pr-2">
             <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />

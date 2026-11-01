@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Settings, LogOut } from 'lucide-react';
+import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
@@ -8,22 +8,29 @@ import { canUseAdmin, pendingRequests } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
+import { TEXT_SIZES, getTextSize } from '../../utils/textSize.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
+import { TextSizeDrawer } from '../../features/settings/TextSizeDrawer.jsx';
 
-export function AccountMenu() {
+export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const { currentUser, logout, accessRequests } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+  const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
 
   const pendingRequestsCount = useMemo(() => {
     return canUseAdmin(currentUser) ? pendingRequests(accessRequests).length : 0;
   }, [currentUser, accessRequests]);
+
+  const currentSizeId = getTextSize();
+  const currentSizeObj = TEXT_SIZES.find((s) => s.id === currentSizeId);
+  const textSizeLabel = currentSizeObj?.label || 'Standard';
 
   const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'User';
 
@@ -126,6 +133,22 @@ export function AccountMenu() {
               <span>Notification settings</span>
             </button>
 
+            {/* Text size */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setIsTextSizeOpen(true);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-3 flex items-center justify-between text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-3">
+                <ALargeSmall className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+                <span>Text size</span>
+              </div>
+              <span className="text-xs text-ink-muted">{textSizeLabel}</span>
+            </button>
+
             {/* Admin (Admins only) */}
             {canUseAdmin(currentUser) && (
               <button
@@ -145,6 +168,31 @@ export function AccountMenu() {
               </button>
             )}
 
+            {/* Compact-only rows on narrow screens (<480px) at Large/XL text size */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onOpenDemoTools?.();
+              }}
+              className="account-menu-compact-only w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <Wrench className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Demo tools</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onOpenFeedback?.();
+              }}
+              className="account-menu-compact-only w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <MessageSquarePlus className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Give feedback</span>
+            </button>
+
             {/* Log out (neutral text, no red) */}
             <button
               type="button"
@@ -162,6 +210,12 @@ export function AccountMenu() {
       <NotificationSettingsDrawer
         isOpen={isNotificationSettingsOpen}
         onClose={() => setIsNotificationSettingsOpen(false)}
+      />
+
+      {/* Text Size Drawer */}
+      <TextSizeDrawer
+        isOpen={isTextSizeOpen}
+        onClose={() => setIsTextSizeOpen(false)}
       />
     </>
   );

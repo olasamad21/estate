@@ -398,7 +398,7 @@ function ChannelRow({
       {/* Desktop (>=1024px): Neutral secondary button on row, or reserved space for announcement */}
       <div className="hidden lg:flex items-center shrink-0">
         {isAnnouncement ? (
-          <div className="w-[74px] shrink-0" aria-hidden="true" />
+          <div className="w-[4.625rem] shrink-0" aria-hidden="true" />
         ) : isArchived ? (
           <Button
             variant="secondary"
@@ -829,7 +829,7 @@ export function AdminView() {
                             <div key={member.id}>
                               {/* Compact Row (below 1024px) */}
                               <div
-                                className={`p-3.5 sm:p-4 min-h-[72px] sm:min-h-[76px] flex items-center justify-between gap-3 lg:hidden transition-colors ${
+                                className={`p-3.5 sm:p-4 min-h-[4.5rem] sm:min-h-[4.75rem] flex items-center justify-between gap-3 lg:hidden transition-colors ${
                                   active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
                                 }`}
                               >

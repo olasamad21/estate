@@ -9,6 +9,7 @@ import { getUnregisteredPhoneLoginErrorMessage } from '../../utils/messages.js';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { RequestAccessForm } from './RequestAccessForm.jsx';
+import { TextSizeDrawer } from '../settings/TextSizeDrawer.jsx';
 
 export function LoginView() {
   const { staff, login } = useChat();
@@ -16,6 +17,7 @@ export function LoginView() {
 
   const [mode, setMode] = useState('login'); // 'login' | 'request'
   const [requestFormKey, setRequestFormKey] = useState(0);
+  const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
   const [phone, setPhone] = useState('+234 803 000 0101');
   const [code, setCode] = useState('123456');
   const [error, setError] = useState('');
@@ -61,7 +63,20 @@ export function LoginView() {
   };
 
   return (
-    <div className="min-h-dvh bg-canvas flex flex-col justify-center items-center px-4 py-8">
+    <div className="min-h-dvh bg-canvas flex flex-col justify-center items-center px-4 py-8 relative">
+      {/* Accessibility text size button (Aa) */}
+      <div className="absolute top-4 right-4 z-10">
+        <button
+          type="button"
+          onClick={() => setIsTextSizeOpen(true)}
+          aria-label="Text size"
+          title="Text size"
+          className="w-11 h-11 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center shadow-2xs hover:bg-surface-raised hover:border-brand cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <span className="font-bold text-xs tracking-tight">Aa</span>
+        </button>
+      </div>
+
       <div className="w-full max-w-md bg-surface border border-line rounded-2xl shadow-xs p-6 sm:p-8 space-y-6">
         {/* Brand header */}
         <div className="text-center space-y-2">
@@ -226,6 +241,12 @@ export function LoginView() {
           </>
         )}
       </div>
+
+      {/* Text Size Drawer */}
+      <TextSizeDrawer
+        isOpen={isTextSizeOpen}
+        onClose={() => setIsTextSizeOpen(false)}
+      />
     </div>
   );
 }
