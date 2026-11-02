@@ -16,6 +16,8 @@ export const SCRIPTED_REPLIES = [
   'Good update. I will keep the buyer side informed.',
   'Noted, thank you. Let us aim to close this before the weekend.',
   'All clear from my end. Proceed as planned.',
+  'Document package received and verified.',
+  'Checking the registry records now and will share feedback.',
 ];
 
 export function getRandomColleagueReply() {
