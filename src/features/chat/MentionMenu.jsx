@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
+import { callNameOf, initialsOf } from '../../utils/chat.js';
 
 export function MentionMenu({
   query = '',
@@ -15,7 +16,12 @@ export function MentionMenu({
   const filteredMembers = members.filter((m) => {
     if (!query) return true;
     const q = query.toLowerCase();
-    return m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q);
+    const callName = callNameOf(m).toLowerCase();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      callName.includes(q) ||
+      m.role.toLowerCase().includes(q)
+    );
   });
 
   useEffect(() => {
@@ -72,7 +78,7 @@ export function MentionMenu({
               <div className="flex items-center gap-2 min-w-0 pr-2">
                 <Avatar
                   role={member.role}
-                  initials={member.initials}
+                  initials={initialsOf(member.name)}
                   name={member.name}
                   size="xs"
                 />
@@ -81,7 +87,7 @@ export function MentionMenu({
                     {member.name}
                   </span>
                   <span className="text-xs text-ink-muted">
-                    @{member.name.split(' ')[0]}
+                    @{callNameOf(member)}
                   </span>
                 </div>
               </div>

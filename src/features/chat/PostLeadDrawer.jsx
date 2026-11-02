@@ -171,7 +171,7 @@ function PostLeadForm({ channel, onClose }) {
           value={area}
           onChange={(e) => setArea(e.target.value)}
           onBlur={() => setTouched(true)}
-          placeholder="e.g. Lekki Phase 1"
+          placeholder="e.g. Maitama"
           maxLength={30}
           required
           className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"

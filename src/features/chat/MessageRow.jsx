@@ -2,7 +2,14 @@ import { Info, MessageSquare, MoreHorizontal, SmilePlus, Pin, Clock, Eye, UserPl
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext.jsx';
 import { formatTimeNg, formatNaira } from '../../utils/formatters.js';
-import { mentionsUser, reactionList, canUserSeeChannel, channelDisplayName } from '../../utils/chat.js';
+import {
+  mentionsUser,
+  reactionList,
+  canUserSeeChannel,
+  channelDisplayName,
+  callNameOf,
+  initialsOf,
+} from '../../utils/chat.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
@@ -16,9 +23,10 @@ function renderFormattedText(text, currentUser) {
   return parts.map((part, index) => {
     if (part.startsWith('@')) {
       const mentionTarget = part.slice(1).toLowerCase();
+      const userCallName = callNameOf(currentUser).toLowerCase();
       const isUser = currentUser && (
         mentionTarget === 'all' ||
-        mentionTarget === currentUser.name.split(' ')[0].toLowerCase()
+        mentionTarget === userCallName
       );
       return (
         <span
@@ -136,7 +144,7 @@ export function MessageRow({
         {!isConsecutive ? (
           <Avatar
             role={sender?.role || 'agent'}
-            initials={sender?.initials}
+            initials={initialsOf(sender?.name)}
             name={sender?.name || 'Staff'}
             size="sm"
           />

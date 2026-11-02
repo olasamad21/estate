@@ -4,7 +4,7 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { formatTimeNg } from '../../utils/formatters.js';
-import { threadReplies } from '../../utils/chat.js';
+import { threadReplies, initialsOf } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { Button } from '../../components/common/Button.jsx';
 
@@ -53,7 +53,7 @@ export function ThreadDrawer({
           <div className="flex items-start gap-2.5">
             <Avatar
               role={parentSender?.role || 'agent'}
-              initials={parentSender?.initials}
+              initials={initialsOf(parentSender?.name)}
               name={parentSender?.name || 'Staff'}
               size="sm"
             />
@@ -95,7 +95,7 @@ export function ThreadDrawer({
                 <div key={reply.id} className="flex items-start gap-2.5">
                   <Avatar
                     role={replySender?.role || 'agent'}
-                    initials={replySender?.initials}
+                    initials={initialsOf(replySender?.name)}
                     name={replySender?.name || 'Staff'}
                     size="xs"
                   />

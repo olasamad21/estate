@@ -142,17 +142,19 @@ describe('minutesFromNow', () => {
 });
 
 describe('company config', () => {
-  it('exposes naira, +234, and the Lagos and Abuja offices', () => {
+  it('exposes naira, +234, and the company offices', () => {
     expect(COMPANY_CONFIG.currency).toBe('NGN');
     expect(COMPANY_CONFIG.currencySymbol).toBe('\u20A6');
     expect(COMPANY_CONFIG.locale).toBe('en-NG');
     expect(COMPANY_CONFIG.phoneCountryCode).toBe('+234');
     expect(COMPANY_CONFIG.timeZone).toBe('Africa/Lagos');
-    expect(COMPANY_CONFIG.offices.map((o) => o.id)).toEqual(['lagos', 'abuja']);
-    expect(COMPANY_CONFIG.offices.map((o) => o.name)).toEqual(['Lagos', 'Abuja']);
-    const lagos = COMPANY_CONFIG.offices.find((o) => o.id === 'lagos');
-    const abuja = COMPANY_CONFIG.offices.find((o) => o.id === 'abuja');
-    expect(lagos.consentLabel).toBe("Governor's Consent");
-    expect(abuja.consentLabel).toBe("Minister's Consent");
+    expect(COMPANY_CONFIG.offices.map((o) => o.id)).toEqual(['hq', 'lugbe', 'port-harcourt']);
+    expect(COMPANY_CONFIG.offices.map((o) => o.name)).toEqual(['Head Quarters', 'Lugbe', 'Port Harcourt']);
+    const hq = COMPANY_CONFIG.offices.find((o) => o.id === 'hq');
+    const lugbe = COMPANY_CONFIG.offices.find((o) => o.id === 'lugbe');
+    const ph = COMPANY_CONFIG.offices.find((o) => o.id === 'port-harcourt');
+    expect(hq.consentLabel).toBe("Minister's Consent");
+    expect(lugbe.consentLabel).toBe("Minister's Consent");
+    expect(ph.consentLabel).toBe("Governor's Consent");
   });
 });

@@ -4,8 +4,8 @@ export const SEED_ACCESS_REQUESTS = [
   {
     id: 'blessing-nwachukwu',
     name: 'Blessing Nwachukwu',
-    phone: '+2348030000112',
-    officeId: 'abuja',
+    phone: '+2340000000101',
+    officeId: 'lugbe',
     requestedRole: 'agent',
     status: 'pending',
     createdAt: minutesFromNow(-180),
@@ -14,8 +14,8 @@ export const SEED_ACCESS_REQUESTS = [
   {
     id: 'yusuf-danjuma',
     name: 'Yusuf Danjuma',
-    phone: '+2348030000113',
-    officeId: 'lagos',
+    phone: '+2340000000102',
+    officeId: 'port-harcourt',
     requestedRole: 'intern',
     status: 'pending',
     createdAt: minutesFromNow(-1440),

@@ -3,9 +3,8 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { formatNaira } from '../../utils/formatters.js';
-import { COMPANY_CONFIG } from '../../config/market.js';
 import { useChat } from '../../context/ChatContext.jsx';
-import { shareableListings } from '../../utils/chat.js';
+import { shareableListings, officeLabelOf } from '../../utils/chat.js';
 import { ListingPhoto } from './ListingPhoto.jsx';
 
 function ShareListingForm({ channel, onClose }) {
@@ -42,8 +41,7 @@ function ShareListingForm({ channel, onClose }) {
           <div className="space-y-2 max-h-[45dvh] overflow-y-auto pr-1" role="radiogroup" aria-label="Listing rooms">
             {listings.map((item) => {
               const isSelected = selectedListingId === item.id;
-              const office = COMPANY_CONFIG.offices.find((o) => o.id === item.officeId);
-              const officeName = office ? `${office.name} office` : 'All offices';
+              const officeName = officeLabelOf(item.officeId);
               const statusVariant =
                 item.status === 'Available'
                   ? 'success'
@@ -115,7 +113,7 @@ function ShareListingForm({ channel, onClose }) {
           rows={2}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Price just updated, great match for Lekki buyers"
+          placeholder="e.g. Price just updated, great match for Maitama buyers"
           maxLength={140}
           className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none resize-none leading-relaxed"
         />

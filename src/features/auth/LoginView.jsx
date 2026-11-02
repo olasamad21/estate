@@ -18,15 +18,24 @@ export function LoginView() {
   const [mode, setMode] = useState('login'); // 'login' | 'request'
   const [requestFormKey, setRequestFormKey] = useState(0);
   const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
-  const [phone, setPhone] = useState('+234 803 000 0101');
+  const [phone, setPhone] = useState('+234 000 000 0001');
   const [code, setCode] = useState('123456');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const demoStaffMembers = useMemo(() => {
     const list = Array.isArray(staff) ? staff : [];
-    return ['adaeze', 'ibrahim', 'hauwa', 'chidi']
-      .map((id) => list.find((s) => s.id === id))
+    const demoPersonas = [
+      { id: 'ruth', roleLabel: 'Admin, all offices' },
+      { id: 'fortune', roleLabel: 'Manager, all offices' },
+      { id: 'micheal', roleLabel: 'Manager, Port Harcourt office' },
+      { id: 'taiye', roleLabel: 'Marketer, Lugbe office' },
+    ];
+    return demoPersonas
+      .map((p) => {
+        const found = list.find((s) => s.id === p.id);
+        return found ? { ...found, demoLabel: p.roleLabel } : null;
+      })
       .filter(Boolean);
   }, [staff]);
 
@@ -57,7 +66,7 @@ export function LoginView() {
   };
 
   const handleQuickFillPending = () => {
-    setPhone(formatPhoneNg('+2348030000112'));
+    setPhone(formatPhoneNg('+2340000000101'));
     setCode('123456');
     setError('');
   };
@@ -189,6 +198,10 @@ export function LoginView() {
                   New here? Request access
                 </button>
               </div>
+
+              <p className="text-xs text-ink-muted text-center pt-1 leading-relaxed">
+                All conversations in this demo are invented. Names are used for demonstration only.
+              </p>
             </form>
 
             {/* Demo Fast Switcher Helper */}
@@ -210,7 +223,7 @@ export function LoginView() {
                         {member.name}
                       </p>
                       <p className="text-xs text-ink-muted">
-                        {formatPhoneNg(member.phone)} · {member.office.toUpperCase()}
+                        {formatPhoneNg(member.phone)} · {member.demoLabel}
                       </p>
                     </div>
                     <Badge role={member.role} size="sm">
@@ -230,7 +243,7 @@ export function LoginView() {
                       Waiting for approval: Blessing Nwachukwu
                     </p>
                     <p className="text-xs text-ink-muted">
-                      {formatPhoneNg('+2348030000112')} · ABUJA
+                      {formatPhoneNg('+2340000000101')} · Lugbe office
                     </p>
                   </div>
                   <Badge role="agent" size="sm">

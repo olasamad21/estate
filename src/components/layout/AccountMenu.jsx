@@ -4,7 +4,7 @@ import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus } from '
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
-import { canUseAdmin, pendingRequests } from '../../utils/chat.js';
+import { canUseAdmin, pendingRequests, callNameOf, initialsOf } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
@@ -32,15 +32,14 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const currentSizeObj = TEXT_SIZES.find((s) => s.id === currentSizeId);
   const textSizeLabel = currentSizeObj?.label || 'Standard';
 
-  const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'User';
+  const callName = callNameOf(currentUser) || 'User';
 
-  const officeObj = currentUser?.officeId || currentUser?.office
-    ? COMPANY_CONFIG.offices.find(
-        (o) => o.id === (currentUser.officeId || currentUser.office)
-      )
-    : null;
-  const officeName = officeObj ? officeObj.name : 'Lagos';
-  const officeLine = currentUser?.role === 'admin' ? 'All offices' : `${officeName} office`;
+  const officeObj = (COMPANY_CONFIG.offices || []).find(
+    (o) => o.id === (currentUser?.officeId || currentUser?.office)
+  );
+  const officeLine = currentUser?.seesAllOffices
+    ? 'All offices'
+    : (officeObj?.label || officeObj?.name || 'Head Quarters');
 
   const handleOpenNotificationSettings = () => {
     setIsOpen(false);
@@ -65,13 +64,13 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        aria-label={`Account menu for ${firstName}`}
+        aria-label={`Account menu for ${callName}`}
         title={`Account menu for ${currentUser?.name || 'User'}`}
         className="w-11 h-11 flex items-center justify-center rounded-full hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer shrink-0 transition-opacity"
       >
         <Avatar
           role={currentUser?.role || 'agent'}
-          initials={currentUser?.initials}
+          initials={initialsOf(currentUser?.name)}
           name={currentUser?.name}
           size="sm"
         />
@@ -89,7 +88,7 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
           <div className="p-4 rounded-xl bg-surface-raised border border-line flex items-start gap-3.5">
             <Avatar
               role={currentUser?.role || 'agent'}
-              initials={currentUser?.initials}
+              initials={initialsOf(currentUser?.name)}
               name={currentUser?.name}
               size="lg"
             />
@@ -106,6 +105,12 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
               </div>
               <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap">
                 <span>{officeLine}</span>
+                {currentUser?.department && (
+                  <>
+                    <span>·</span>
+                    <span>{currentUser.department}</span>
+                  </>
+                )}
                 {currentUser?.phone && (
                   <>
                     <span>·</span>

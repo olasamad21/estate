@@ -138,7 +138,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => setTouched(true)}
-            placeholder="e.g. Lekki Duplex"
+            placeholder="e.g. Maitama Duplex"
             maxLength={40}
             required
             className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
@@ -154,7 +154,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-ink">Branch Office</label>
           <div className="p-2.5 rounded-lg bg-surface-raised border border-line text-xs font-semibold text-ink">
-            {office?.name || 'Branch'} office
+            {office?.label || office?.name || 'Branch'}
           </div>
           <p className="text-xs text-ink-muted">Office location cannot be changed after creation.</p>
         </div>
@@ -189,7 +189,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
             value={area}
             onChange={(e) => setArea(e.target.value)}
             onBlur={() => setTouched(true)}
-            placeholder="e.g. Lekki Phase 1"
+            placeholder="e.g. Maitama"
             maxLength={30}
             required
             className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"

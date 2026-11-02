@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { formatNaira } from '../../utils/formatters.js';
-import { COMPANY_CONFIG } from '../../config/market.js';
+import { canManageListing, officeLabelOf } from '../../utils/chat.js';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { ListingPhoto } from './ListingPhoto.jsx';
@@ -15,14 +15,8 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
     return null;
   }
 
-  // Permission: Admins can change status for any listing; managers can change for their office
-  const canChangeStatus =
-    currentUser?.role === 'admin' ||
-    (currentUser?.role === 'manager' &&
-      (currentUser?.office === channel.officeId || !channel.officeId));
-
-  const office = COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId);
-  const officeName = office ? office.name : 'All offices';
+  const canChangeStatus = canManageListing(currentUser, channel);
+  const officeName = officeLabelOf(channel.officeId);
 
   const statusVariant =
     channel.status === 'Available'

@@ -2,6 +2,7 @@ import { Pin, ArrowRight } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { formatTimeNg } from '../../utils/formatters.js';
+import { initialsOf } from '../../utils/chat.js';
 
 export function PinnedMessagesDrawer({
   isOpen,
@@ -33,7 +34,7 @@ export function PinnedMessagesDrawer({
                   <div className="flex items-center gap-2 min-w-0">
                     <Avatar
                       role={sender?.role || 'agent'}
-                      initials={sender?.initials}
+                      initials={initialsOf(sender?.name)}
                       name={sender?.name || 'Staff'}
                       size="xs"
                     />

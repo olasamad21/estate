@@ -1,5 +1,13 @@
 import { Hash, Lock, Megaphone, Building2, Users, BellOff } from 'lucide-react';
-import { channelDisplayName, lastMessage, unreadCount, mentionsUser, messagePreview } from '../../utils/chat.js';
+import {
+  channelDisplayName,
+  lastMessage,
+  unreadCount,
+  mentionsUser,
+  messagePreview,
+  callNameOf,
+  initialsOf,
+} from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 
@@ -30,7 +38,7 @@ export function ChannelRow({
     const sender = Array.isArray(staffList)
       ? staffList.find((s) => s.id === latestMsg.senderId)
       : staffList?.[latestMsg.senderId];
-    const firstName = sender?.name ? sender.name.split(' ')[0] : '';
+    const firstName = sender ? callNameOf(sender) : '';
     return firstName ? `${firstName}: ${preview}` : preview;
   })();
 
@@ -64,9 +72,9 @@ export function ChannelRow({
       return (
         <Avatar
           role={otherStaff?.role || 'agent'}
-          initials={otherStaff?.initials}
+          initials={initialsOf(otherStaff?.name || displayName)}
           name={otherStaff?.name || displayName}
-          isOnline={otherStaff?.online || false}
+          isOnline={Boolean(otherStaff?.isOnline ?? otherStaff?.online)}
           size="xs"
         />
       );

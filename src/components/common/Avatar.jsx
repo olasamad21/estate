@@ -1,3 +1,5 @@
+import { initialsOf } from '../../utils/chat.js';
+
 const ROLE_SOLIDS = {
   admin: 'bg-role-admin-solid text-surface',
   manager: 'bg-role-manager-solid text-surface',
@@ -26,7 +28,7 @@ export function Avatar({
   className = '',
   ...props
 }) {
-  const displayInitials = initials || (name ? name.split(' ').map((n) => n[0]).join('').slice(0, 2) : '??');
+  const displayInitials = initials || (name ? initialsOf(name) : 'ST');
   const roleClass = ROLE_SOLIDS[role] || ROLE_SOLIDS.agent;
   const sizeClass = SIZES[size] || SIZES.md;
 

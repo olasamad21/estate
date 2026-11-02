@@ -5,9 +5,9 @@ import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
-import { LAGOS_LEADS_POOL, ABUJA_LEADS_POOL } from '../mock/leads.js';
+import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -30,7 +30,7 @@ import {
   getListingSharedInChannelMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-11';
+const CHAT_STATE_VERSION = 'chat-12';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -94,6 +94,7 @@ export function ChatProvider({ children }) {
     if (matched && isStaffActive(matched)) {
       return saved;
     }
+    safeLocalStorage.remove('session_user');
     return null;
   });
 
@@ -275,7 +276,7 @@ export function ChatProvider({ children }) {
 
       if (candidates.length > 0) {
         const responder = candidates[Math.floor(Math.random() * candidates.length)];
-        const responderName = responder.name.split(' ')[0];
+        const responderName = callNameOf(responder);
 
         clearTypingTimer();
         setTypingStatus({ channelId, staffName: responderName });
@@ -498,8 +499,10 @@ export function ChatProvider({ children }) {
     safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
 
-  const addStaff = useCallback(({ name, phone, role, office }) => {
-    const baseSlug = slugify(name);
+  const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, seesAllOffices }) => {
+    const effectiveOfficeId = officeId || office || 'hq';
+    const effectiveCallName = (callName || name.trim().split(/\s+/)[0] || 'staff').trim();
+    const baseSlug = slugify(effectiveCallName) || slugify(name);
     let id = baseSlug || 'staff';
     let counter = 2;
     while (staff.some((s) => s.id === id)) {
@@ -507,22 +510,25 @@ export function ChatProvider({ children }) {
       counter++;
     }
 
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
     const roleLabel = ROLE_LABELS[role] || role;
-    const officeName = office === 'abuja' ? 'Abuja' : 'Lagos';
-    const title = `${roleLabel}, ${officeName}`;
+    const officeObj = (COMPANY_CONFIG.offices || []).find((o) => o.id === effectiveOfficeId);
+    const officeName = officeObj ? officeObj.name : 'Head Quarters';
+    const jobTitle = title || `${roleLabel}, ${officeName}`;
     const normalisedPhone = normalisePhoneNg(phone);
+    const dept = department || (role === 'admin' ? 'Executive' : (role === 'agent' ? 'Sales' : 'Operations'));
 
     const newPerson = {
       id,
       name: name.trim(),
+      callName: effectiveCallName,
       role,
-      title,
-      office,
-      officeId: office,
+      title: jobTitle,
+      department: dept,
+      officeId: effectiveOfficeId,
+      office: effectiveOfficeId,
       phone: normalisedPhone,
-      initials,
+      seesAllOffices: role === 'admin' ? Boolean(seesAllOffices) : false,
+      isOnline: false,
       online: false,
       status: 'active',
       active: true,
@@ -547,20 +553,25 @@ export function ChatProvider({ children }) {
     return newPerson;
   }, [staff]);
 
-  const updateStaff = useCallback((staffId, { role, office }) => {
-    const roleLabel = ROLE_LABELS[role] || role;
-    const officeName = office === 'abuja' ? 'Abuja' : 'Lagos';
-    const title = `${roleLabel}, ${officeName}`;
-
+  const updateStaff = useCallback((staffId, { role, office, officeId, department, title, seesAllOffices, callName }) => {
     setChatState((prev) => {
       const nextStaff = prev.staff.map((s) => {
         if (s.id !== staffId) return s;
+        const effectiveOfficeId = officeId || office || s.officeId;
+        const roleLabel = ROLE_LABELS[role || s.role] || (role || s.role);
+        const officeObj = (COMPANY_CONFIG.offices || []).find((o) => o.id === effectiveOfficeId);
+        const officeName = officeObj ? officeObj.name : 'Head Quarters';
+        const jobTitle = title || `${roleLabel}, ${officeName}`;
+
         return {
           ...s,
-          role,
-          office,
-          officeId: office,
-          title,
+          ...(callName ? { callName: callName.trim() } : {}),
+          role: role || s.role,
+          office: effectiveOfficeId,
+          officeId: effectiveOfficeId,
+          department: department || s.department,
+          title: jobTitle,
+          seesAllOffices: (role || s.role) === 'admin' ? Boolean(seesAllOffices ?? s.seesAllOffices) : false,
         };
       });
 
@@ -672,7 +683,7 @@ export function ChatProvider({ children }) {
     return { ok: true };
   }, [staff, accessRequests]);
 
-  const approveAccessRequest = useCallback((id, { role, officeId } = {}) => {
+  const approveAccessRequest = useCallback((id, { role, officeId, department, callName, title } = {}) => {
     const targetReq = accessRequests.find((r) => r.id === id);
     if (!targetReq) return null;
     const chosenRole = role || targetReq.requestedRole;
@@ -680,9 +691,13 @@ export function ChatProvider({ children }) {
 
     const newPerson = addStaff({
       name: targetReq.name,
+      callName: callName || (targetReq.name.trim().split(/\s+/)[0] || ''),
       phone: targetReq.phone,
       role: chosenRole,
       office: chosenOffice,
+      officeId: chosenOffice,
+      department,
+      title,
     });
 
     const decidedAt = new Date().toISOString();
@@ -716,8 +731,7 @@ export function ChatProvider({ children }) {
 
   const createChannel = useCallback(({ name, kind, officeId, description, memberIds, title, area, priceNgn, status }) => {
     const isListing = kind === 'listing';
-    const creatorName = currentUser?.name || 'Staff';
-    const creatorFirstName = creatorName.split(' ')[0];
+    const creatorCallName = callNameOf(currentUser) || 'Staff';
 
     let newChannel;
 
@@ -731,7 +745,7 @@ export function ChatProvider({ children }) {
         name: channelSlug,
         title: title ? title.trim() : (name || 'Listing'),
         kind: 'listing',
-        officeId: officeId || (currentUser?.office || 'lagos'),
+        officeId: officeId || (currentUser?.officeId || 'hq'),
         location: area || '',
         area: area || '',
         price: Number(priceNgn) || 0,
@@ -743,7 +757,7 @@ export function ChatProvider({ children }) {
         createdAt: new Date().toISOString(),
         archived: false,
         listing: {
-          officeId: officeId || (currentUser?.office || 'lagos'),
+          officeId: officeId || (currentUser?.officeId || 'hq'),
           area: area || '',
           priceNgn: Number(priceNgn) || 0,
           status: status || 'Available',
@@ -772,8 +786,8 @@ export function ChatProvider({ children }) {
       senderId: 'system',
       type: 'system',
       text: isListing
-        ? `${creatorFirstName} created this listing room`
-        : `${creatorName} created this channel`,
+        ? `${creatorCallName} created this listing room`
+        : `${creatorCallName} created this channel`,
       createdAt: new Date().toISOString(),
       status: 'sent',
     };
@@ -920,7 +934,7 @@ export function ChatProvider({ children }) {
     if (!target || target.claimedById) return;
 
     const claimedAt = new Date().toISOString();
-    const leadTakerName = currentUser?.name || 'Staff';
+    const leadTakerName = callNameOf(currentUser) || 'Staff';
 
     const systemMessage = {
       id: `msg-sys-${Date.now()}`,
@@ -986,9 +1000,9 @@ export function ChatProvider({ children }) {
   }, [showToast]);
 
   const simulateNewLead = useCallback(() => {
-    const isAbuja = currentUser?.office === 'abuja';
-    const targetChannelId = isAbuja ? 'abuja-leads' : 'lagos-leads';
-    const pool = isAbuja ? ABUJA_LEADS_POOL : LAGOS_LEADS_POOL;
+    const officeId = currentUser?.seesAllOffices ? 'hq' : (currentUser?.officeId || 'hq');
+    const targetChannelId = `${officeId}-leads`;
+    const pool = LEADS_BY_OFFICE[officeId] || LEADS_BY_OFFICE.hq;
     const sample = pool[Math.floor(Math.random() * pool.length)];
     const leadTime = new Date().toISOString();
 

@@ -27,6 +27,8 @@ import {
   canUseAdmin,
   isStaffActive,
   pendingRequests,
+  initialsOf,
+  slugify,
 } from '../../utils/chat.js';
 import {
   formatPhoneNg,
@@ -46,7 +48,7 @@ import {
   getAccessRequestApprovedMessage,
   getAccessRequestDeclinedMessage,
 } from '../../utils/messages.js';
-import { ROLE_LABELS } from '../../mock/staff.js';
+import { ROLE_LABELS, DEPARTMENTS } from '../../mock/staff.js';
 
 const AVAILABLE_ROLES = [
   { id: 'admin', label: 'Admin (Managing Director / Operations)' },
@@ -56,10 +58,20 @@ const AVAILABLE_ROLES = [
   { id: 'intern', label: 'Intern (Sales Intern)' },
 ];
 
-const AVAILABLE_OFFICES = [
-  { id: 'lagos', label: 'Lagos office' },
-  { id: 'abuja', label: 'Abuja office' },
-];
+const AVAILABLE_OFFICES = (COMPANY_CONFIG.offices || []).map((o) => ({
+  id: o.id,
+  label: o.label || o.name,
+}));
+
+function officeLabelOf(id) {
+  const o = (COMPANY_CONFIG.offices || []).find((x) => x.id === id);
+  return o ? o.label || o.name : 'Head Quarters';
+}
+
+function officeNameOf(id) {
+  const o = (COMPANY_CONFIG.offices || []).find((x) => x.id === id);
+  return o ? o.name : 'Head Quarters';
+}
 
 function renderChannelIcon(ch) {
   if (ch.kind === 'announcement') return <Megaphone className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
@@ -70,9 +82,12 @@ function renderChannelIcon(ch) {
 
 function AddStaffForm({ staff, onSave, onClose }) {
   const [addName, setAddName] = useState('');
+  const [addCallName, setAddCallName] = useState('');
   const [addPhone, setAddPhone] = useState('+234 ');
   const [addRole, setAddRole] = useState('agent');
-  const [addOffice, setAddOffice] = useState('lagos');
+  const [addDepartment, setAddDepartment] = useState('Sales');
+  const [addOffice, setAddOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
+  const [addSeesAllOffices, setAddSeesAllOffices] = useState(false);
   const [addTouched, setAddTouched] = useState(false);
 
   const addErrors = useMemo(() => {
@@ -80,6 +95,20 @@ function AddStaffForm({ staff, onSave, onClose }) {
     const errs = {};
     if (!addName.trim()) {
       errs.name = 'Full name is required.';
+    }
+    const callNameTrimmed = addCallName.trim();
+    if (!callNameTrimmed) {
+      errs.callName = 'Call name is required.';
+    } else if (callNameTrimmed.length < 2 || callNameTrimmed.length > 20) {
+      errs.callName = 'Call name must be between 2 and 20 characters.';
+    } else {
+      const callLower = callNameTrimmed.toLowerCase();
+      const duplicateCall = staff.some(
+        (s) => (s.callName || '').toLowerCase() === callLower || s.id === slugify(callNameTrimmed)
+      );
+      if (duplicateCall) {
+        errs.callName = 'This call name is already taken.';
+      }
     }
     const normalised = normalisePhoneNg(addPhone);
     if (!normalised || !isValidPhoneNg(addPhone)) {
@@ -91,18 +120,22 @@ function AddStaffForm({ staff, onSave, onClose }) {
       }
     }
     return errs;
-  }, [addName, addPhone, addTouched, staff]);
+  }, [addName, addCallName, addPhone, addTouched, staff]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setAddTouched(true);
-    if (Object.keys(addErrors).length > 0 || !addName.trim()) return;
+    if (Object.keys(addErrors).length > 0 || !addName.trim() || !addCallName.trim()) return;
 
     onSave({
       name: addName.trim(),
+      callName: addCallName.trim(),
       phone: addPhone.trim(),
       role: addRole,
+      department: addDepartment,
       office: addOffice,
+      officeId: addOffice,
+      seesAllOffices: addRole === 'admin' ? addSeesAllOffices : false,
     });
   };
 
@@ -119,12 +152,32 @@ function AddStaffForm({ staff, onSave, onClose }) {
           type="text"
           value={addName}
           onChange={(e) => setAddName(e.target.value)}
-          placeholder="e.g. Babatunde Fashola"
+          placeholder="e.g. Aminu Bello"
           required
-          className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
         />
         {addErrors.name && (
           <p className="text-xs text-status-danger font-medium">{addErrors.name}</p>
+        )}
+      </div>
+
+      {/* Call Name */}
+      <div className="space-y-1.5">
+        <label htmlFor="add-staff-call-name" className="block text-xs font-semibold text-ink">
+          Call Name <span className="text-status-danger">*</span>
+        </label>
+        <input
+          id="add-staff-call-name"
+          name="add_staff_call_name"
+          type="text"
+          value={addCallName}
+          onChange={(e) => setAddCallName(e.target.value)}
+          placeholder="e.g. Aminu (2-20 characters, unique)"
+          required
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+        />
+        {addErrors.callName && (
+          <p className="text-xs text-status-danger font-medium">{addErrors.callName}</p>
         )}
       </div>
 
@@ -141,7 +194,7 @@ function AddStaffForm({ staff, onSave, onClose }) {
           onChange={(e) => setAddPhone(e.target.value)}
           placeholder="+234 803 000 0112"
           required
-          className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none font-mono"
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none font-mono"
         />
         {addErrors.phone ? (
           <p className="text-xs text-status-danger font-medium">{addErrors.phone}</p>
@@ -170,7 +223,12 @@ function AddStaffForm({ staff, onSave, onClose }) {
                 name="add_staff_role"
                 value={r.id}
                 checked={addRole === r.id}
-                onChange={() => setAddRole(r.id)}
+                onChange={() => {
+                  setAddRole(r.id);
+                  if (r.id === 'admin') {
+                    setAddDepartment('Executive');
+                  }
+                }}
                 className="accent-brand"
               />
               <span>{r.label}</span>
@@ -179,12 +237,59 @@ function AddStaffForm({ staff, onSave, onClose }) {
         </div>
       </div>
 
+      {/* Sees all offices switch (admins only) */}
+      {addRole === 'admin' && (
+        <div className="p-3 rounded-xl border border-line bg-surface-raised flex items-center justify-between min-h-[44px]">
+          <div className="space-y-0.5">
+            <span className="text-xs font-semibold text-ink block">Sees all offices</span>
+            <span className="text-xs text-ink-muted block">Allow visibility across all office channels</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={addSeesAllOffices}
+            aria-label="Sees all offices"
+            onClick={() => setAddSeesAllOffices(!addSeesAllOffices)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              addSeesAllOffices ? 'bg-brand' : 'bg-line-strong'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
+                addSeesAllOffices ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* Department selection */}
+      <div className="space-y-1.5">
+        <label htmlFor="add-staff-department" className="block text-xs font-semibold text-ink">
+          Department <span className="text-status-danger">*</span>
+        </label>
+        <select
+          id="add-staff-department"
+          name="add_staff_department"
+          value={addDepartment}
+          onChange={(e) => setAddDepartment(e.target.value)}
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+        >
+          {DEPARTMENTS.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Office selection radio rows */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">
           Office Assignment <span className="text-status-danger">*</span>
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {AVAILABLE_OFFICES.map((off) => (
             <label
               key={off.id}
@@ -223,15 +328,22 @@ function AddStaffForm({ staff, onSave, onClose }) {
 
 function EditStaffForm({ staff: staffMember, onSave, onClose }) {
   const [editRole, setEditRole] = useState(staffMember.role);
+  const [editDepartment, setEditDepartment] = useState(staffMember.department || 'Sales');
   const [editOffice, setEditOffice] = useState(
-    staffMember.officeId || staffMember.office || 'lagos'
+    staffMember.officeId || staffMember.office || AVAILABLE_OFFICES[0]?.id || 'hq'
+  );
+  const [editSeesAllOffices, setEditSeesAllOffices] = useState(
+    Boolean(staffMember.seesAllOffices)
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
       role: editRole,
+      department: editDepartment,
       office: editOffice,
+      officeId: editOffice,
+      seesAllOffices: editRole === 'admin' ? editSeesAllOffices : false,
     });
   };
 
@@ -240,7 +352,7 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
       <div className="p-3 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
         <Avatar
           role={staffMember.role}
-          initials={staffMember.initials}
+          initials={initialsOf(staffMember.name)}
           name={staffMember.name}
           size="md"
         />
@@ -268,7 +380,12 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
                 name="edit_staff_role"
                 value={r.id}
                 checked={editRole === r.id}
-                onChange={() => setEditRole(r.id)}
+                onChange={() => {
+                  setEditRole(r.id);
+                  if (r.id === 'admin') {
+                    setEditDepartment('Executive');
+                  }
+                }}
                 className="accent-brand"
               />
               <span>{r.label}</span>
@@ -277,10 +394,57 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
         </div>
       </div>
 
+      {/* Sees all offices switch (admins only) */}
+      {editRole === 'admin' && (
+        <div className="p-3 rounded-xl border border-line bg-surface-raised flex items-center justify-between min-h-[44px]">
+          <div className="space-y-0.5">
+            <span className="text-xs font-semibold text-ink block">Sees all offices</span>
+            <span className="text-xs text-ink-muted block">Allow visibility across all office channels</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={editSeesAllOffices}
+            aria-label="Sees all offices"
+            onClick={() => setEditSeesAllOffices(!editSeesAllOffices)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              editSeesAllOffices ? 'bg-brand' : 'bg-line-strong'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
+                editSeesAllOffices ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* Department selection */}
+      <div className="space-y-1.5">
+        <label htmlFor="edit-staff-department" className="block text-xs font-semibold text-ink">
+          Department
+        </label>
+        <select
+          id="edit-staff-department"
+          name="edit_staff_department"
+          value={editDepartment}
+          onChange={(e) => setEditDepartment(e.target.value)}
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+        >
+          {DEPARTMENTS.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Office Radio Rows */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">Office</label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {AVAILABLE_OFFICES.map((off) => (
             <label
               key={off.id}
@@ -481,10 +645,12 @@ export function AdminView() {
 
   const [reviewingRequest, setReviewingRequest] = useState(null);
   const [reviewRole, setReviewRole] = useState('agent');
-  const [reviewOffice, setReviewOffice] = useState('lagos');
+  const [reviewOffice, setReviewOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
+  const [reviewDepartment, setReviewDepartment] = useState('Sales');
   const [declineModalRequest, setDeclineModalRequest] = useState(null);
   const [isDecidedOpen, setIsDecidedOpen] = useState(false);
-  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | 'lagos' | 'abuja' | 'deactivated'
+  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | office.id | 'deactivated'
+  const [departmentFilter, setDepartmentFilter] = useState('all');
   const [staffSearchQuery, setStaffSearchQuery] = useState('');
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
@@ -500,34 +666,40 @@ export function AdminView() {
 
   // Counts for staff filter chips
   const staffCounts = useMemo(() => {
-    return {
+    const counts = {
       all: staff.length,
-      lagos: staff.filter((s) => (s.officeId || s.office) === 'lagos').length,
-      abuja: staff.filter((s) => (s.officeId || s.office) === 'abuja').length,
       deactivated: staff.filter((s) => !isStaffActive(s)).length,
     };
+    (COMPANY_CONFIG.offices || []).forEach((o) => {
+      counts[o.id] = staff.filter((s) => (s.officeId || s.office) === o.id).length;
+    });
+    return counts;
   }, [staff]);
 
   // Combined search and chip filter for staff
   const filteredStaff = useMemo(() => {
     let list = staff;
-    if (staffFilter === 'lagos') {
-      list = list.filter((s) => (s.officeId || s.office) === 'lagos');
-    } else if (staffFilter === 'abuja') {
-      list = list.filter((s) => (s.officeId || s.office) === 'abuja');
-    } else if (staffFilter === 'deactivated') {
+    if (staffFilter === 'deactivated') {
       list = list.filter((s) => !isStaffActive(s));
+    } else if (staffFilter !== 'all') {
+      list = list.filter((s) => (s.officeId || s.office) === staffFilter);
+    }
+
+    if (departmentFilter !== 'all') {
+      list = list.filter((s) => (s.department || '').toLowerCase() === departmentFilter.toLowerCase());
     }
 
     const q = staffSearchQuery.trim().toLowerCase();
     if (!q) return list;
-    return list.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        (ROLE_LABELS[s.role] || s.role).toLowerCase().includes(q) ||
-        (s.phone && s.phone.includes(q))
-    );
-  }, [staff, staffFilter, staffSearchQuery]);
+    return list.filter((s) => {
+      const nameMatch = (s.name || '').toLowerCase().includes(q);
+      const callMatch = (s.callName || '').toLowerCase().includes(q);
+      const titleMatch = (s.title || '').toLowerCase().includes(q);
+      const deptMatch = (s.department || '').toLowerCase().includes(q);
+      const phoneMatch = s.phone && s.phone.includes(q);
+      return nameMatch || callMatch || titleMatch || deptMatch || phoneMatch;
+    });
+  }, [staff, staffFilter, departmentFilter, staffSearchQuery]);
 
   // Group filtered staff in COMPANY_CONFIG.offices order, hiding empty groups
   const groupedStaff = useMemo(() => {
@@ -565,12 +737,13 @@ export function AdminView() {
     return activeChannels.filter((c) => !c.officeId);
   }, [activeChannels]);
 
-  const lagosChannels = useMemo(() => {
-    return activeChannels.filter((c) => c.officeId === 'lagos');
-  }, [activeChannels]);
-
-  const abujaChannels = useMemo(() => {
-    return activeChannels.filter((c) => c.officeId === 'abuja');
+  const channelsByOffice = useMemo(() => {
+    return (COMPANY_CONFIG.offices || [])
+      .map((off) => ({
+        office: off,
+        channels: activeChannels.filter((c) => c.officeId === off.id),
+      }))
+      .filter((group) => group.channels.length > 0);
   }, [activeChannels]);
 
   const handleAddStaff = (staffData) => {
@@ -624,17 +797,31 @@ export function AdminView() {
     showToast(getChannelUnarchivedMessage(channel.name));
   };
 
+  // Default department helper based on role
+  const defaultDepartmentForRole = (role) => {
+    if (role === 'admin') return 'Executive';
+    if (role === 'agent') return 'Sales';
+    if (role === 'intern') return 'Interns';
+    return 'Management';
+  };
+
   // Review request handlers
   const handleOpenReview = (req) => {
     setReviewingRequest(req);
-    setReviewRole(req.requestedRole || 'agent');
-    setReviewOffice(req.officeId || 'lagos');
+    const role = req.requestedRole || 'agent';
+    setReviewRole(role);
+    setReviewOffice(req.officeId || AVAILABLE_OFFICES[0]?.id || 'hq');
+    setReviewDepartment(defaultDepartmentForRole(role));
   };
 
   const handleApprove = () => {
     if (!reviewingRequest) return;
     const req = reviewingRequest;
-    approveAccessRequest(req.id, { role: reviewRole, officeId: reviewOffice });
+    approveAccessRequest(req.id, {
+      role: reviewRole,
+      officeId: reviewOffice,
+      department: reviewDepartment,
+    });
     setReviewingRequest(null);
     showToast(getAccessRequestApprovedMessage(req.name));
   };
@@ -751,12 +938,15 @@ export function AdminView() {
                 </Button>
               </div>
 
-              {/* Filter chips: All, Lagos, Abuja, Deactivated */}
+              {/* Filter chips: All, offices from config, Deactivated + Department select */}
               <div className="flex items-center gap-2 flex-wrap">
                 {[
                   { id: 'all', label: 'All', count: staffCounts.all },
-                  { id: 'lagos', label: 'Lagos', count: staffCounts.lagos },
-                  { id: 'abuja', label: 'Abuja', count: staffCounts.abuja },
+                  ...(COMPANY_CONFIG.offices || []).map((o) => ({
+                    id: o.id,
+                    label: o.name,
+                    count: staffCounts[o.id] || 0,
+                  })),
                   { id: 'deactivated', label: 'Deactivated', count: staffCounts.deactivated },
                 ].map((chip) => {
                   const isSelected = staffFilter === chip.id;
@@ -784,6 +974,27 @@ export function AdminView() {
                     </button>
                   );
                 })}
+
+                {/* Department Select */}
+                <div className="ml-auto flex items-center gap-1.5">
+                  <label htmlFor="admin-department-filter" className="sr-only">
+                    Filter by Department
+                  </label>
+                  <select
+                    id="admin-department-filter"
+                    name="admin_department_filter"
+                    value={departmentFilter}
+                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                    className="min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-xl text-ink font-medium focus:border-brand focus:outline-none cursor-pointer"
+                  >
+                    <option value="all">All departments</option>
+                    {DEPARTMENTS.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Staff grouped under section headings "<Office name> office" with count */}
@@ -809,7 +1020,7 @@ export function AdminView() {
                   {groupedStaff.map((group) => (
                     <div key={group.office.id} className="space-y-2">
                       <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                        {group.office.name} office ({group.members.length})
+                        {group.office.label || `${group.office.name} office`} ({group.members.length})
                       </h2>
                       <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                         {group.members.map((member) => {
@@ -836,9 +1047,9 @@ export function AdminView() {
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <Avatar
                                     role={member.role}
-                                    initials={member.initials}
+                                    initials={initialsOf(member.name)}
                                     name={member.name}
-                                    isOnline={active && member.online}
+                                    isOnline={active && (member.isOnline ?? member.online)}
                                     size="md"
                                   />
                                   <div className="min-w-0 flex-1 space-y-0.5">
@@ -854,13 +1065,18 @@ export function AdminView() {
                                       )}
                                     </div>
 
-                                    {/* Role Badge and Office caption (and Deactivated badge if inactive) */}
+                                    {/* Role Badge, Department, and Office caption (and Deactivated badge if inactive) */}
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <Badge role={member.role}>
                                         {ROLE_LABELS[member.role] || member.role}
                                       </Badge>
+                                      {member.department && (
+                                        <span className="text-xs text-ink-soft font-medium">
+                                          {member.department}
+                                        </span>
+                                      )}
                                       <span className="text-xs text-ink-muted">
-                                        {(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}
+                                        {officeLabelOf(member.officeId || member.office)}
                                       </span>
                                       {!active && (
                                         <Badge variant="danger">
@@ -897,9 +1113,9 @@ export function AdminView() {
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <Avatar
                                     role={member.role}
-                                    initials={member.initials}
+                                    initials={initialsOf(member.name)}
                                     name={member.name}
-                                    isOnline={active && member.online}
+                                    isOnline={active && (member.isOnline ?? member.online)}
                                     size="md"
                                   />
                                   <div className="min-w-0">
@@ -919,6 +1135,11 @@ export function AdminView() {
                                   </div>
                                 </div>
 
+                                {/* Department */}
+                                <div className="text-xs text-ink-soft shrink-0 w-28">
+                                  {member.department || 'General'}
+                                </div>
+
                                 {/* Role Badge */}
                                 <div className="shrink-0">
                                   <Badge role={member.role}>
@@ -927,8 +1148,8 @@ export function AdminView() {
                                 </div>
 
                                 {/* Office */}
-                                <div className="text-xs text-ink-muted shrink-0 w-24">
-                                  {(member.officeId || member.office) === 'abuja' ? 'Abuja' : 'Lagos'}
+                                <div className="text-xs text-ink-muted shrink-0 w-32">
+                                  {officeNameOf(member.officeId || member.office)}
                                 </div>
 
                                 {/* Phone */}
@@ -1013,9 +1234,8 @@ export function AdminView() {
                 ) : (
                   <div className="border border-line rounded-xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                     {pending.map((req) => {
-                      const words = req.name.trim().split(/\s+/).filter(Boolean);
-                      const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
-                      const officeLabel = req.officeId === 'abuja' ? 'Abuja' : 'Lagos';
+                      const initials = initialsOf(req.name);
+                      const officeLabel = officeLabelOf(req.officeId);
                       const roleLabel = ROLE_LABELS[req.requestedRole] || req.requestedRole;
 
                       return (
@@ -1035,7 +1255,7 @@ export function AdminView() {
                                 </span>
                               </div>
                               <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap mt-0.5">
-                                <span>{officeLabel} office · wants to join as {roleLabel}</span>
+                                <span>{officeLabel} · wants to join as {roleLabel}</span>
                                 <span>·</span>
                                 <span className="tabular-nums">{formatListTimeNg(req.createdAt)}</span>
                               </div>
@@ -1077,9 +1297,8 @@ export function AdminView() {
                   {isDecidedOpen && (
                     <div className="border border-line rounded-xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                       {decidedRequests.map((req) => {
-                        const words = req.name.trim().split(/\s+/).filter(Boolean);
-                        const initials = words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'ST';
-                        const officeLabel = req.officeId === 'abuja' ? 'Abuja' : 'Lagos';
+                        const initials = initialsOf(req.name);
+                        const officeLabel = officeLabelOf(req.officeId);
                         const roleLabel = ROLE_LABELS[req.requestedRole] || req.requestedRole;
                         const isApproved = req.status === 'approved';
 
@@ -1100,7 +1319,7 @@ export function AdminView() {
                                   </span>
                                 </div>
                                 <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap mt-0.5">
-                                  <span>{officeLabel} office · {roleLabel}</span>
+                                  <span>{officeLabel} · {roleLabel}</span>
                                   <span>·</span>
                                   <span className="tabular-nums">
                                     {formatDateNg(req.decidedAt || req.createdAt)}
@@ -1165,14 +1384,14 @@ export function AdminView() {
                 </div>
               )}
 
-              {/* Lagos Office Section */}
-              {lagosChannels.length > 0 && (
-                <div className="space-y-2">
+              {/* Office Sections */}
+              {channelsByOffice.map(({ office, channels: offChannels }) => (
+                <div key={office.id} className="space-y-2">
                   <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    Lagos office ({lagosChannels.length})
+                    {office.label} ({offChannels.length})
                   </h2>
                   <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
-                    {lagosChannels.map((ch) => (
+                    {offChannels.map((ch) => (
                       <ChannelRow
                         key={ch.id}
                         channel={ch}
@@ -1183,27 +1402,7 @@ export function AdminView() {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Abuja Office Section */}
-              {abujaChannels.length > 0 && (
-                <div className="space-y-2">
-                  <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    Abuja office ({abujaChannels.length})
-                  </h2>
-                  <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
-                    {abujaChannels.map((ch) => (
-                      <ChannelRow
-                        key={ch.id}
-                        channel={ch}
-                        onOpenSheet={setSelectedChannelForSheet}
-                        onArchive={setChannelToArchive}
-                        onUnarchive={handleUnarchive}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              ))}
 
               {/* Collapsed Archived Section at Bottom */}
               <div className="border border-line rounded-2xl bg-surface overflow-hidden shadow-2xs">
@@ -1305,9 +1504,9 @@ export function AdminView() {
               <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
                 <Avatar
                   role={member.role}
-                  initials={member.initials}
+                  initials={initialsOf(member.name)}
                   name={member.name}
-                  isOnline={active && member.online}
+                  isOnline={active && (member.isOnline ?? member.online)}
                   size="md"
                 />
                 <div className="min-w-0 space-y-1">
@@ -1331,7 +1530,7 @@ export function AdminView() {
                     {member.title}
                   </div>
                   <div className="text-xs text-ink-muted flex items-center gap-2">
-                    <span>{(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}</span>
+                    <span>{officeLabelOf(member.officeId || member.office)}</span>
                     <span>·</span>
                     <span className="tabular-nums tracking-normal">{formatPhoneNg(member.phone)}</span>
                   </div>
@@ -1558,14 +1757,7 @@ export function AdminView() {
               <div className="flex items-center gap-3">
                 <Avatar
                   name={reviewingRequest.name}
-                  initials={
-                    reviewingRequest.name
-                      .trim()
-                      .split(/\s+/)
-                      .slice(0, 2)
-                      .map((w) => w[0].toUpperCase())
-                      .join('') || 'ST'
-                  }
+                  initials={initialsOf(reviewingRequest.name)}
                   role={reviewingRequest.requestedRole}
                   size="lg"
                 />
@@ -1579,7 +1771,7 @@ export function AdminView() {
               <div className="flex items-center gap-2 flex-wrap text-xs text-ink-muted pt-1 border-t border-line">
                 <span>Requested: <strong className="text-ink font-semibold">{ROLE_LABELS[reviewingRequest.requestedRole] || reviewingRequest.requestedRole}</strong></span>
                 <span>·</span>
-                <span>{reviewingRequest.officeId === 'abuja' ? 'Abuja' : 'Lagos'} office</span>
+                <span>{officeLabelOf(reviewingRequest.officeId)}</span>
                 <span>·</span>
                 <span className="tabular-nums">{formatListTimeNg(reviewingRequest.createdAt)}</span>
               </div>
@@ -1605,7 +1797,10 @@ export function AdminView() {
                         name="review_role_choice"
                         value={r.id}
                         checked={isChecked}
-                        onChange={() => setReviewRole(r.id)}
+                        onChange={() => {
+                          setReviewRole(r.id);
+                          setReviewDepartment(defaultDepartmentForRole(r.id));
+                        }}
                         className="accent-brand cursor-pointer"
                       />
                       <div className="min-w-0">
@@ -1618,10 +1813,33 @@ export function AdminView() {
               </div>
             </div>
 
-            {/* Office choices (2 radio rows) */}
+            {/* Department select */}
+            <div className="space-y-2">
+              <label htmlFor="review_department_select" className="block text-xs font-semibold text-ink">
+                Department
+              </label>
+              <div className="relative">
+                <select
+                  id="review_department_select"
+                  name="review_department_choice"
+                  value={reviewDepartment}
+                  onChange={(e) => setReviewDepartment(e.target.value)}
+                  className="w-full h-11 px-3.5 pr-8 rounded-xl border border-line bg-surface text-ink text-xs font-medium appearance-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                >
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-ink-muted absolute right-3 top-3.5 pointer-events-none" aria-hidden="true" />
+              </div>
+            </div>
+
+            {/* Office choices (3 radio rows) */}
             <div className="space-y-2">
               <span className="block text-xs font-semibold text-ink">Office</span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {AVAILABLE_OFFICES.map((off) => {
                   const isChecked = reviewOffice === off.id;
                   return (

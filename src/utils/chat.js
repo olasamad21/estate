@@ -2,6 +2,44 @@
  * Pure utility functions for staff messaging, channel visibility, and unread computation.
  */
 import { normalisePhoneNg } from './formatters.js';
+import { COMPANY_CONFIG } from '../config/market.js';
+
+/**
+ * Computes initials from a person's name (first letters of the first two words, upper case).
+ */
+export function initialsOf(name = '') {
+  if (!name || typeof name !== 'string') return 'ST';
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'ST';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+/**
+ * Resolves the call name of a person (callName, or the first word of the name).
+ */
+export function callNameOf(person) {
+  if (!person) return '';
+  if (typeof person === 'string') {
+    return person.trim().split(/\s+/)[0] || person;
+  }
+  if (person.callName) {
+    return person.callName;
+  }
+  if (person.name) {
+    return person.name.trim().split(/\s+/)[0] || '';
+  }
+  return person.id || '';
+}
+
+/**
+ * Returns the human-readable office label from an office id.
+ */
+export function officeLabelOf(officeId) {
+  if (!officeId) return 'Company-wide';
+  const found = (COMPANY_CONFIG.offices || []).find((o) => o.id === officeId);
+  return found ? found.label : officeId;
+}
 
 /**
  * Checks if a staff user is active (not deactivated).
@@ -64,6 +102,7 @@ export function canManageListing(user, channel) {
   if (!user || !channel || !isStaffActive(user)) return false;
   if (user.role === 'admin') return true;
   if (user.role === 'manager') {
+    if (user.seesAllOffices) return true;
     const userOffice = user.officeId || user.office || null;
     const channelOffice = channel.officeId || null;
     return userOffice === channelOffice || !channelOffice;
@@ -73,17 +112,23 @@ export function canManageListing(user, channel) {
 
 export function officeChoicesFor(user) {
   if (!user || !isStaffActive(user)) return [];
+  const officeOptions = (COMPANY_CONFIG.offices || []).map((o) => ({
+    id: o.id,
+    label: o.label,
+  }));
   if (user.role === 'admin') {
     return [
       { id: null, label: 'Company-wide' },
-      { id: 'lagos', label: 'Lagos office' },
-      { id: 'abuja', label: 'Abuja office' },
+      ...officeOptions,
     ];
   }
   if (user.role === 'manager') {
-    const userOffice = user.officeId || user.office || 'lagos';
-    const label = userOffice === 'abuja' ? 'Abuja office' : 'Lagos office';
-    return [{ id: userOffice, label }];
+    if (user.seesAllOffices) {
+      return officeOptions;
+    }
+    const userOffice = user.officeId || user.office || null;
+    const match = officeOptions.find((o) => o.id === userOffice);
+    return match ? [match] : [];
   }
   return [];
 }
@@ -93,7 +138,7 @@ export function officeChoicesFor(user) {
  * Rule:
  * - Deactivated staff cannot see any channel.
  * - open kinds (public, announcement, listing) with officeId null: every active staff member;
- * - open kinds with an officeId: admin, or staff whose officeId equals the channel's officeId;
+ * - open kinds with an officeId: admin, seesAllOffices, or staff whose officeId equals the channel's officeId;
  * - private: members, and the admin;
  * - dm and group: members only (nobody else, not even the admin).
  */
@@ -102,6 +147,7 @@ export function canUserSeeChannel(user, channel) {
   if (!isStaffActive(user)) return false;
 
   const isAdmin = user.role === 'admin';
+  const seesAll = Boolean(user.seesAllOffices);
   const kind = channel.kind || 'public';
   const userOffice = user.officeId || user.office || null;
   const channelOffice = channel.officeId || null;
@@ -122,8 +168,8 @@ export function canUserSeeChannel(user, channel) {
     if (!channelOffice) {
       return true;
     }
-    // with an officeId: admin, or staff whose officeId equals the channel's officeId
-    return isAdmin || userOffice === channelOffice;
+    // with an officeId: admin, seesAllOffices, or staff whose officeId equals the channel's officeId
+    return isAdmin || seesAll || userOffice === channelOffice;
   }
 
   return false;
@@ -139,7 +185,7 @@ export function visibleChannelsFor(user, channels = []) {
 
 /**
  * Returns the member staff objects for a channel following the member rule:
- * - open channel with an officeId: active staff of that office plus the admin;
+ * - open channel with an officeId: active staff of that office plus admin and seesAllOffices;
  * - open channel with officeId null: all active staff;
  * - private, dm and group: the memberIds.
  * Skips deactivated staff.
@@ -162,7 +208,7 @@ export function channelMembersFor(channel, staffList = []) {
   return staffList.filter((s) => {
     if (!isStaffActive(s)) return false;
     const sOffice = s.officeId || s.office || null;
-    return s.role === 'admin' || sOffice === channelOffice;
+    return s.role === 'admin' || Boolean(s.seesAllOffices) || sOffice === channelOffice;
   });
 }
 
@@ -322,12 +368,13 @@ export function lastMessage(channelId, messages = []) {
 
 /**
  * Determines if a message mentions a specific user.
- * Checks for @Firstname (e.g. @Chidi, @Adaeze) or @all.
+ * Checks for @CallName (e.g. @Ruth, @Fortune) or @all.
  */
 export function mentionsUser(message, user) {
-  if (!message || !message.text || !user || !user.name) return false;
-  const firstName = user.name.split(' ')[0];
-  const regex = new RegExp(`@(?:${firstName}|all)\\b`, 'i');
+  if (!message || !message.text || !user) return false;
+  const callName = callNameOf(user);
+  if (!callName) return false;
+  const regex = new RegExp(`@(?:${callName}|all)\\b`, 'i');
   return regex.test(message.text);
 }
 
@@ -399,9 +446,11 @@ export function reactionList(reactions = {}, currentUserId = null) {
 
 const LISTING_TITLES = {
   'maitama-duplex': 'Maitama Duplex',
-  'lekki-terraces': 'Lekki Terraces',
   'wuse-office-block': 'Wuse Office Block',
-  'vi-penthouse': 'Victoria Island Penthouse',
+  'lugbe-terraces': 'Lugbe Terraces',
+  'airport-road-estate': 'Airport Road Estate',
+  'gra-apartments': 'GRA Phase 2 Apartments',
+  'trans-amadi-suites': 'Trans-Amadi Office Suites',
 };
 
 /**
@@ -420,18 +469,16 @@ export function messagePreview(message, staff) {
 
   if (message.type === 'lead') {
     if (message.claimedById) {
-      let claimerName = '';
+      let claimer = null;
       if (staff) {
         if (Array.isArray(staff)) {
-          const s = staff.find((member) => member.id === message.claimedById);
-          if (s?.name) claimerName = s.name;
+          claimer = staff.find((member) => member.id === message.claimedById) ?? null;
         } else if (typeof staff === 'object') {
-          const s = staff[message.claimedById];
-          if (s?.name) claimerName = s.name;
+          claimer = staff[message.claimedById] ?? null;
         }
       }
-      const firstName = claimerName ? claimerName.split(' ')[0] : (message.claimedById || 'Agent');
-      return `Lead taken by ${firstName}: ${message.clientName || 'Client'}`;
+      const callName = claimer ? callNameOf(claimer) : (message.claimedById || 'Agent');
+      return `Lead taken by ${callName}: ${message.clientName || 'Client'}`;
     }
     return `New lead: ${message.clientName || 'Client'}, ${message.area || 'Area'}`;
   }

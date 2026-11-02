@@ -73,18 +73,28 @@ export const COMPANY_CONFIG = {
   locale: 'en-NG',
   timeZone: 'Africa/Lagos',
   phoneCountryCode: '+234',
+  // Assumption: Head Quarters is in Abuja. Confirm with the company.
   offices: [
     {
-      id: 'lagos',
-      name: 'Lagos',
-      areas: ['Lekki', 'Victoria Island'],
-      consentLabel: "Governor's Consent",
+      id: 'hq',
+      name: 'Head Quarters',
+      label: 'Head Quarters',
+      areas: ['Maitama', 'Wuse 2', 'Garki'],
+      consentLabel: "Minister's Consent",
     },
     {
-      id: 'abuja',
-      name: 'Abuja',
-      areas: ['Maitama', 'Wuse 2'],
+      id: 'lugbe',
+      name: 'Lugbe',
+      label: 'Lugbe office',
+      areas: ['Lugbe', 'Airport Road', 'Kuje'],
       consentLabel: "Minister's Consent",
+    },
+    {
+      id: 'port-harcourt',
+      name: 'Port Harcourt',
+      label: 'Port Harcourt office',
+      areas: ['GRA Phase 2', 'Trans-Amadi', 'Rumuola'],
+      consentLabel: "Governor's Consent",
     },
   ],
 };

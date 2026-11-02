@@ -50,12 +50,12 @@ export function AppLayout({ children }) {
   };
 
   const officeSubtitle = useMemo(() => {
-    if (currentUser?.role === 'admin') {
+    if (currentUser?.seesAllOffices) {
       return 'All offices';
     }
     const userOfficeId = currentUser?.officeId || currentUser?.office;
-    const officeObj = COMPANY_CONFIG.offices.find((o) => o.id === userOfficeId);
-    return `${officeObj ? officeObj.name : 'Office'} office`;
+    const officeObj = (COMPANY_CONFIG.offices || []).find((o) => o.id === userOfficeId);
+    return officeObj?.label || officeObj?.name || 'Head Quarters';
   }, [currentUser]);
 
   // Unread notification count for bell: counts only unread mentions in channels that are not muted

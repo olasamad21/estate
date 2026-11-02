@@ -1,8 +1,8 @@
 # Da Ace Cribs Staff Workspace
 
-Sample data only. The people, offices and listings are invented.
+Staff names are real people, used with the company's permission for this demo. Conversations are invented.
 
-A Slack-style staff messaging web prototype for a Nigerian real estate company with offices in Lagos and Abuja. Front-end only, sample data, nothing is sent anywhere.
+A Slack-style staff messaging web prototype for Da Ace Cribs with offices in Head Quarters, Lugbe, and Port Harcourt. Front-end only, sample data, nothing is sent anywhere.
 
 ## Running Locally
 
@@ -18,12 +18,10 @@ Use any 6-digit verification code to sign in with any seeded phone number.
 
 | Name | Role | Office | Phone Number |
 | :--- | :--- | :--- | :--- |
-| Adaeze Okonkwo | Admin | Lagos & Abuja | +234 803 000 0101 |
-| Ibrahim Musa | Manager | Abuja | +234 803 000 0102 |
-| Funmilayo Adeyemi | Manager | Lagos | +234 803 000 0103 |
-| Hauwa Sani | Agent | Abuja | +234 803 000 0106 |
-| Chidi Eze | Agent | Lagos | +234 803 000 0104 |
-| Ngozi Nwosu | Support staff | Lagos | +234 803 000 0108 |
+| Ruth Obasanjo | Admin | All offices | +234 000 000 0001 |
+| Fortune Mfoniso Idaboh | Manager | All offices | +234 000 000 0006 |
+| Alechenu Ahubi Micheal | Manager | Port Harcourt office | +234 000 000 0005 |
+| Kolawole Taiye | Agent | Lugbe office | +234 000 000 0024 |
 
 You can also switch personas at any point: open Demo tools, then View as. To reset the prototype, open Demo tools, then Reset demo. To log out, tap your avatar, then Log out. Managers and admins can post a lead or share a listing from the paperclip menu in the message box.
 
@@ -33,18 +31,18 @@ Text size: tap your avatar, then Text size (or Aa on the login screen) to switch
 
 Follow these steps in order to tour the core workspace features:
 
-1. Log in as Adaeze Okonkwo (admin has visibility across both Lagos and Abuja branches).
+1. Log in as Ruth Obasanjo (admin has visibility across announcements and all offices).
 2. Open #announcements to review broadcast notices and tap Seen by to inspect read receipts.
-3. Open Demo tools, then View as to switch to Hauwa Sani and inspect Abuja branch channels.
-4. Claim a lead in #abuja-leads by tapping "I've got this" on an unclaimed lead card.
-5. Open #maitama-duplex, review the pinned listing card, open Files & Media, and preview a photo.
+3. Open Demo tools, then View as to switch to Taiye (Lugbe only).
+4. Claim a lead in #lugbe-leads by tapping "I've got this" on an unclaimed lead card.
+5. Open #lugbe-terraces, review the listing card, and change a photo.
 6. Open a PDF document attachment in chat or from the files tab to test the multi-page viewer.
-7. Send a message in #abuja-sales mentioning @Ibrahim and watch the scripted colleague reply appear.
+7. Send a message with a mention.
 8. Add an emoji reaction to a message and post a reply inside a message thread.
-9. Open Demo tools, then View as to switch to Chidi Eze (Lagos only) and compare his visible channel list with Hauwa's.
+9. Open Demo tools, then View as to switch to Micheal (Port Harcourt).
 10. Open Demo tools, toggle Simulate offline, and send a message to observe offline queueing.
-11. Open Demo tools, then View as to switch back to Adaeze Okonkwo, open Admin from the top bar, and add a new staff member. To finish, tap your avatar, then Log out.
-12. On the login screen choose Request access, submit a request, log in as Adaeze, open Admin, then Requests, and approve it.
+11. Open Demo tools, switch back to Ruth, open Admin from the top bar, and add a staff member. To finish, tap your avatar, then Log out.
+12. On the login screen choose Request access, submit a request, log in as Ruth, open Admin, then Requests, and approve it.
 
 ## What is Simulated
 

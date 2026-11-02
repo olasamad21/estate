@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
-import { canPost } from '../../utils/chat.js';
+import { canPost, callNameOf } from '../../utils/chat.js';
 import { Button } from '../../components/common/Button.jsx';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
@@ -79,7 +79,7 @@ export function MessageComposer({
   };
 
   const handleSelectMention = (member) => {
-    const firstName = member.name.split(' ')[0];
+    const firstName = callNameOf(member);
     const cursorPos = textareaRef.current ? textareaRef.current.selectionStart : text.length;
     const textBeforeCursor = text.slice(0, cursorPos);
     const textAfterCursor = text.slice(cursorPos);

@@ -5,7 +5,7 @@ import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
-import { channelMembersFor } from '../../utils/chat.js';
+import { channelMembersFor, initialsOf, officeLabelOf } from '../../utils/chat.js';
 
 export function ChannelInfoDrawer({
   isOpen,
@@ -32,11 +32,7 @@ export function ChannelInfoDrawer({
   if (!channel) return null;
 
   const isDm = channel.kind === 'dm';
-  const officeLine = channel.officeId === 'lagos'
-    ? 'Lagos office'
-    : channel.officeId === 'abuja'
-    ? 'Abuja office'
-    : 'All offices';
+  const officeLine = officeLabelOf(channel.officeId);
 
   return (
     <Drawer
@@ -111,9 +107,9 @@ export function ChannelInfoDrawer({
               <div className="flex items-center gap-3">
                 <Avatar
                   role={otherPerson.role}
-                  initials={otherPerson.initials}
+                  initials={initialsOf(otherPerson.name)}
                   name={otherPerson.name}
-                  isOnline={otherPerson.online}
+                  isOnline={otherPerson.isOnline ?? otherPerson.online}
                   size="md"
                 />
                 <div className="min-w-0">
@@ -126,7 +122,7 @@ export function ChannelInfoDrawer({
                   {ROLE_LABELS[otherPerson.role] || otherPerson.role}
                 </Badge>
                 <span className="text-xs text-ink-muted">
-                  {(otherPerson.officeId || otherPerson.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}
+                  {officeLabelOf(otherPerson.officeId || otherPerson.office)}
                 </span>
                 <span className="text-xs text-ink-muted font-mono tabular-nums">
                   {formatPhoneNg(otherPerson.phone)}
@@ -148,9 +144,9 @@ export function ChannelInfoDrawer({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar
                       role={member.role}
-                      initials={member.initials}
+                      initials={initialsOf(member.name)}
                       name={member.name}
-                      isOnline={member.online}
+                      isOnline={member.isOnline ?? member.online}
                       size="sm"
                     />
                     <div className="min-w-0">
@@ -162,9 +158,11 @@ export function ChannelInfoDrawer({
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-ink-muted">
-                        {(member.officeId || member.office) === 'abuja' ? 'Abuja office' : 'Lagos office'}
-                      </div>
+                      {member.title && (
+                        <div className="text-xs text-ink-muted">
+                          {member.title}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="shrink-0">

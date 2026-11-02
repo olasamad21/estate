@@ -66,13 +66,13 @@ export function TextSizeDrawer({ isOpen, onClose }) {
             <div className="flex items-center gap-2 border-b border-line pb-2.5">
               <Hash className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
               <span className="text-sm font-bold text-ink">general</span>
-              <span className="text-xs text-ink-muted">· Lagos & Abuja</span>
+              <span className="text-xs text-ink-muted">· All offices</span>
             </div>
 
             {/* Sample message with formatted Naira price */}
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-ink">Adaeze Okonkwo</span>
+                <span className="text-xs font-bold text-ink">Ruth Obasanjo</span>
                 <span className="text-xs text-ink-muted">12:30 PM</span>
               </div>
               <p className="text-xs text-ink-soft leading-relaxed">

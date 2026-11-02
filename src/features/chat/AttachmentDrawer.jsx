@@ -58,7 +58,7 @@ export function AttachmentDrawer({
 
   const handleSamplePhoto = () => {
     onAttachFile?.({
-      fileName: 'Site_Photo_Ikoyi.jpg',
+      fileName: 'Site_Photo_Maitama.jpg',
       fileSize: '2.8 MB',
       fileKind: 'photo',
     });
@@ -136,7 +136,7 @@ export function AttachmentDrawer({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-ink">Use a sample photo</p>
-            <p className="text-xs text-ink-muted">Site_Photo_Ikoyi.jpg (2.8 MB)</p>
+            <p className="text-xs text-ink-muted">Site_Photo_Maitama.jpg (2.8 MB)</p>
           </div>
         </button>
 

@@ -2,7 +2,7 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
-import { isStaffActive } from '../../utils/chat.js';
+import { isStaffActive, initialsOf, officeLabelOf } from '../../utils/chat.js';
 
 export function SeenByDrawer({ isOpen, onClose, message, staffList = [] }) {
   if (!message) return null;
@@ -35,9 +35,9 @@ export function SeenByDrawer({ isOpen, onClose, message, staffList = [] }) {
                 <div className="flex items-center gap-2.5 min-w-0 pr-2">
                   <Avatar
                     role={member.role}
-                    initials={member.initials}
+                    initials={initialsOf(member.name)}
                     name={member.name}
-                    isOnline={member.online}
+                    isOnline={member.isOnline ?? member.online}
                     size="xs"
                   />
                   <div className="min-w-0">
@@ -45,7 +45,7 @@ export function SeenByDrawer({ isOpen, onClose, message, staffList = [] }) {
                       {member.name}
                     </p>
                     <p className="text-xs text-ink-muted">
-                      {ROLE_LABELS[member.role] || member.role} · {member.office.toUpperCase()}
+                      {ROLE_LABELS[member.role] || member.role} · {officeLabelOf(member.officeId || member.office)}
                     </p>
                   </div>
                 </div>

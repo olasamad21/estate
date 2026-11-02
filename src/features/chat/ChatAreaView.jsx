@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies } from '../../utils/chat.js';
+import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies, initialsOf } from '../../utils/chat.js';
 import { formatDayLabelNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getAccessDeniedMessage } from '../../utils/messages.js';
@@ -233,12 +233,12 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const officeObj = channel.officeId
     ? COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId)
     : null;
-  const officeName = officeObj ? officeObj.name : 'All offices';
+  const officeLabel = officeObj?.label || (officeObj ? officeObj.name : 'All offices');
 
   const headerCaption = (() => {
     if (!channel) return '';
     if (channel.kind === 'listing') {
-      return `${channel.location || 'Listing'} · ${officeName}`;
+      return `${channel.location || 'Listing'} · ${officeLabel}`;
     }
     if (channel.kind === 'dm') {
       const otherId = channel.members?.find((id) => id !== currentUserId) || channel.members?.[0];
@@ -248,7 +248,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     if (channel.kind === 'group') {
       return `${channelMembers.length} members`;
     }
-    return `${channelMembers.length} members${channel.officeId ? ` · ${officeName}` : ' · All offices'}`;
+    return `${channelMembers.length} members${channel.officeId ? ` · ${officeLabel}` : ' · All offices'}`;
   })();
 
   const renderChannelIcon = () => {
@@ -270,7 +270,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
       return (
         <Avatar
           role={other?.role || 'agent'}
-          initials={other?.initials}
+          initials={initialsOf(other?.name)}
           name={other?.name || displayName}
           isOnline={other?.online || false}
           size="sm"

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatNaira } from '../../utils/formatters.js';
-import { COMPANY_CONFIG } from '../../config/market.js';
+import { canManageListing, officeLabelOf } from '../../utils/chat.js';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
@@ -109,8 +109,7 @@ export function ListingDetailsDrawer({
 
   if (!channel) return null;
 
-  const office = COMPANY_CONFIG.offices.find((o) => o.id === channel.officeId);
-  const officeName = office ? office.name : 'All offices';
+  const officeName = officeLabelOf(channel.officeId);
 
   const statusVariant =
     channel.status === 'Available'
@@ -121,10 +120,7 @@ export function ListingDetailsDrawer({
 
   const canShareInChannel = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
-  const canChangeStatus =
-    currentUser?.role === 'admin' ||
-    (currentUser?.role === 'manager' &&
-      (currentUser?.office === channel.officeId || !channel.officeId));
+  const canChangeStatus = canManageListing(currentUser, channel);
 
   const handleSaveStatus = (newStatus) => {
     onSetListingStatus?.(channel.id, newStatus);
@@ -157,11 +153,11 @@ export function ListingDetailsDrawer({
           <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-1.5 text-xs">
             <div className="flex items-center justify-between text-ink">
               <span className="text-ink-muted">Area / Neighborhood</span>
-              <span className="font-semibold">{channel.location || 'Lekki'}</span>
+              <span className="font-semibold">{channel.location || 'Area'}</span>
             </div>
             <div className="flex items-center justify-between text-ink">
               <span className="text-ink-muted">Branch Office</span>
-              <span className="font-semibold">{officeName} office</span>
+              <span className="font-semibold">{officeName}</span>
             </div>
           </div>
 

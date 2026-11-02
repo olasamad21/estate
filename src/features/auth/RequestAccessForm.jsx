@@ -16,7 +16,7 @@ export function RequestAccessForm({ onBackToSignIn }) {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+234 ');
-  const [officeId, setOfficeId] = useState('lagos');
+  const [officeId, setOfficeId] = useState(COMPANY_CONFIG?.offices?.[0]?.id || 'hq');
   const [requestedRole, setRequestedRole] = useState('agent');
   const [touched, setTouched] = useState(false);
   const [errors, setErrors] = useState({});
@@ -163,7 +163,7 @@ export function RequestAccessForm({ onBackToSignIn }) {
         {/* Office */}
         <div className="space-y-1.5">
           <span className="block text-xs font-semibold text-ink">Office</span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
             {(COMPANY_CONFIG?.offices || []).map((office) => {
               const isChecked = officeId === office.id;
               return (
@@ -183,7 +183,7 @@ export function RequestAccessForm({ onBackToSignIn }) {
                     onChange={() => setOfficeId(office.id)}
                     className="accent-brand cursor-pointer"
                   />
-                  <span className="text-xs font-medium">{office.name} office</span>
+                  <span className="text-xs font-medium">{office.label}</span>
                 </label>
               );
             })}
@@ -241,6 +241,10 @@ export function RequestAccessForm({ onBackToSignIn }) {
           </button>
         </div>
       </form>
+
+      <p className="text-xs text-ink-muted text-center pt-2 leading-relaxed">
+        All conversations in this demo are invented. Names are used for demonstration only.
+      </p>
     </div>
   );
 }

@@ -16,8 +16,14 @@ import {
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
-import { COMPANY_CONFIG } from '../../config/market.js';
-import { visibleChannelsFor, channelDisplayName, isStaffActive } from '../../utils/chat.js';
+import {
+  visibleChannelsFor,
+  channelDisplayName,
+  isStaffActive,
+  initialsOf,
+  officeLabelOf,
+  callNameOf,
+} from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getNoDirectMessageToast } from '../../utils/messages.js';
@@ -47,8 +53,7 @@ function HighlightMatch({ text = '', query = '' }) {
 
 function getOfficeName(officeId) {
   if (!officeId) return null;
-  const office = COMPANY_CONFIG.offices?.find((o) => o.id === officeId);
-  return office ? office.name : (officeId === 'lagos' ? 'Lagos' : 'Abuja');
+  return officeLabelOf(officeId);
 }
 
 export function GlobalSearchDrawer({
@@ -327,38 +332,42 @@ export function GlobalSearchDrawer({
                   <span>People ({results.people.length})</span>
                 </div>
                 <div className="space-y-1">
-                  {(expandedGroups.people ? results.people : results.people.slice(0, 5)).map((person) => (
-                    <button
-                      key={person.id}
-                      type="button"
-                      onClick={() => handleSelectPerson(person)}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg border border-line bg-surface hover:bg-surface-raised transition-colors cursor-pointer text-left gap-2"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                        <Avatar
-                          role={person.role}
-                          initials={person.initials}
-                          name={person.name}
-                          isOnline={person.online}
-                          size="xs"
-                        />
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-ink break-words">
-                            <HighlightMatch text={person.name} query={query} />
-                          </div>
-                          <div className="text-xs text-ink-muted break-words">
-                            <HighlightMatch
-                              text={`${person.title} · ${person.office}`}
-                              query={query}
-                            />
+                  {(expandedGroups.people ? results.people : results.people.slice(0, 5)).map((person) => {
+                    const personOffice = officeLabelOf(person.officeId || person.office);
+                    const personSubtitle = person.title ? `${person.title} · ${personOffice}` : personOffice;
+                    return (
+                      <button
+                        key={person.id}
+                        type="button"
+                        onClick={() => handleSelectPerson(person)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg border border-line bg-surface hover:bg-surface-raised transition-colors cursor-pointer text-left gap-2"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <Avatar
+                            role={person.role}
+                            initials={initialsOf(person.name)}
+                            name={person.name}
+                            isOnline={person.isOnline ?? person.online}
+                            size="xs"
+                          />
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-ink break-words">
+                              <HighlightMatch text={person.name} query={query} />
+                            </div>
+                            <div className="text-xs text-ink-muted break-words">
+                              <HighlightMatch
+                                text={personSubtitle}
+                                query={query}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised border border-line text-ink-muted font-medium shrink-0">
-                        {ROLE_LABELS[person.role] || person.role}
-                      </span>
-                    </button>
-                  ))}
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised border border-line text-ink-muted font-medium shrink-0">
+                          {ROLE_LABELS[person.role] || person.role}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
                 {results.people.length > 5 && (
                   <button
@@ -384,7 +393,7 @@ export function GlobalSearchDrawer({
                     const ch = channelMap[msg.channelId];
                     const chName = ch ? channelDisplayName(ch, currentUserId, staff) : 'channel';
                     const sender = staffById[msg.senderId];
-                    const firstName = sender?.name ? sender.name.split(' ')[0] : 'Staff';
+                    const firstName = sender ? callNameOf(sender) : 'Staff';
 
                     return (
                       <button
@@ -433,7 +442,7 @@ export function GlobalSearchDrawer({
                     const ch = channelMap[file.channelId];
                     const chName = ch ? channelDisplayName(ch, currentUserId, staff) : 'channel';
                     const sender = staffById[file.senderId];
-                    const firstName = sender?.name ? sender.name.split(' ')[0] : 'Staff';
+                    const firstName = sender ? callNameOf(sender) : 'Staff';
                     const isPhoto = file.fileKind === 'photo';
 
                     return (

@@ -13,6 +13,7 @@ import {
   officeChoicesFor,
   isChannelNameValid,
   isStaffActive,
+  initialsOf,
 } from '../../utils/chat.js';
 import { getChannelCreatedMessage, getListingRoomCreatedMessage } from '../../utils/messages.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
@@ -51,8 +52,10 @@ function CreateChannelForm({ onClose }) {
   const [touched, setTouched] = useState(false);
 
   // Listing room state
-  const managerOfficeId = currentUser?.officeId || currentUser?.office || 'lagos';
-  const defaultListingOffice = currentUser?.role === 'admin' ? 'lagos' : managerOfficeId;
+  const managerOfficeId = currentUser?.officeId || currentUser?.office || COMPANY_CONFIG.offices[0]?.id || 'hq';
+  const defaultListingOffice = (currentUser?.role === 'admin' || currentUser?.seesAllOffices)
+    ? (COMPANY_CONFIG.offices[0]?.id || 'hq')
+    : managerOfficeId;
   const [listingOfficeId, setListingOfficeId] = useState(defaultListingOffice);
   const [listingTitle, setListingTitle] = useState('');
   const [listingArea, setListingArea] = useState('');
@@ -331,7 +334,7 @@ function CreateChannelForm({ onClose }) {
               value={listingTitle}
               onChange={(e) => setListingTitle(e.target.value)}
               onBlur={() => setTouched(true)}
-              placeholder="e.g. Lekki Phase 1 Duplex"
+              placeholder="e.g. Maitama Terrace Duplex"
               maxLength={40}
               required
               className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
@@ -343,11 +346,11 @@ function CreateChannelForm({ onClose }) {
             )}
           </div>
 
-          {/* Office (Admins choose Lagos or Abuja; managers see their own office fixed) */}
+          {/* Office */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-ink">Branch Office</label>
-            {currentUser?.role === 'admin' ? (
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Branch Office">
+            {currentUser?.role === 'admin' || currentUser?.seesAllOffices ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Branch Office">
                 {COMPANY_CONFIG.offices.map((off) => (
                   <label
                     key={off.id}
@@ -365,13 +368,13 @@ function CreateChannelForm({ onClose }) {
                       onChange={() => handleListingOfficeChange(off.id)}
                       className="accent-brand cursor-pointer"
                     />
-                    <span>{off.name} office</span>
+                    <span>{off.label}</span>
                   </label>
                 ))}
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-surface-raised border border-line text-xs font-semibold text-ink">
-                {currentListingOffice.name} office
+                {currentListingOffice.label}
               </div>
             )}
           </div>
@@ -406,7 +409,7 @@ function CreateChannelForm({ onClose }) {
               value={listingArea}
               onChange={(e) => setListingArea(e.target.value)}
               onBlur={() => setTouched(true)}
-              placeholder="e.g. Lekki Phase 1"
+              placeholder="e.g. Maitama"
               maxLength={30}
               required
               className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
@@ -564,7 +567,7 @@ function CreateChannelForm({ onClose }) {
                 value={name}
                 onChange={handleNameChange}
                 onBlur={() => setTouched(true)}
-                placeholder="e.g. lekki-inspections"
+                placeholder="e.g. maitama-inspections"
                 required
                 className="w-full pl-9 pr-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
               />
@@ -581,7 +584,7 @@ function CreateChannelForm({ onClose }) {
           {/* Office Selection */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-ink">Office Scope</label>
-            {currentUser?.role === 'admin' ? (
+            {officeOptions.length > 1 ? (
               <div className="space-y-1.5" role="radiogroup" aria-label="Office Scope">
                 {officeOptions.map((opt) => (
                   <label
@@ -663,7 +666,7 @@ function CreateChannelForm({ onClose }) {
                       <div className="flex items-center gap-2.5 min-w-0 pr-2">
                         <Avatar
                           role={person.role}
-                          initials={person.initials}
+                          initials={initialsOf(person.name)}
                           name={person.name}
                           size="xs"
                         />
