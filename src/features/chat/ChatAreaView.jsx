@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies, initialsOf } from '../../utils/chat.js';
+import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies, initialsOf, canPost } from '../../utils/chat.js';
 import { formatDayLabelNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getAccessDeniedMessage } from '../../utils/messages.js';
@@ -501,6 +501,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         currentUser={currentUser}
         staffById={staffById}
         isArchived={Boolean(channel?.archived)}
+        allowedToPost={canPost(currentUser, channel)}
         onSendReply={(chId, parentId, text) => {
           sendThreadReply(chId, parentId, text);
         }}

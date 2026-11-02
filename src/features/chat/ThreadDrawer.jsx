@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Lock } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
@@ -15,6 +15,7 @@ export function ThreadDrawer({
   allMessages = [],
   staffById = {},
   isArchived = false,
+  allowedToPost = true,
   onSendReply,
 }) {
   const [replyText, setReplyText] = useState('');
@@ -127,6 +128,11 @@ export function ThreadDrawer({
         {isArchived ? (
           <div className="p-3 bg-surface-raised border-t border-line text-center text-xs text-ink-muted font-medium shrink-0">
             This channel is archived
+          </div>
+        ) : !allowedToPost ? (
+          <div className="p-3 border-t border-line bg-surface-raised flex items-center justify-center gap-2 text-xs text-ink-muted shrink-0">
+            <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>Only admins can send messages.</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-3 bg-surface border-t border-line shrink-0">

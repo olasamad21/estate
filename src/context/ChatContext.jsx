@@ -7,7 +7,7 @@ import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -28,9 +28,12 @@ import {
   getLeadPostedMessage,
   getListingSharedMessage,
   getListingSharedInChannelMessage,
+  getChannelAdminAddedMessage,
+  getChannelAdminRemovedMessage,
+  getChannelSendPolicyChangedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-12';
+const CHAT_STATE_VERSION = 'chat-13';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -241,6 +244,9 @@ export function ChatProvider({ children }) {
 
   const sendMessage = useCallback((channelId, text) => {
     if (!text || !text.trim() || !currentUserId) return;
+    const currentChannel = channels.find((c) => c.id === channelId);
+    if (!currentChannel || !canPost(currentUser, currentChannel)) return;
+
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -268,11 +274,10 @@ export function ChatProvider({ children }) {
     });
 
     // Scripted colleague reply if online and not in announcements
-    if (!isOffline && channelId !== 'announcements') {
-      const currentChannel = channels.find((c) => c.id === channelId);
-      const candidates = currentChannel
-        ? channelMembersFor(currentChannel, staff).filter((s) => s.id !== currentUserId && s.online && isStaffActive(s))
-        : [];
+    if (!isOffline && channelId !== 'announcements' && canPost(currentUser, currentChannel)) {
+      const candidates = channelMembersFor(currentChannel, staff).filter(
+        (s) => s.id !== currentUserId && s.online && isStaffActive(s) && canPost(s, currentChannel)
+      );
 
       if (candidates.length > 0) {
         const responder = candidates[Math.floor(Math.random() * candidates.length)];
@@ -300,10 +305,13 @@ export function ChatProvider({ children }) {
         }, delay);
       }
     }
-  }, [currentUserId, isOffline, channels, staff, clearTypingTimer]);
+  }, [currentUserId, currentUser, isOffline, channels, staff, clearTypingTimer]);
 
   const sendThreadReply = useCallback((channelId, parentId, text) => {
     if (!text || !text.trim() || !currentUserId || !parentId) return;
+    const currentChannel = channels.find((c) => c.id === channelId);
+    if (!currentChannel || !canPost(currentUser, currentChannel)) return;
+
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -320,10 +328,13 @@ export function ChatProvider({ children }) {
       ...prev,
       messages: [...prev.messages, newMsg],
     }));
-  }, [currentUserId, isOffline]);
+  }, [currentUserId, currentUser, isOffline, channels]);
 
   const sendVoiceNote = useCallback((channelId, durationSec) => {
     if (!currentUserId || !channelId) return;
+    const currentChannel = channels.find((c) => c.id === channelId);
+    if (!currentChannel || !canPost(currentUser, currentChannel)) return;
+
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -340,10 +351,13 @@ export function ChatProvider({ children }) {
       ...prev,
       messages: [...prev.messages, newMsg],
     }));
-  }, [currentUserId, isOffline]);
+  }, [currentUserId, currentUser, isOffline, channels]);
 
   const sendFile = useCallback((channelId, { fileName, fileSize, fileKind }) => {
     if (!currentUserId || !channelId || !fileName) return null;
+    const currentChannel = channels.find((c) => c.id === channelId);
+    if (!currentChannel || !canPost(currentUser, currentChannel)) return null;
+
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -364,7 +378,7 @@ export function ChatProvider({ children }) {
     }));
 
     return newMsg.id;
-  }, [currentUserId, isOffline]);
+  }, [currentUserId, currentUser, isOffline, channels]);
 
   const editMessage = useCallback((messageId, newText) => {
     if (!messageId || !newText.trim()) return;
@@ -729,7 +743,7 @@ export function ChatProvider({ children }) {
     });
   }, []);
 
-  const createChannel = useCallback(({ name, kind, officeId, description, memberIds, title, area, priceNgn, status }) => {
+  const createChannel = useCallback(({ name, kind, officeId, description, memberIds, title, area, priceNgn, status, sendPolicy }) => {
     const isListing = kind === 'listing';
     const creatorCallName = callNameOf(currentUser) || 'Staff';
 
@@ -754,6 +768,8 @@ export function ChatProvider({ children }) {
         description: generatedDesc,
         members: [],
         createdById: currentUserId,
+        adminIds: [currentUserId],
+        sendPolicy: sendPolicy || 'everyone',
         createdAt: new Date().toISOString(),
         archived: false,
         listing: {
@@ -775,6 +791,8 @@ export function ChatProvider({ children }) {
           ? Array.from(new Set([currentUserId, ...(memberIds || [])]))
           : undefined,
         createdById: currentUserId,
+        adminIds: [currentUserId],
+        sendPolicy: sendPolicy || 'everyone',
         createdAt: new Date().toISOString(),
         archived: false,
       };
@@ -928,10 +946,131 @@ export function ChatProvider({ children }) {
     });
   }, []);
 
+  const setChannelAdmin = useCallback((channelId, staffId, makeAdmin) => {
+    if (!channelId || !staffId || !currentUser) return 'Invalid request.';
+    const channel = channels.find((c) => c.id === channelId);
+    if (!channel) return 'Channel not found.';
+
+    if (!canManageChannel(currentUser, channel)) {
+      return 'You do not have permission to manage this channel.';
+    }
+
+    const targetStaff = staff.find((s) => s.id === staffId);
+    if (!targetStaff) return 'Staff member not found.';
+
+    // Company admins' rights are implicit and not editable
+    if (targetStaff.role === 'admin') {
+      return 'Company admins are already admins of every channel.';
+    }
+
+    // Target must be an active member (using channelMembersFor)
+    const members = channelMembersFor(channel, staff);
+    const isMember = members.some((m) => m.id === staffId && isStaffActive(m));
+    if (!isMember) {
+      return 'Target must be an active member of the channel.';
+    }
+
+    const currentAdminIds = Array.isArray(channel.adminIds)
+      ? channel.adminIds
+      : (channel.createdById ? [channel.createdById] : []);
+
+    // A person cannot remove their own channel-admin status when they are the only entry in adminIds
+    if (!makeAdmin && currentAdminIds.includes(staffId)) {
+      if (currentAdminIds.length === 1 && currentAdminIds[0] === staffId) {
+        return 'A channel must have at least one admin.';
+      }
+    }
+
+    const nextAdminIds = makeAdmin
+      ? Array.from(new Set([...currentAdminIds, staffId]))
+      : currentAdminIds.filter((id) => id !== staffId);
+
+    const actorCallName = callNameOf(currentUser) || 'Staff';
+    const targetCallName = callNameOf(targetStaff) || 'Staff';
+
+    const systemText = makeAdmin
+      ? `${actorCallName} made ${targetCallName} a channel admin`
+      : `${actorCallName} removed ${targetCallName} as channel admin`;
+
+    const systemMsg = {
+      id: `msg-sys-${Date.now()}`,
+      channelId,
+      senderId: 'system',
+      type: 'system',
+      text: systemText,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const nextChannels = prev.channels.map((ch) =>
+        ch.id === channelId ? { ...ch, adminIds: nextAdminIds } : ch
+      );
+      return {
+        ...prev,
+        channels: nextChannels,
+        messages: [...prev.messages, systemMsg],
+      };
+    });
+
+    if (makeAdmin) {
+      showToast(getChannelAdminAddedMessage(targetCallName));
+    } else {
+      showToast(getChannelAdminRemovedMessage(targetCallName));
+    }
+
+    return null;
+  }, [currentUser, channels, staff, showToast]);
+
+  const setChannelSendPolicy = useCallback((channelId, policy) => {
+    if (!channelId || !currentUser) return;
+    if (policy !== 'everyone' && policy !== 'admins') return;
+
+    const channel = channels.find((c) => c.id === channelId);
+    if (!channel) return;
+
+    if (!canManageChannel(currentUser, channel)) {
+      return;
+    }
+
+    if (channel.sendPolicy === policy) return;
+
+    const actorCallName = callNameOf(currentUser) || 'Staff';
+    const systemText = policy === 'admins'
+      ? `${actorCallName} changed who can send messages to only admins`
+      : `${actorCallName} changed who can send messages to everyone`;
+
+    const systemMsg = {
+      id: `msg-sys-${Date.now()}`,
+      channelId,
+      senderId: 'system',
+      type: 'system',
+      text: systemText,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+    };
+
+    setChatState((prev) => {
+      const nextChannels = prev.channels.map((ch) =>
+        ch.id === channelId ? { ...ch, sendPolicy: policy } : ch
+      );
+      return {
+        ...prev,
+        channels: nextChannels,
+        messages: [...prev.messages, systemMsg],
+      };
+    });
+
+    showToast(getChannelSendPolicyChangedMessage(policy));
+  }, [currentUser, channels, showToast]);
+
   const claimLead = useCallback((messageId) => {
     if (!messageId || !currentUserId) return;
     const target = messages.find((m) => m.id === messageId);
     if (!target || target.claimedById) return;
+
+    const targetChannel = channels.find((c) => c.id === target.channelId);
+    if (!canClaimLead(currentUser, targetChannel)) return;
 
     const claimedAt = new Date().toISOString();
     const leadTakerName = callNameOf(currentUser) || 'Staff';
@@ -964,7 +1103,7 @@ export function ChatProvider({ children }) {
     });
 
     showToast(getLeadClaimedMessage(target.clientName));
-  }, [currentUserId, currentUser, messages, showToast]);
+  }, [currentUserId, currentUser, messages, channels, showToast]);
 
   const setListingStatus = useCallback((channelId, status) => {
     if (!channelId || !status) return;
@@ -1167,6 +1306,8 @@ export function ChatProvider({ children }) {
     setStaffActive,
     createChannel,
     setChannelArchived,
+    setChannelAdmin,
+    setChannelSendPolicy,
     claimLead,
     setListingStatus,
     updateListingDetails,
@@ -1212,6 +1353,8 @@ export function ChatProvider({ children }) {
     setStaffActive,
     createChannel,
     setChannelArchived,
+    setChannelAdmin,
+    setChannelSendPolicy,
     claimLead,
     setListingStatus,
     updateListingDetails,

@@ -48,6 +48,7 @@ function CreateChannelForm({ onClose }) {
   const [name, setName] = useState('');
   const [officeId, setOfficeId] = useState(defaultOfficeId);
   const [description, setDescription] = useState('');
+  const [sendPolicy, setSendPolicy] = useState('everyone');
   const [selectedMemberIds, setSelectedMemberIds] = useState(currentUserId ? [currentUserId] : []);
   const [touched, setTouched] = useState(false);
 
@@ -211,6 +212,7 @@ function CreateChannelForm({ onClose }) {
       officeId,
       description: description.trim(),
       memberIds: kind === 'private' ? selectedMemberIds : undefined,
+      sendPolicy,
     });
 
     showToast(getChannelCreatedMessage(newChannel.name));
@@ -634,6 +636,48 @@ function CreateChannelForm({ onClose }) {
               placeholder="Brief overview of channel purpose"
               className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
             />
+          </div>
+
+          {/* Who can send messages */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-ink">Who can send messages</label>
+            <div className="space-y-1.5" role="radiogroup" aria-label="Who can send messages">
+              <label
+                className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer text-xs transition-colors ${
+                  sendPolicy === 'everyone'
+                    ? 'border-brand bg-surface font-semibold text-ink'
+                    : 'border-line bg-surface text-ink-soft hover:bg-surface-raised'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="new_channel_send_policy"
+                  value="everyone"
+                  checked={sendPolicy === 'everyone'}
+                  onChange={() => setSendPolicy('everyone')}
+                  className="accent-brand cursor-pointer"
+                />
+                <span>Everyone</span>
+              </label>
+
+              <label
+                className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer text-xs transition-colors ${
+                  sendPolicy === 'admins'
+                    ? 'border-brand bg-surface font-semibold text-ink'
+                    : 'border-line bg-surface text-ink-soft hover:bg-surface-raised'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="new_channel_send_policy"
+                  value="admins"
+                  checked={sendPolicy === 'admins'}
+                  onChange={() => setSendPolicy('admins')}
+                  className="accent-brand cursor-pointer"
+                />
+                <span>Only admins</span>
+              </label>
+            </div>
           </div>
 
           {/* Private Channel Member Checklist */}

@@ -168,3 +168,21 @@ export function getListingSharedInChannelMessage(channelName = '') {
   const clean = String(channelName || '').replace(/^#/, '').trim();
   return clean ? `Listing shared in #${clean}` : 'Listing shared in channel';
 }
+
+export function getChannelAdminAddedMessage(name = 'Member') {
+  return `${name} is now a channel admin`;
+}
+
+export function getChannelAdminRemovedMessage(name = 'Member') {
+  return `${name} removed as channel admin`;
+}
+
+export function getChannelSendPolicyChangedMessage(policy = 'everyone') {
+  return policy === 'admins'
+    ? 'Only admins can send messages'
+    : 'Everyone can now send messages';
+}
+
+export function getCannotRemoveOnlyAdminMessage() {
+  return 'A channel must have at least one admin.';
+}

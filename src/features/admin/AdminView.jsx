@@ -529,6 +529,11 @@ function ChannelRow({
           )}
 
           {/* Row 3: Quiet caption row when relevant */}
+          {channel.sendPolicy === 'admins' && (
+            <div className="text-xs text-ink-muted mt-0.5">
+              Only admins can send
+            </div>
+          )}
           {isPrivate && Array.isArray(channel.members) && (
             <div className="text-xs text-ink-muted mt-0.5">
               {channel.members.length} members

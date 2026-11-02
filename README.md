@@ -23,7 +23,7 @@ Use any 6-digit verification code to sign in with any seeded phone number.
 | Alechenu Ahubi Micheal | Manager | Port Harcourt office | +234 000 000 0005 |
 | Kolawole Taiye | Agent | Lugbe office | +234 000 000 0024 |
 
-You can also switch personas at any point: open Demo tools, then View as. To reset the prototype, open Demo tools, then Reset demo. To log out, tap your avatar, then Log out. Managers and admins can post a lead or share a listing from the paperclip menu in the message box.
+You can also switch personas at any point: open Demo tools, then View as. To reset the prototype, open Demo tools, then Reset demo. To log out, tap your avatar, then Log out. Managers and admins can post a lead or share a listing from the paperclip menu in the message box. In a channel's Info, channel admins can switch on Only admins can send messages and make other members channel admins.
 
 Text size: tap your avatar, then Text size (or Aa on the login screen) to switch between Standard, Large and Extra large.
 

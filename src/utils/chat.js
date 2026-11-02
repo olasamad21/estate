@@ -213,15 +213,50 @@ export function channelMembersFor(channel, staffList = []) {
 }
 
 /**
+ * Determines whether a user is an admin of a channel.
+ * True when the user is active, channel kind is not 'dm', and
+ * (the user's role is 'admin' OR channel.adminIds includes the user's id).
+ */
+export function isChannelAdmin(user, channel) {
+  if (!user || !channel || !isStaffActive(user)) return false;
+  if (channel.kind === 'dm') return false;
+  if (user.role === 'admin') return true;
+  return Array.isArray(channel.adminIds) && channel.adminIds.includes(user.id);
+}
+
+/**
+ * Determines whether channel settings are available.
+ * Kind is public, private, listing or group (NOT announcement, NOT dm) and not archived.
+ */
+export function channelSettingsAvailable(channel) {
+  if (!channel || channel.archived) return false;
+  const kind = channel.kind || 'public';
+  return kind === 'public' || kind === 'private' || kind === 'listing' || kind === 'group';
+}
+
+/**
+ * Determines whether a user can manage channel settings and admins.
+ * Requires isChannelAdmin and channelSettingsAvailable.
+ */
+export function canManageChannel(user, channel) {
+  return isChannelAdmin(user, channel) && channelSettingsAvailable(channel);
+}
+
+/**
  * Determines whether a user can post a message to a channel.
  * - 'announcement': Only admin and managers can post.
  * - 'private': Members and admin can post.
  * - 'dm', 'group': Only members can post.
  * - 'public', 'listing': All staff can post.
+ * - If sendPolicy is 'admins' and user is not a channel admin, returns false.
  */
 export function canPost(user, channel) {
   if (!user || !channel) return false;
   const kind = channel.kind || 'public';
+
+  if (channel.sendPolicy === 'admins' && !isChannelAdmin(user, channel)) {
+    return false;
+  }
 
   if (kind === 'announcement') {
     return user.role === 'admin' || user.role === 'manager';
@@ -237,6 +272,15 @@ export function canPost(user, channel) {
   }
 
   return true;
+}
+
+/**
+ * Determines whether a user can claim a lead card.
+ * The user can view the channel and it is not archived (does NOT depend on sendPolicy or canPost).
+ */
+export function canClaimLead(user, channel) {
+  if (!user || !channel || channel.archived) return false;
+  return canUserSeeChannel(user, channel);
 }
 
 /**

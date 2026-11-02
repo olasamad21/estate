@@ -172,10 +172,14 @@ export function MessageComposer({
   };
 
   if (!allowedToPost) {
+    const isAnnouncement = channel?.kind === 'announcement';
+    const noticeText = isAnnouncement
+      ? 'Only managers and admins can post announcements in this channel.'
+      : 'Only admins can send messages.';
     return (
       <div className="p-3 border-t border-line bg-surface-raised flex items-center justify-center gap-2 text-xs text-ink-muted">
         <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
-        <span>Only managers and admins can post announcements in this channel.</span>
+        <span>{noticeText}</span>
       </div>
     );
   }
