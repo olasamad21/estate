@@ -12,7 +12,7 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { PRIMARY_REACTIONS } from '../../config/reactions.js';
-import { canEdit, canDelete, canPin } from '../../utils/chat.js';
+import { canEdit, canDelete, canPin, OWN_MESSAGE_WINDOW_MINUTES } from '../../utils/chat.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getMessageCopiedMessage, getMessageDeletedMessage } from '../../utils/messages.js';
 
@@ -33,9 +33,10 @@ export function MessageActionDrawer({
 
   if (!message) return null;
 
-  const allowedToEdit = message.type !== 'lead' && message.type !== 'listing' && canEdit(message, currentUser);
+  const allowedToEdit = message.type === 'text' && canEdit(message, currentUser);
   const allowedToDelete = canDelete(message, currentUser);
   const allowedToPin = canPin(message, currentUser);
+  const isOwnMessage = Boolean(currentUser && message.senderId === currentUser.id && message.type !== 'system');
 
   const handleCopyText = async () => {
     try {
@@ -159,7 +160,7 @@ export function MessageActionDrawer({
             )}
 
             {/* Delete */}
-            {allowedToDelete && (
+            {allowedToDelete ? (
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(true)}
@@ -168,7 +169,11 @@ export function MessageActionDrawer({
                 <Trash2 className="w-4 h-4 text-status-danger shrink-0" aria-hidden="true" />
                 <span>Delete message</span>
               </button>
-            )}
+            ) : isOwnMessage ? (
+              <div className="px-3 py-2 text-xs text-ink-muted leading-relaxed">
+                You can delete your own messages for {OWN_MESSAGE_WINDOW_MINUTES} minutes after sending.
+              </div>
+            ) : null}
           </div>
         </div>
       </Drawer>

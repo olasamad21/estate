@@ -330,6 +330,7 @@ export const RAW_SEED_MESSAGES = [
     fileSize: '1.2 MB',
     fileKind: 'document',
     text: 'Price_List_Lugbe.pdf',
+    caption: 'Updated price schedule for Lugbe Terraces phases 1 and 2.',
     createdAt: minutesFromNow(-3100),
   },
   {
@@ -440,6 +441,7 @@ export const RAW_SEED_MESSAGES = [
     fileSize: '2.8 MB',
     fileKind: 'document',
     text: 'Survey_Plan_Rumuola.pdf',
+    caption: 'Survey plan showing boundary beacons for Rumuola plot.',
     createdAt: minutesFromNow(-2600),
   },
   {
@@ -879,6 +881,7 @@ export const RAW_SEED_MESSAGES = [
     fileSize: '2.4 MB',
     fileKind: 'document',
     text: 'Brochure_Maitama_Duplex.pdf',
+    caption: 'Marketing brochure with floor plans and payment structure.',
     createdAt: minutesFromNow(-2400),
   },
   {
@@ -971,6 +974,7 @@ export const RAW_SEED_MESSAGES = [
     fileSize: '1.8 MB',
     fileKind: 'document',
     text: 'Deed_of_Assignment_Draft.pdf',
+    caption: 'Draft deed of assignment ready for legal review.',
     createdAt: minutesFromNow(-2800),
   },
   {
@@ -1136,6 +1140,7 @@ export const RAW_SEED_MESSAGES = [
     fileSize: '3.1 MB',
     fileKind: 'photo',
     text: 'Living_Room.jpg',
+    caption: 'Main living room interior showing marble floor finishing.',
     createdAt: minutesFromNow(-1800),
   },
   {

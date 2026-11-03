@@ -149,6 +149,11 @@ export function ChannelFilesDrawer({
                         <p className="text-xs font-bold text-ink break-words">
                           {title}
                         </p>
+                        {item.caption && (
+                          <p className="text-xs text-ink-muted mt-0.5 break-words">
+                            {item.caption}
+                          </p>
+                        )}
                         <p className="text-xs text-ink-muted mt-0.5">
                           {subtitle}
                         </p>

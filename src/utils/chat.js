@@ -412,15 +412,22 @@ export function lastMessage(channelId, messages = []) {
 
 /**
  * Determines if a message mentions a specific user.
- * Checks for @CallName (e.g. @Ruth, @Fortune) or @all.
+ * Checks for @CallName (e.g. @Ruth, @Fortune) or @all in text or caption.
  */
 export function mentionsUser(message, user) {
-  if (!message || !message.text || !user) return false;
+  if (!message || !user || message.deletedAt) return false;
   const callName = callNameOf(user);
   if (!callName) return false;
   const regex = new RegExp(`@(?:${callName}|all)\\b`, 'i');
-  return regex.test(message.text);
+  const fullText = `${message.text || ''} ${message.caption || ''}`.trim();
+  if (!fullText) return false;
+  return regex.test(fullText);
 }
+
+/**
+ * Window for editing and deleting own messages (in minutes).
+ */
+export const OWN_MESSAGE_WINDOW_MINUTES = 15;
 
 /**
  * Determines whether a user can edit a message.
@@ -428,30 +435,32 @@ export function mentionsUser(message, user) {
  * - Must be user's own message
  * - Must be a text message
  * - Must not already be deleted
- * - Must be within 15 minutes of creation
+ * - Must not be a system message
+ * - Must be within OWN_MESSAGE_WINDOW_MINUTES of creation
  */
 export function canEdit(message, user) {
-  if (!message || !user || message.deletedAt) return false;
+  if (!message || !user || message.deletedAt || message.type === 'system') return false;
   if (message.senderId !== user.id || message.type !== 'text') return false;
   const createdAtMs = new Date(message.createdAt).getTime();
   const diffMinutes = (Date.now() - createdAtMs) / (60 * 1000);
-  return diffMinutes <= 15;
+  return diffMinutes <= OWN_MESSAGE_WINDOW_MINUTES;
 }
 
 /**
  * Determines whether a user can delete a message.
  * Rules:
  * - Must not already be deleted
+ * - Must not be a system message
  * - Admin can delete any message anytime
- * - Author can delete their own message within 15 minutes
+ * - Author can delete their own message within OWN_MESSAGE_WINDOW_MINUTES
  */
 export function canDelete(message, user) {
-  if (!message || !user || message.deletedAt) return false;
+  if (!message || !user || message.deletedAt || message.type === 'system') return false;
   if (user.role === 'admin') return true;
   if (message.senderId !== user.id) return false;
   const createdAtMs = new Date(message.createdAt).getTime();
   const diffMinutes = (Date.now() - createdAtMs) / (60 * 1000);
-  return diffMinutes <= 15;
+  return diffMinutes <= OWN_MESSAGE_WINDOW_MINUTES;
 }
 
 /**
@@ -537,11 +546,18 @@ export function messagePreview(message, staff) {
   }
 
   if (message.fileKind === 'photo' || (message.type === 'file' && message.fileKind === 'photo')) {
+    if (message.caption) {
+      return `Photo: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+    }
     return 'Photo';
   }
 
   if (message.type === 'file') {
-    return message.fileName || 'File';
+    const fileName = message.fileName || 'File';
+    if (message.caption) {
+      return `${fileName}: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+    }
+    return fileName;
   }
 
   if (message.type === 'voice') {

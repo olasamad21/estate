@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import { Info, MessageSquare, MoreHorizontal, SmilePlus, Pin, Clock, Eye, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -16,6 +17,48 @@ import { Button } from '../../components/common/Button.jsx';
 import { VoiceBubble } from './VoiceBubble.jsx';
 import { AttachmentCard } from './AttachmentCard.jsx';
 import { ListingPhoto } from './ListingPhoto.jsx';
+
+function useTouchLongPress(onLongPress, delay = 500) {
+  const timerRef = useRef(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+
+  const onTouchStart = useCallback((e) => {
+    if (e.touches && e.touches.length > 0) {
+      touchStartPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+    timerRef.current = setTimeout(() => {
+      onLongPress?.();
+    }, delay);
+  }, [onLongPress, delay]);
+
+  const onTouchMove = useCallback((e) => {
+    if (timerRef.current && e.touches && e.touches.length > 0) {
+      const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+      const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+      if (dx > 10 || dy > 10) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  return {
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTouchCancel: onTouchEnd,
+  };
+}
 
 function renderFormattedText(text, currentUser) {
   if (!text) return null;
@@ -61,6 +104,14 @@ export function MessageRow({
 }) {
   const navigate = useNavigate();
   const { claimLead, channelsById = {}, staffById = {}, channels = [], staff = [] } = useChat();
+
+  const handleOpenActionsFromCard = useCallback(() => {
+    if (!message.deletedAt && onOpenActions) {
+      onOpenActions(message);
+    }
+  }, [message, onOpenActions]);
+
+  const cardTouchHandlers = useTouchLongPress(handleOpenActionsFromCard);
 
   // 1. System messages
   if (message.type === 'system' || (message.senderId === 'system' && message.type !== 'lead')) {
@@ -190,8 +241,24 @@ export function MessageRow({
             This message was deleted
           </p>
         ) : message.type === 'voice' ? (
-          <div className="mt-1">
+          <div
+            {...cardTouchHandlers}
+            className="mt-1 flex items-center gap-2 max-w-sm"
+          >
             <VoiceBubble durationSec={message.durationSec || 15} />
+            {onOpenActions && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenActions(message);
+                }}
+                aria-label="Message actions"
+                className="w-11 h-11 rounded-lg bg-surface border border-line hover:border-brand hover:text-brand flex items-center justify-center shrink-0 text-ink-muted transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
         ) : message.type === 'file' ? (
           <div className="mt-1">
@@ -201,19 +268,43 @@ export function MessageRow({
               fileSize={message.fileSize || '1.5 MB'}
               fileKind={message.fileKind || 'document'}
               onOpenFileDetail={onOpenFileDetail}
+              onOpenActions={onOpenActions}
             />
+            {message.caption && (
+              <div className="text-sm text-ink leading-relaxed break-words mt-1.5 max-w-[65ch]">
+                {renderFormattedText(message.caption, currentUser)}
+              </div>
+            )}
           </div>
         ) : message.type === 'lead' ? (
-          <div className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-2.5">
-            {/* Top line: Lucide UserPlus icon + "New lead" + status Badge */}
+          <div
+            {...cardTouchHandlers}
+            className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-2.5"
+          >
+            {/* Top line: Lucide UserPlus icon + "New lead" + status Badge + 44px MoreHorizontal button */}
             <div className="flex items-center justify-between gap-2 border-b border-line pb-2">
               <div className="flex items-center gap-1.5 text-ink font-bold text-xs uppercase tracking-wider">
                 <UserPlus className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
                 <span>New lead</span>
               </div>
-              <Badge variant={message.claimedById ? 'success' : 'warning'} size="sm">
-                {message.claimedById ? 'Taken' : 'New'}
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                <Badge variant={message.claimedById ? 'success' : 'warning'} size="sm">
+                  {message.claimedById ? 'Taken' : 'New'}
+                </Badge>
+                {onOpenActions && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenActions(message);
+                    }}
+                    aria-label="Message actions"
+                    className="w-11 h-11 -my-2.5 -mr-2 rounded-lg hover:bg-surface-raised flex items-center justify-center text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                  >
+                    <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Client name + enquiry */}
@@ -275,7 +366,10 @@ export function MessageRow({
                 : 'neutral';
 
             return (
-              <div className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-3">
+              <div
+                {...cardTouchHandlers}
+                className="mt-1 border border-line rounded-xl bg-surface p-3 sm:p-4 max-w-md shadow-2xs space-y-3"
+              >
                 <div className="flex items-start gap-3">
                   <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised shadow-2xs">
                     <ListingPhoto
@@ -286,16 +380,31 @@ export function MessageRow({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h4 className="text-xs sm:text-sm font-bold text-ink">
-                        {listingChannel
-                          ? channelDisplayName(listingChannel, currentUser?.id, staff)
-                          : 'Listing Room'}
-                      </h4>
-                      {listingChannel?.status && (
-                        <Badge variant={statusVariant} size="sm">
-                          {listingChannel.status}
-                        </Badge>
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <h4 className="text-xs sm:text-sm font-bold text-ink">
+                          {listingChannel
+                            ? channelDisplayName(listingChannel, currentUser?.id, staff)
+                            : 'Listing Room'}
+                        </h4>
+                        {listingChannel?.status && (
+                          <Badge variant={statusVariant} size="sm">
+                            {listingChannel.status}
+                          </Badge>
+                        )}
+                      </div>
+                      {onOpenActions && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenActions(message);
+                          }}
+                          aria-label="Message actions"
+                          className="w-11 h-11 -mt-1 -mr-2 rounded-lg hover:bg-surface-raised flex items-center justify-center text-ink-muted hover:text-ink transition-colors cursor-pointer shrink-0"
+                        >
+                          <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                        </button>
                       )}
                     </div>
 

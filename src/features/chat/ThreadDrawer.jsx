@@ -7,6 +7,7 @@ import { formatTimeNg } from '../../utils/formatters.js';
 import { threadReplies, initialsOf } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { Button } from '../../components/common/Button.jsx';
+import { AttachmentCard } from './AttachmentCard.jsx';
 
 export function ThreadDrawer({
   isOpen,
@@ -72,9 +73,25 @@ export function ThreadDrawer({
                   {formatTimeNg(parentMessage.createdAt)}
                 </span>
               </div>
-              <p className="text-xs text-ink leading-relaxed break-words">
-                {parentMessage.text}
-              </p>
+              {parentMessage.type === 'file' ? (
+                <div className="mt-1">
+                  <AttachmentCard
+                    message={parentMessage}
+                    fileName={parentMessage.fileName || parentMessage.text}
+                    fileSize={parentMessage.fileSize || '1.5 MB'}
+                    fileKind={parentMessage.fileKind || 'document'}
+                  />
+                  {parentMessage.caption && (
+                    <div className="text-sm text-ink leading-relaxed break-words mt-1.5">
+                      {parentMessage.caption}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-ink leading-relaxed break-words">
+                  {parentMessage.text}
+                </p>
+              )}
             </div>
           </div>
 
@@ -114,9 +131,25 @@ export function ThreadDrawer({
                         {formatTimeNg(reply.createdAt)}
                       </span>
                     </div>
-                    <p className="text-xs text-ink leading-relaxed break-words">
-                      {reply.text}
-                    </p>
+                    {reply.type === 'file' ? (
+                      <div className="mt-1">
+                        <AttachmentCard
+                          message={reply}
+                          fileName={reply.fileName || reply.text}
+                          fileSize={reply.fileSize || '1.5 MB'}
+                          fileKind={reply.fileKind || 'document'}
+                        />
+                        {reply.caption && (
+                          <div className="text-sm text-ink leading-relaxed break-words mt-1.5">
+                            {reply.caption}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-ink leading-relaxed break-words">
+                        {reply.text}
+                      </p>
+                    )}
                   </div>
                 </div>
               );

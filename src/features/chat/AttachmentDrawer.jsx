@@ -17,6 +17,7 @@ export function AttachmentDrawer({
   isOpen,
   onClose,
   onAttachFile,
+  onSelectAttachment,
   channel,
   onOpenPostLead,
   onOpenShareListing,
@@ -31,15 +32,27 @@ export function AttachmentDrawer({
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const msgId = onAttachFile?.({
-        fileName: file.name,
-        fileSize: formatBytes(file.size),
-        fileKind: 'photo',
-      });
-      if (file.type?.startsWith('image/') && msgId) {
-        const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(msgId, objectUrl);
+      const objectUrl = file.type?.startsWith('image/') ? URL.createObjectURL(file) : null;
+      if (onSelectAttachment) {
+        onSelectAttachment({
+          file,
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'photo',
+          objectUrl,
+          isSample: false,
+        });
+      } else {
+        const msgId = onAttachFile?.({
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'photo',
+        });
+        if (objectUrl && msgId) {
+          setPreviewUrl(msgId, objectUrl);
+        }
       }
+      e.target.value = '';
       onClose();
     }
   };
@@ -47,30 +60,62 @@ export function AttachmentDrawer({
   const handleDocChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onAttachFile?.({
-        fileName: file.name,
-        fileSize: formatBytes(file.size),
-        fileKind: 'document',
-      });
+      if (onSelectAttachment) {
+        onSelectAttachment({
+          file,
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'document',
+          objectUrl: null,
+          isSample: false,
+        });
+      } else {
+        onAttachFile?.({
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'document',
+        });
+      }
+      e.target.value = '';
       onClose();
     }
   };
 
   const handleSamplePhoto = () => {
-    onAttachFile?.({
-      fileName: 'Site_Photo_Maitama.jpg',
-      fileSize: '2.8 MB',
-      fileKind: 'photo',
-    });
+    if (onSelectAttachment) {
+      onSelectAttachment({
+        fileName: 'Site_Photo_Maitama.jpg',
+        fileSize: '2.8 MB',
+        fileKind: 'photo',
+        objectUrl: null,
+        isSample: true,
+      });
+    } else {
+      onAttachFile?.({
+        fileName: 'Site_Photo_Maitama.jpg',
+        fileSize: '2.8 MB',
+        fileKind: 'photo',
+      });
+    }
     onClose();
   };
 
   const handleSampleDoc = () => {
-    onAttachFile?.({
-      fileName: 'Brochure_Maitama_Duplex.pdf',
-      fileSize: '2.4 MB',
-      fileKind: 'document',
-    });
+    if (onSelectAttachment) {
+      onSelectAttachment({
+        fileName: 'Brochure_Maitama_Duplex.pdf',
+        fileSize: '2.4 MB',
+        fileKind: 'document',
+        objectUrl: null,
+        isSample: true,
+      });
+    } else {
+      onAttachFile?.({
+        fileName: 'Brochure_Maitama_Duplex.pdf',
+        fileSize: '2.4 MB',
+        fileKind: 'document',
+      });
+    }
     onClose();
   };
 

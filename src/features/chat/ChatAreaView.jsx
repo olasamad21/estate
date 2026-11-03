@@ -14,6 +14,7 @@ import { ThreadDrawer } from './ThreadDrawer.jsx';
 import { SeenByDrawer } from './SeenByDrawer.jsx';
 import { PinnedMessagesDrawer } from './PinnedMessagesDrawer.jsx';
 import { AttachmentDrawer } from './AttachmentDrawer.jsx';
+import { AttachmentPreviewDrawer } from './AttachmentPreviewDrawer.jsx';
 import { PostLeadDrawer } from './PostLeadDrawer.jsx';
 import { ShareListingDrawer } from './ShareListingDrawer.jsx';
 import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
@@ -22,6 +23,7 @@ import { ChannelInfoDrawer } from './ChannelInfoDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { ListingCard } from './ListingCard.jsx';
+import { setPreviewUrl } from '../../utils/previewUrls.js';
 
 export function ChatAreaView({ defaultChannelId = 'general' }) {
   const { id: routeChannelId } = useParams();
@@ -58,6 +60,13 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const [selectedAnnouncementMessage, setSelectedAnnouncementMessage] = useState(null);
   const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
   const [isAttachmentDrawerOpen, setIsAttachmentDrawerOpen] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+  const pendingAttachmentRef = useRef(null);
+
+  useEffect(() => {
+    pendingAttachmentRef.current = pendingAttachment;
+  }, [pendingAttachment]);
+
   const [isPostLeadOpen, setIsPostLeadOpen] = useState(false);
   const [isShareListingOpen, setIsShareListingOpen] = useState(false);
   const [isFilesDrawerOpen, setIsFilesDrawerOpen] = useState(false);
@@ -196,6 +205,66 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
       }, 1500);
     }
   }, [messages]);
+
+  // Clean up uncommitted preview object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingAttachmentRef.current?.objectUrl) {
+        try {
+          URL.revokeObjectURL(pendingAttachmentRef.current.objectUrl);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
+
+  const handleSelectAttachment = useCallback((attachment) => {
+    if (pendingAttachmentRef.current?.objectUrl && pendingAttachmentRef.current.objectUrl !== attachment?.objectUrl) {
+      try {
+        URL.revokeObjectURL(pendingAttachmentRef.current.objectUrl);
+      } catch {
+        // ignore
+      }
+    }
+    setPendingAttachment({
+      ...attachment,
+      key: `att-${Date.now()}`,
+    });
+  }, []);
+
+  const handleCancelAttachmentPreview = useCallback(() => {
+    if (pendingAttachmentRef.current?.objectUrl) {
+      try {
+        URL.revokeObjectURL(pendingAttachmentRef.current.objectUrl);
+      } catch {
+        // ignore
+      }
+    }
+    setPendingAttachment(null);
+  }, []);
+
+  const handleSendAttachment = useCallback(({ caption }) => {
+    if (!pendingAttachmentRef.current || !channel) return;
+    const currentAtt = pendingAttachmentRef.current;
+    const msgId = sendFile(channel.id, {
+      fileName: currentAtt.fileName,
+      fileSize: currentAtt.fileSize,
+      fileKind: currentAtt.fileKind,
+      caption,
+    });
+
+    if (msgId && currentAtt.objectUrl) {
+      setPreviewUrl(msgId, currentAtt.objectUrl);
+    }
+
+    setPendingAttachment(null);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 50);
+  }, [channel, sendFile]);
 
   // Jump to message if URL hash is present (e.g. #msg-xyz from search or external link)
   useEffect(() => {
@@ -528,9 +597,18 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         channel={channel}
         onOpenPostLead={() => setIsPostLeadOpen(true)}
         onOpenShareListing={() => setIsShareListingOpen(true)}
+        onSelectAttachment={handleSelectAttachment}
         onAttachFile={(fileData) => {
           return sendFile(channel.id, fileData);
         }}
+      />
+
+      <AttachmentPreviewDrawer
+        key={pendingAttachment?.key || 'preview'}
+        isOpen={Boolean(pendingAttachment)}
+        onClose={handleCancelAttachmentPreview}
+        attachment={pendingAttachment}
+        onSend={handleSendAttachment}
       />
 
       <PostLeadDrawer

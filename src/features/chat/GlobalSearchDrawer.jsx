@@ -137,8 +137,13 @@ export function GlobalSearchDrawer({
       const ch = channelMap[m.channelId];
       if (!ch || ch.archived) return false;
       if (m.deletedAt) return false;
-      if (m.type !== 'text') return false;
-      return (m.text || '').toLowerCase().includes(q);
+      if (m.type === 'text') {
+        return (m.text || '').toLowerCase().includes(q);
+      }
+      if (m.type === 'file' && m.caption) {
+        return m.caption.toLowerCase().includes(q);
+      }
+      return false;
     });
 
     // 4. Files (ignore archived channels)
@@ -412,7 +417,10 @@ export function GlobalSearchDrawer({
                           </span>
                         </div>
                         <div className="text-xs text-ink leading-relaxed break-words">
-                          <HighlightMatch text={msg.text} query={query} />
+                          <HighlightMatch
+                            text={msg.type === 'file' ? (msg.caption || msg.text) : msg.text}
+                            query={query}
+                          />
                         </div>
                       </button>
                     );

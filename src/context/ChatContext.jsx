@@ -353,11 +353,12 @@ export function ChatProvider({ children }) {
     }));
   }, [currentUserId, currentUser, isOffline, channels]);
 
-  const sendFile = useCallback((channelId, { fileName, fileSize, fileKind }) => {
+  const sendFile = useCallback((channelId, { fileName, fileSize, fileKind, caption }) => {
     if (!currentUserId || !channelId || !fileName) return null;
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return null;
 
+    const trimmedCaption = caption && typeof caption === 'string' && caption.trim() ? caption.trim() : undefined;
     const nowIso = new Date().toISOString();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -368,6 +369,7 @@ export function ChatProvider({ children }) {
       fileSize: fileSize || '1.2 MB',
       fileKind: fileKind || 'document',
       text: fileName,
+      caption: trimmedCaption,
       createdAt: nowIso,
       status: isOffline ? 'queued' : 'sent',
     };
