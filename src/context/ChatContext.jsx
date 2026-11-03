@@ -1142,7 +1142,8 @@ export function ChatProvider({ children }) {
 
   const simulateNewLead = useCallback(() => {
     const officeId = currentUser?.seesAllOffices ? 'hq' : (currentUser?.officeId || 'hq');
-    const targetChannelId = `${officeId}-leads`;
+    const matchingLeads = channels.find((c) => c.name === `${officeId}-leads` || c.name === 'leads');
+    const targetChannelId = matchingLeads ? matchingLeads.id : 'sales';
     const pool = LEADS_BY_OFFICE[officeId] || LEADS_BY_OFFICE.hq;
     const sample = pool[Math.floor(Math.random() * pool.length)];
     const leadTime = new Date().toISOString();
@@ -1178,7 +1179,7 @@ export function ChatProvider({ children }) {
     });
 
     showToast(getLeadSimulatedMessage(sample.area));
-  }, [currentUser, currentUserId, showToast]);
+  }, [channels, currentUser, currentUserId, showToast]);
 
   const postLead = useCallback(
     (channelId, { clientName, enquiry, area, budgetNgn }) => {

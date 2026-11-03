@@ -34,8 +34,8 @@ Follow these steps in order to tour the core workspace features:
 1. Log in as Ruth Obasanjo (admin has visibility across announcements and all offices).
 2. Open #announcements to review broadcast notices and tap Seen by to inspect read receipts.
 3. Open Demo tools, then View as to switch to Taiye (Lugbe only).
-4. Claim a lead in #lugbe-leads by tapping "I've got this" on an unclaimed lead card.
-5. Open #lugbe-terraces, review the listing card, and change a photo.
+4. Claim a lead in #sales by tapping "I've got this" on an unclaimed lead card.
+5. Tap + beside Channels to create a listing room or departmental channel.
 6. Open a PDF document attachment in chat or from the files tab to test the multi-page viewer.
 7. Send a message with a mention.
 8. Add an emoji reaction to a message and post a reply inside a message thread.

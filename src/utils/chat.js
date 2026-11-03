@@ -285,14 +285,12 @@ export function canClaimLead(user, channel) {
 
 /**
  * Determines whether a channel is a leads channel.
- * True for a non-archived public channel whose name is exactly 'leads' or ends with '-leads'.
+ * True for a non-archived channel whose name is 'leads', 'sales', or ends with '-leads'.
  */
 export function isLeadsChannel(channel) {
   if (!channel || channel.archived) return false;
-  const kind = channel.kind || 'public';
-  if (kind !== 'public') return false;
   const name = (channel.name || '').toLowerCase();
-  return name === 'leads' || name.endsWith('-leads');
+  return name === 'leads' || name.endsWith('-leads') || name === 'sales';
 }
 
 /**
