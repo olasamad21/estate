@@ -113,7 +113,7 @@ export function AppLayout({ children }) {
           aria-label={`${COMPANY_CONFIG.name} Workspace`}
           className="flex items-center gap-2 text-ink font-semibold text-base tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded shrink min-w-0 pr-1"
         >
-          <BrandMark variant="tile" />
+          <BrandMark variant="tile" className="text-brand" />
           <div className="flex flex-col min-w-0">
             <span className="leading-tight text-xs sm:text-sm font-semibold text-ink break-words line-clamp-2 sm:line-clamp-none sm:whitespace-nowrap">
               {COMPANY_CONFIG.name}

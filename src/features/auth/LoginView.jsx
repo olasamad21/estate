@@ -88,14 +88,20 @@ export function LoginView() {
           </button>
         </div>
 
-        <BrandMark variant="wordmark" size="xl" className="text-surface" />
+        <div className="flex items-center gap-3">
+          <BrandMark variant="tile" size="lg" className="text-surface" />
+          <BrandMark variant="wordmark" size="xl" className="text-surface" />
+        </div>
       </div>
 
       {/* Centered Form Card Area */}
       <div className="flex-1 flex flex-col justify-center items-center px-4 py-6 sm:py-8 w-full">
         <div className="w-full max-w-[28rem] bg-surface border border-line rounded-2xl shadow-xs p-6 sm:p-8 space-y-6">
-          {/* Card header: "Staff workspace" in ink-muted at 14px or larger */}
-          <div className="text-center space-y-1">
+          {/* Card header: "Staff workspace" with emblem */}
+          <div className="text-center space-y-2">
+            <div className="flex justify-center">
+              <BrandMark variant="tile" size="xl" className="text-brand" />
+            </div>
             <h1 className="text-sm sm:text-base font-medium text-ink-muted">
               Staff workspace
             </h1>
