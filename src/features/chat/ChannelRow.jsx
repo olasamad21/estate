@@ -93,17 +93,20 @@ export function ChannelRow({
     }
     if (channel.kind === 'site') {
       return (
-        <div className="w-8 h-8 rounded-lg overflow-hidden border border-line shrink-0 bg-surface shadow-2xs">
-          <ListingPhoto
-            channel={channel}
-            previewKey={`site:${channel.id}`}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-8 h-8 rounded-lg border border-line shrink-0 bg-surface-raised flex items-center justify-center text-brand shadow-2xs">
+          <Building2 className="w-4 h-4" aria-hidden="true" />
         </div>
       );
     }
     if (channel.kind === 'listing') {
-      return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
+      return (
+        <div className="w-8 h-8 rounded-lg overflow-hidden border border-line shrink-0 bg-surface-raised shadow-2xs">
+          <ListingPhoto
+            channel={channel}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      );
     }
     if (channel.kind === 'group') {
       return <Users className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;

@@ -1,13 +1,12 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hash, Lock, Check, Upload, Trash2, Building2 } from 'lucide-react';
+import { Hash, Lock, Check, Building2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../../components/common/useToast.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { setPreviewUrl } from '../../utils/previewUrls.js';
 import {
   officeChoicesFor,
   isChannelNameValid,
@@ -54,9 +53,6 @@ function CreateChannelForm({ onClose }) {
   const [siteTitle, setSiteTitle] = useState('');
   const [siteLocation, setSiteLocation] = useState('');
   const [siteDescription, setSiteDescription] = useState('');
-  const [sitePhotoFile, setSitePhotoFile] = useState(null);
-  const [sitePhotoPreview, setSitePhotoPreview] = useState(null);
-  const photoInputRef = useRef(null);
 
   // Clean and sanitize public/private channel name
   const handleNameChange = (e) => {
@@ -142,23 +138,6 @@ function CreateChannelForm({ onClose }) {
     setSiteLocation(''); // Changing the office resets the location per spec
   };
 
-  const handlePhotoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSitePhotoFile(file);
-      const url = URL.createObjectURL(file);
-      setSitePhotoPreview(url);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setSitePhotoFile(null);
-    setSitePhotoPreview(null);
-    if (photoInputRef.current) {
-      photoInputRef.current.value = '';
-    }
-  };
-
   const isSubmitDisabled =
     kind === 'site'
       ? Object.keys(siteErrors).length > 0
@@ -179,11 +158,6 @@ function CreateChannelForm({ onClose }) {
 
       if (!result.ok) {
         return;
-      }
-
-      if (sitePhotoFile && result.id) {
-        const url = URL.createObjectURL(sitePhotoFile);
-        setPreviewUrl(`site:${result.id}`, url);
       }
 
       onClose();
@@ -426,64 +400,6 @@ function CreateChannelForm({ onClose }) {
               placeholder="Brief description of this site location"
               className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none resize-none"
             />
-          </div>
-
-          {/* Photo (Optional) */}
-          <div className="space-y-2 pt-1 border-t border-line">
-            <label className="block text-xs font-semibold text-ink">Site Photo (optional)</label>
-            <input
-              ref={photoInputRef}
-              id="create-site-photo"
-              name="new_site_photo_file"
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoSelect}
-              className="hidden"
-            />
-
-            {sitePhotoPreview ? (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl border border-line bg-surface-raised">
-                <div className="w-16 h-12 rounded-lg overflow-hidden border border-line shrink-0 bg-surface">
-                  <img
-                    src={sitePhotoPreview}
-                    alt="Site thumbnail preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    className="min-h-[44px] px-3 py-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
-                  >
-                    Replace
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRemovePhoto}
-                    className="min-h-[44px] px-2 py-2 text-xs font-medium text-status-danger hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Remove</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => photoInputRef.current?.click()}
-                className="cursor-pointer gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Add a photo</span>
-              </Button>
-            )}
-
-            <p className="text-xs text-ink-muted">
-              Photos are kept only for this session in the prototype.
-            </p>
           </div>
         </div>
       ) : (

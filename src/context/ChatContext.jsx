@@ -36,7 +36,7 @@ import {
   getPropertyCreatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-17';
+const CHAT_STATE_VERSION = 'chat-18';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],

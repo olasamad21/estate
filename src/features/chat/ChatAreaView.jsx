@@ -66,15 +66,11 @@ function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap,
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-      {/* Site Header Summary Bar with 56px thumbnail and Add Property Button */}
+      {/* Site Header Summary Bar with Building2 icon badge and Add Property Button */}
       <div className="p-3 sm:p-4 bg-surface-raised border-b border-line flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 pr-2">
-          <div className="w-14 h-14 rounded-xl overflow-hidden border border-line shrink-0 bg-surface shadow-2xs">
-            <ListingPhoto
-              channel={site}
-              previewKey={`site:${site.id}`}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl border border-line shrink-0 bg-surface flex items-center justify-center text-brand shadow-2xs">
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <div className="text-xs sm:text-sm font-bold text-ink break-words line-clamp-1">

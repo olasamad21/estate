@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BellOff, MoreHorizontal } from 'lucide-react';
+import { Bell, BellOff, MoreHorizontal, Building2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
@@ -16,7 +16,6 @@ import {
   canAddProperty,
 } from '../../utils/chat.js';
 import { useChat } from '../../context/ChatContext.jsx';
-import { ListingPhoto } from './ListingPhoto.jsx';
 import { EditSiteDrawer } from './EditSiteDrawer.jsx';
 
 export function ChannelInfoDrawer({
@@ -71,36 +70,34 @@ export function ChannelInfoDrawer({
         <div className="space-y-5">
           {/* Channel / DM Header Summary */}
           <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-3">
-            {channel.kind === 'site' && (
-              <div className="w-full aspect-[16/9] rounded-xl overflow-hidden border border-line bg-surface">
-                <ListingPhoto
-                  channel={channel}
-                  previewKey={`site:${channel.id}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-ink">
-                  {isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
-                </h3>
-                {!isDm && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
-                    {officeLine}
-                  </span>
-                )}
-                {channel.kind === 'site' && channel.site?.location && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
-                    {channel.site.location}
-                  </span>
-                )}
-              </div>
-              {channel.description && (
-                <p className="text-xs text-ink-muted leading-relaxed break-words">
-                  {channel.description}
-                </p>
+            <div className="flex items-start gap-3">
+              {channel.kind === 'site' && (
+                <div className="w-10 h-10 rounded-xl border border-line shrink-0 bg-surface flex items-center justify-center text-brand shadow-2xs">
+                  <Building2 className="w-5 h-5" aria-hidden="true" />
+                </div>
               )}
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-bold text-ink">
+                    {isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
+                  </h3>
+                  {!isDm && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
+                      {officeLine}
+                    </span>
+                  )}
+                  {channel.kind === 'site' && channel.site?.location && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
+                      {channel.site.location}
+                    </span>
+                  )}
+                </div>
+                {channel.description && (
+                  <p className="text-xs text-ink-muted leading-relaxed break-words">
+                    {channel.description}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Site Edit Details Button */}
