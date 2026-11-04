@@ -17,6 +17,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
 
   const canChangeStatus = canManageListing(currentUser, channel);
   const officeName = officeLabelOf(channel.officeId);
+  const typeSize = [channel.listing?.type, channel.listing?.size].filter(Boolean).join(' · ');
 
   const statusVariant =
     channel.status === 'Available'
@@ -37,7 +38,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
         <button
           type="button"
           onClick={() => setIsDetailsOpen(true)}
-          aria-label="Listing details"
+          aria-label="Property details"
           className="flex-1 flex items-center justify-between gap-2.5 sm:gap-3 min-w-0 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-1 -m-1"
         >
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -46,7 +47,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
               <ListingPhoto channel={channel} className="w-full h-full object-cover" />
             </div>
 
-            {/* Metadata: Line 1 price + status, Line 2 area + office */}
+            {/* Metadata: Line 1 price + status, Line 2 type + size + area + office */}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="text-xs sm:text-sm font-semibold text-brand tabular-nums">
@@ -57,7 +58,7 @@ export function ListingCard({ channel, currentUser, onSetListingStatus }) {
                 </Badge>
               </div>
               <div className="text-xs text-ink-muted line-clamp-1 mt-0.5">
-                {channel.title || channel.location || 'Listing'} · {officeName}
+                {typeSize ? `${typeSize} · ` : ''}{channel.title || channel.location || 'Property'} · {officeName}
               </div>
             </div>
           </div>

@@ -39,14 +39,14 @@ export function StatusChangeDrawer({ isOpen, onClose, channel, onSaveStatus }) {
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Change listing status">
+    <Drawer isOpen={isOpen} onClose={onClose} title="Change property status">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <p className="text-xs text-ink-muted">
-            Select the current transaction status for {channel?.title || channel?.name || 'listing'}.
+            Select the current transaction status for {channel?.title || channel?.name || 'property'}.
           </p>
 
-          <div className="space-y-2" role="radiogroup" aria-label="Listing Status Options">
+          <div className="space-y-2" role="radiogroup" aria-label="Property Status Options">
             {STATUS_OPTIONS.map((opt) => {
               const isSelected = selectedStatus === opt.id;
               return (
@@ -129,7 +129,7 @@ export function ListingDetailsDrawer({
 
   return (
     <>
-      <Drawer isOpen={isOpen} onClose={onClose} title={channel.title || channel.location || 'Listing Details'}>
+      <Drawer isOpen={isOpen} onClose={onClose} title={channel.title || channel.location || 'Property Details'}>
         <div className="space-y-4">
           {/* 4:3 Image */}
           <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-line bg-surface-raised">

@@ -119,9 +119,10 @@ export function GlobalSearchDrawer({
     // 1. Channels
     const matchedChannels = visibleChannels.filter((ch) => {
       const name = channelDisplayName(ch, currentUserId, staff).toLowerCase();
+      const title = (ch.title || '').toLowerCase();
       const desc = (ch.description || '').toLowerCase();
-      const loc = (ch.location || '').toLowerCase();
-      return name.includes(q) || desc.includes(q) || loc.includes(q);
+      const loc = (ch.location || ch.site?.location || ch.listing?.area || '').toLowerCase();
+      return name.includes(q) || title.includes(q) || desc.includes(q) || loc.includes(q);
     });
 
     // 2. People (skip deactivated staff)
@@ -240,7 +241,7 @@ export function GlobalSearchDrawer({
   const renderChannelIcon = (ch) => {
     if (ch.kind === 'announcement') return <Megaphone className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
     if (ch.kind === 'private') return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
-    if (ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
+    if (ch.kind === 'site' || ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
     if (ch.kind === 'group') return <Users className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
     return <Hash className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
   };

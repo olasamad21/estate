@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, BellOff, MoreHorizontal } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
@@ -6,7 +7,13 @@ import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
-import { channelMembersFor, initialsOf, officeLabelOf, canManageChannel } from '../../utils/chat.js';
+import {
+  channelMembersFor,
+  initialsOf,
+  officeLabelOf,
+  canManageChannel,
+  siteOfProperty,
+} from '../../utils/chat.js';
 import { useChat } from '../../context/ChatContext.jsx';
 
 export function ChannelInfoDrawer({
@@ -21,7 +28,8 @@ export function ChannelInfoDrawer({
   onToggleMute,
   displayName,
 }) {
-  const { currentUser: chatCurrentUser, setChannelAdmin, setChannelSendPolicy } = useChat();
+  const navigate = useNavigate();
+  const { currentUser: chatCurrentUser, channels, setChannelAdmin, setChannelSendPolicy } = useChat();
   const currentUser = propCurrentUser || chatCurrentUser;
 
   const [selectedMemberForAdmin, setSelectedMemberForAdmin] = useState(null);
@@ -37,10 +45,15 @@ export function ChannelInfoDrawer({
     return staffById[otherId] || null;
   }, [channel, currentUserId, staffById]);
 
+  const parentSite = useMemo(() => {
+    return channel?.kind === 'listing' ? siteOfProperty(channel, channels) : null;
+  }, [channel, channels]);
+
   if (!channel) return null;
 
   const isDm = channel.kind === 'dm';
   const isAnnouncement = channel.kind === 'announcement';
+  const isSiteOrProperty = channel.kind === 'listing' || channel.kind === 'site';
   const officeLine = officeLabelOf(channel.officeId);
   const canManage = !isDm && !isAnnouncement && canManageChannel(currentUser, channel);
 
@@ -49,18 +62,23 @@ export function ChannelInfoDrawer({
       <Drawer
         isOpen={isOpen}
         onClose={onClose}
-        title={isDm || channel.kind === 'listing' ? displayName : `#${channel.name}`}
+        title={isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
       >
         <div className="space-y-5">
           {/* Channel / DM Header Summary */}
           <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-bold text-ink">
-                {isDm || channel.kind === 'listing' ? displayName : `#${channel.name}`}
+                {isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
               </h3>
               {!isDm && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
                   {officeLine}
+                </span>
+              )}
+              {channel.kind === 'site' && channel.site?.location && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
+                  {channel.site.location}
                 </span>
               )}
             </div>
@@ -70,6 +88,29 @@ export function ChannelInfoDrawer({
               </p>
             )}
           </div>
+
+          {/* Property Channel: Parent Site Link Row */}
+          {channel.kind === 'listing' && parentSite && (
+            <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-ink">Site</div>
+                <div className="text-xs text-ink-muted">
+                  {parentSite.site?.location ? `${parentSite.site.location} · ` : ''}{officeLine}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate(`/channels/${parentSite.id}`);
+                }}
+                className="text-xs font-semibold text-brand-ink hover:underline cursor-pointer px-2 py-1 flex items-center gap-1 min-h-[44px]"
+              >
+                <span>{parentSite.title || parentSite.name}</span>
+                <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+          )}
 
           {/* Mute Notifications Switch Row */}
           <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center justify-between gap-3">

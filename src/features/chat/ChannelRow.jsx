@@ -7,6 +7,8 @@ import {
   messagePreview,
   callNameOf,
   initialsOf,
+  siteSummary,
+  siteActivity,
 } from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
@@ -21,17 +23,37 @@ export function ChannelRow({
   staffList = [],
   isMuted = false,
   notifyMode = 'all',
+  channels = [],
+  userReadMap = {},
+  notifyPrefs = {},
 }) {
   const currentUserId = currentUser?.id || null;
+  const isSite = channel.kind === 'site';
+
+  // For site channels, compute activity & summary across the site and its properties
+  const siteAct = isSite
+    ? siteActivity(channel, channels, messages, currentUser, userReadMap, notifyPrefs)
+    : null;
+  const siteSum = isSite ? siteSummary(channel.id, channels) : null;
+
   const displayName = channelDisplayName(channel, currentUserId, staffList);
-  const unread = unreadCount(channel.id, messages, lastReadAt, currentUserId);
-  const latestMsg = lastMessage(channel.id, messages);
+  const unread = isSite
+    ? (siteAct?.unreadCount || 0)
+    : unreadCount(channel.id, messages, lastReadAt, currentUserId);
+  const latestMsg = isSite
+    ? (siteAct?.latestMessage || null)
+    : lastMessage(channel.id, messages);
 
   const previewText = (() => {
     if (!latestMsg) {
       return 'No messages yet';
     }
     const preview = messagePreview(latestMsg, staffList);
+    if (isSite && latestMsg.channelId !== channel.id) {
+      const propChannel = channels.find((c) => c.id === latestMsg.channelId);
+      const propTitle = propChannel?.title || propChannel?.name || 'Property';
+      return `${propTitle}: ${preview}`;
+    }
     if (latestMsg.type === 'system' || latestMsg.senderId === 'system') {
       return preview;
     }
@@ -42,13 +64,23 @@ export function ChannelRow({
     return firstName ? `${firstName}: ${preview}` : preview;
   })();
 
+  // Caption line for site: "<location> · <N> properties" (or "No properties yet")
+  const siteCaption = isSite
+    ? siteSum.total === 0
+      ? 'No properties yet'
+      : `${channel.site?.location || 'Location'} · ${siteSum.total} ${siteSum.total === 1 ? 'property' : 'properties'}`
+    : null;
+
   // Check if any unread message mentions the current user
-  const hasMention = unread > 0 && messages.some((m) => {
-    if (m.channelId !== channel.id) return false;
-    if (m.senderId === currentUserId) return false;
-    if (lastReadAt && m.createdAt <= lastReadAt) return false;
-    return mentionsUser(m, currentUser);
-  });
+  const hasMention = isSite
+    ? Boolean(siteAct?.hasMention)
+    : unread > 0 &&
+      messages.some((m) => {
+        if (m.channelId !== channel.id) return false;
+        if (m.senderId === currentUserId) return false;
+        if (lastReadAt && m.createdAt <= lastReadAt) return false;
+        return mentionsUser(m, currentUser);
+      });
 
   // Render prefix icon
   const renderIcon = () => {
@@ -58,7 +90,7 @@ export function ChannelRow({
     if (channel.kind === 'private') {
       return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
     }
-    if (channel.kind === 'listing') {
+    if (channel.kind === 'site' || channel.kind === 'listing') {
       return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
     }
     if (channel.kind === 'group') {
@@ -114,6 +146,11 @@ export function ChannelRow({
               </span>
             )}
           </div>
+          {siteCaption && (
+            <p className="text-xs text-ink-soft overflow-hidden text-ellipsis whitespace-nowrap">
+              {siteCaption}
+            </p>
+          )}
           <p className="text-xs text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
             {previewText}
           </p>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hash, Lock, Check, Building2, Upload, Trash2 } from 'lucide-react';
+import { Hash, Lock, Check, Upload, Trash2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
@@ -34,8 +34,6 @@ function CreateChannelForm({ onClose }) {
   const { currentUser, currentUserId, channels, staff, createChannel } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
-
-  const canCreateListing = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
   const officeOptions = useMemo(() => {
     return officeChoicesFor(currentUser);
@@ -285,38 +283,6 @@ function CreateChannelForm({ onClose }) {
             </div>
             {kind === 'private' && <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />}
           </label>
-
-          {/* Listing Room (Admins and managers only) */}
-          {canCreateListing && (
-            <label
-              className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
-                kind === 'listing'
-                  ? 'border-brand bg-brand/5 shadow-2xs'
-                  : 'border-line bg-surface hover:bg-surface-raised'
-              }`}
-            >
-              <div className="flex items-start gap-2.5 min-w-0 pr-2">
-                <input
-                  type="radio"
-                  name="new_channel_kind"
-                  value="listing"
-                  checked={kind === 'listing'}
-                  onChange={() => setKind('listing')}
-                  className="mt-0.5 accent-brand cursor-pointer"
-                />
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
-                    <Building2 className="w-3.5 h-3.5 text-brand" aria-hidden="true" />
-                    <span>Listing room</span>
-                  </div>
-                  <p className="text-xs text-ink-muted">
-                    Dedicated property transaction room with metadata, price and photos.
-                  </p>
-                </div>
-              </div>
-              {kind === 'listing' && <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />}
-            </label>
-          )}
         </div>
       </div>
 

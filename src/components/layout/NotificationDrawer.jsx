@@ -79,7 +79,7 @@ export function NotificationDrawer({ isOpen, onClose }) {
         type: isMention ? 'mention' : 'announcement',
         isUnread,
         channelLabel: ch
-          ? ch.kind === 'listing'
+          ? ch.kind === 'listing' || ch.kind === 'site'
             ? channelDisplayName(ch, currentUserId, staff)
             : `#${channelDisplayName(ch, currentUserId, staff)}`
           : `#${msg.channelId}`,

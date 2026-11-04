@@ -225,8 +225,8 @@ export function canUserSeeChannel(user, channel) {
     return isAdmin || (Array.isArray(channel.members) && channel.members.includes(user.id));
   }
 
-  // open kinds: public, announcement, listing
-  if (kind === 'public' || kind === 'announcement' || kind === 'listing') {
+  // open kinds: public, announcement, listing, site
+  if (kind === 'public' || kind === 'announcement' || kind === 'listing' || kind === 'site') {
     // with officeId null: every active staff member
     if (!channelOffice) {
       return true;
@@ -263,7 +263,7 @@ export function channelMembersFor(channel, staffList = []) {
     return staffList.filter((s) => memberIds.includes(s.id) && isStaffActive(s));
   }
 
-  // Open kinds (public, announcement, listing)
+  // Open kinds (public, announcement, listing, site)
   if (!channelOffice) {
     return staffList.filter((s) => isStaffActive(s));
   }
@@ -289,12 +289,18 @@ export function isChannelAdmin(user, channel) {
 
 /**
  * Determines whether channel settings are available.
- * Kind is public, private, listing or group (NOT announcement, NOT dm) and not archived.
+ * Kind is public, private, listing, site or group (NOT announcement, NOT dm) and not archived.
  */
 export function channelSettingsAvailable(channel) {
   if (!channel || channel.archived) return false;
   const kind = channel.kind || 'public';
-  return kind === 'public' || kind === 'private' || kind === 'listing' || kind === 'group';
+  return (
+    kind === 'public' ||
+    kind === 'private' ||
+    kind === 'listing' ||
+    kind === 'site' ||
+    kind === 'group'
+  );
 }
 
 /**
@@ -394,7 +400,7 @@ export function shareableListings(user, channels = []) {
 export function channelDisplayName(channel, viewerId, staffList = []) {
   if (!channel) return '';
 
-  if (channel.kind === 'listing' && channel.title) {
+  if ((channel.kind === 'site' || channel.kind === 'listing') && channel.title) {
     return channel.title;
   }
 
@@ -411,12 +417,198 @@ export function channelDisplayName(channel, viewerId, staffList = []) {
 }
 
 /**
+ * Checks whether a channel is a site (kind === 'site').
+ */
+export function isSiteChannel(channel) {
+  return Boolean(channel && channel.kind === 'site');
+}
+
+/**
+ * Checks whether a channel is a property (kind === 'listing').
+ */
+export function isPropertyChannel(channel) {
+  return Boolean(channel && channel.kind === 'listing');
+}
+
+/**
+ * Returns visible, non-archived properties belonging to a site in creation order.
+ */
+export function propertiesOfSite(siteId, channels = [], user = null) {
+  if (!siteId || !Array.isArray(channels)) return [];
+  return channels
+    .filter((ch) => {
+      if (!ch || ch.kind !== 'listing' || ch.archived) return false;
+      const chSiteId = ch.listing?.siteId || ch.siteId;
+      if (chSiteId !== siteId) return false;
+      if (user && !canUserSeeChannel(user, ch)) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+}
+
+/**
+ * Returns the parent site channel for a given property channel.
+ */
+export function siteOfProperty(property, channels = []) {
+  if (!property || !Array.isArray(channels)) return null;
+  const siteId = property.listing?.siteId || property.siteId;
+  if (!siteId) return null;
+  return channels.find((ch) => ch && ch.kind === 'site' && ch.id === siteId) ?? null;
+}
+
+/**
+ * Returns { total, available, underOffer, sold } counts for non-archived properties of a site.
+ */
+export function siteSummary(siteId, channels = []) {
+  if (!siteId || !Array.isArray(channels)) {
+    return { total: 0, available: 0, underOffer: 0, sold: 0 };
+  }
+  const props = channels.filter(
+    (ch) =>
+      ch &&
+      ch.kind === 'listing' &&
+      !ch.archived &&
+      (ch.listing?.siteId === siteId || ch.siteId === siteId)
+  );
+  let available = 0;
+  let underOffer = 0;
+  let sold = 0;
+
+  props.forEach((p) => {
+    const rawStatus = (p.listing?.status || p.status || '').toLowerCase().replace(/\s+/g, '-');
+    if (rawStatus === 'available') {
+      available++;
+    } else if (rawStatus === 'under-offer') {
+      underOffer++;
+    } else if (rawStatus === 'sold') {
+      sold++;
+    }
+  });
+
+  return {
+    total: props.length,
+    available,
+    underOffer,
+    sold,
+  };
+}
+
+/**
+ * Computes aggregated unread count (site chat + visible properties, excluding muted)
+ * and returns the latest message across the site and its properties.
+ */
+export function siteActivity(
+  site,
+  channels = [],
+  messages = [],
+  user = null,
+  userReadMap = {},
+  notifyPrefs = {}
+) {
+  if (!site || !Array.isArray(channels) || !Array.isArray(messages)) {
+    return { unreadCount: 0, latestMessage: null, hasMention: false };
+  }
+
+  const currentUserId = user?.id || null;
+  const readMap = (user && userReadMap?.[user.id]) ? userReadMap[user.id] : (userReadMap || {});
+  const mutedChannelIds = Array.isArray(notifyPrefs?.mutedChannelIds)
+    ? notifyPrefs.mutedChannelIds
+    : [];
+  const notifyMode = notifyPrefs?.mode || 'all';
+
+  const properties = propertiesOfSite(site.id, channels, user);
+  const siteAndProperties = [site, ...properties];
+  const channelIds = new Set(siteAndProperties.map((c) => c.id));
+
+  // Find latest message across site and its properties
+  let latestMsg = null;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (channelIds.has(m.channelId)) {
+      if (!latestMsg || new Date(m.createdAt) > new Date(latestMsg.createdAt)) {
+        latestMsg = m;
+      }
+    }
+  }
+
+  // Compute aggregated unread count and mention state
+  let totalUnread = 0;
+  let aggregatedHasMention = false;
+
+  siteAndProperties.forEach((ch) => {
+    if (mutedChannelIds.includes(ch.id)) return;
+
+    const lastReadAt = readMap[ch.id] || null;
+    const count = unreadCount(ch.id, messages, lastReadAt, currentUserId);
+    if (count <= 0) return;
+
+    const channelHasMention = messages.some((m) => {
+      if (m.channelId !== ch.id) return false;
+      if (m.senderId === currentUserId) return false;
+      if (lastReadAt && m.createdAt <= lastReadAt) return false;
+      return mentionsUser(m, user);
+    });
+
+    if (channelHasMention) {
+      aggregatedHasMention = true;
+    }
+
+    if (notifyMode === 'mentions') {
+      if (channelHasMention) {
+        totalUnread += count;
+      }
+    } else {
+      totalUnread += count;
+    }
+  });
+
+  return {
+    unreadCount: totalUnread,
+    latestMessage: latestMsg,
+    hasMention: aggregatedHasMention,
+  };
+}
+
+/**
+ * Determines whether a user can create a site in the given office.
+ * Admins and managers with seesAllOffices can create anywhere; other managers only in their own office.
+ */
+export function canCreateSite(user, officeId = null) {
+  if (!user || !isStaffActive(user)) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'manager') {
+    if (user.seesAllOffices) return true;
+    if (!officeId) return true;
+    const userOffice = user.officeId || user.office || null;
+    return userOffice === officeId;
+  }
+  return false;
+}
+
+/**
+ * Determines whether a user can add a property to the given site.
+ * Admins and managers with seesAllOffices can add to any site; other managers only in their own office.
+ */
+export function canAddProperty(user, site) {
+  if (!user || !site || !isStaffActive(user)) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'manager') {
+    if (user.seesAllOffices) return true;
+    const userOffice = user.officeId || user.office || null;
+    const siteOffice = site.officeId || site.site?.officeId || null;
+    return userOffice === siteOffice;
+  }
+  return false;
+}
+
+/**
  * Groups channels by logical categories for sidebar rendering.
  */
 export function groupChannels(channels = []) {
   const result = {
     channels: [],
     private: [],
+    sites: [],
     listings: [],
     directMessages: [],
     archived: [],
@@ -425,15 +617,19 @@ export function groupChannels(channels = []) {
   channels.forEach((ch) => {
     if (!ch) return;
     if (ch.archived) {
-      result.archived.push(ch);
+      // Archived sites appear in archived section; individual properties are not listed
+      if (ch.kind !== 'listing') {
+        result.archived.push(ch);
+      }
       return;
     }
     if (ch.kind === 'public' || ch.kind === 'announcement') {
       result.channels.push(ch);
     } else if (ch.kind === 'private') {
       result.private.push(ch);
-    } else if (ch.kind === 'listing') {
-      result.listings.push(ch);
+    } else if (ch.kind === 'site') {
+      result.sites.push(ch);
+      result.listings.push(ch); // Aliased for backwards compatibility
     } else if (ch.kind === 'dm' || ch.kind === 'group') {
       result.directMessages.push(ch);
     }

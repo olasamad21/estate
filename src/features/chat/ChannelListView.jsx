@@ -6,6 +6,7 @@ import {
   visibleChannelsFor,
   groupChannels,
   unreadCount,
+  siteActivity,
   canCreateChannels,
   canUseAdmin,
 } from '../../utils/chat.js';
@@ -18,7 +19,7 @@ const FILTER_TABS = [
   { id: 'all', label: 'All' },
   { id: 'unread', label: 'Unread' },
   { id: 'channels', label: 'Channels', icon: Hash },
-  { id: 'listings', label: 'Listings', icon: Building2 },
+  { id: 'sites', label: 'Sites', icon: Building2 },
   { id: 'direct', label: 'Direct', icon: MessageSquare },
 ];
 
@@ -63,12 +64,17 @@ export function ChannelListView() {
     return (currentUserId && lastReadAtByUser?.[currentUserId]) || {};
   }, [lastReadAtByUser, currentUserId]);
 
-  // 2. Filter by active category tab (All, Unread, Channels, Listings, Direct)
+  // 2. Filter by active category tab (All, Unread, Channels, Sites, Direct)
   const filteredChannels = useMemo(() => {
     // Archived channels never appear in normal list tabs
     const activeChannels = userVisibleChannels.filter((ch) => !ch.archived);
     if (activeFilter === 'unread') {
       return activeChannels.filter((ch) => {
+        if (ch.kind === 'listing') return false; // properties are not listed individually
+        if (ch.kind === 'site') {
+          const act = siteActivity(ch, channels, messages, currentUser, userReadMap, notifyPrefs);
+          return act.unreadCount > 0;
+        }
         const count = unreadCount(ch.id, messages, userReadMap[ch.id], currentUserId);
         return count > 0;
       });
@@ -78,14 +84,15 @@ export function ChannelListView() {
         (ch) => ch.kind === 'public' || ch.kind === 'announcement' || ch.kind === 'private'
       );
     }
-    if (activeFilter === 'listings') {
-      return activeChannels.filter((ch) => ch.kind === 'listing');
+    if (activeFilter === 'sites') {
+      return activeChannels.filter((ch) => ch.kind === 'site');
     }
     if (activeFilter === 'direct') {
       return activeChannels.filter((ch) => ch.kind === 'dm' || ch.kind === 'group');
     }
-    return activeChannels;
-  }, [userVisibleChannels, activeFilter, messages, userReadMap, currentUserId]);
+    // Individual properties are not listed in normal channel lists
+    return activeChannels.filter((ch) => ch.kind !== 'listing');
+  }, [userVisibleChannels, activeFilter, channels, messages, userReadMap, currentUserId, currentUser, notifyPrefs]);
 
   // 3. Group channels into sections when on 'all' tab
   const grouped = useMemo(() => {
@@ -114,7 +121,7 @@ export function ChannelListView() {
         >
           <div className="flex items-center gap-2 min-w-0">
             <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Search channels & listings...</span>
+            <span>Search channels & sites...</span>
           </div>
           <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-mono bg-surface border border-line rounded text-ink-muted">
             ⌘K
@@ -172,11 +179,14 @@ export function ChannelListView() {
                     isActive={channel.id === activeChannelId}
                     onClick={() => handleSelectChannel(channel.id)}
                     messages={messages}
+                    channels={channels}
                     lastReadAt={userReadMap[channel.id]}
+                    userReadMap={userReadMap}
                     currentUser={currentUser}
                     staffList={staff}
                     isMuted={isChannelMuted(channel.id)}
                     notifyMode={notifyPrefs?.mode || 'all'}
+                    notifyPrefs={notifyPrefs}
                   />
                 ))}
               </div>
@@ -195,34 +205,40 @@ export function ChannelListView() {
                     isActive={channel.id === activeChannelId}
                     onClick={() => handleSelectChannel(channel.id)}
                     messages={messages}
+                    channels={channels}
                     lastReadAt={userReadMap[channel.id]}
+                    userReadMap={userReadMap}
                     currentUser={currentUser}
                     staffList={staff}
                     isMuted={isChannelMuted(channel.id)}
                     notifyMode={notifyPrefs?.mode || 'all'}
+                    notifyPrefs={notifyPrefs}
                   />
                 ))}
               </div>
             )}
 
-            {/* Listing Channels */}
-            {grouped.listings.length > 0 && (
+            {/* Sites Section */}
+            {grouped.sites.length > 0 && (
               <div className="space-y-1">
                 <div className="px-2 py-1 text-xs font-bold text-ink-muted uppercase tracking-wider">
-                  Listing Rooms
+                  Sites
                 </div>
-                {grouped.listings.map((channel) => (
+                {grouped.sites.map((channel) => (
                   <ChannelRow
                     key={channel.id}
                     channel={channel}
                     isActive={channel.id === activeChannelId}
                     onClick={() => handleSelectChannel(channel.id)}
                     messages={messages}
+                    channels={channels}
                     lastReadAt={userReadMap[channel.id]}
+                    userReadMap={userReadMap}
                     currentUser={currentUser}
                     staffList={staff}
                     isMuted={isChannelMuted(channel.id)}
                     notifyMode={notifyPrefs?.mode || 'all'}
+                    notifyPrefs={notifyPrefs}
                   />
                 ))}
               </div>
@@ -252,11 +268,14 @@ export function ChannelListView() {
                     isActive={channel.id === activeChannelId}
                     onClick={() => handleSelectChannel(channel.id)}
                     messages={messages}
+                    channels={channels}
                     lastReadAt={userReadMap[channel.id]}
+                    userReadMap={userReadMap}
                     currentUser={currentUser}
                     staffList={staff}
                     isMuted={isChannelMuted(channel.id)}
                     notifyMode={notifyPrefs?.mode || 'all'}
+                    notifyPrefs={notifyPrefs}
                   />
                 ))
               ) : (
@@ -292,11 +311,14 @@ export function ChannelListView() {
                       isActive={channel.id === activeChannelId}
                       onClick={() => handleSelectChannel(channel.id)}
                       messages={messages}
+                      channels={channels}
                       lastReadAt={userReadMap[channel.id]}
+                      userReadMap={userReadMap}
                       currentUser={currentUser}
                       staffList={staff}
                       isMuted={isChannelMuted(channel.id)}
                       notifyMode={notifyPrefs?.mode || 'all'}
+                      notifyPrefs={notifyPrefs}
                     />
                   ))}
               </div>
@@ -332,11 +354,14 @@ export function ChannelListView() {
                   isActive={channel.id === activeChannelId}
                   onClick={() => handleSelectChannel(channel.id)}
                   messages={messages}
+                  channels={channels}
                   lastReadAt={userReadMap[channel.id]}
+                  userReadMap={userReadMap}
                   currentUser={currentUser}
                   staffList={staff}
                   isMuted={isChannelMuted(channel.id)}
                   notifyMode={notifyPrefs?.mode || 'all'}
+                  notifyPrefs={notifyPrefs}
                 />
               ))
             )}

@@ -3,8 +3,19 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
-import { channelDisplayName, canUserSeeChannel, channelMembersFor, threadReplies, initialsOf, canPost } from '../../utils/chat.js';
-import { formatDayLabelNg } from '../../utils/formatters.js';
+import {
+  channelDisplayName,
+  canUserSeeChannel,
+  channelMembersFor,
+  threadReplies,
+  initialsOf,
+  canPost,
+  siteOfProperty,
+  propertiesOfSite,
+  siteSummary,
+  unreadCount,
+} from '../../utils/chat.js';
+import { formatDayLabelNg, formatNaira } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getAccessDeniedMessage } from '../../utils/messages.js';
 import { MessageRow } from './MessageRow.jsx';
@@ -22,8 +33,99 @@ import { FileDetailDrawer } from './FileDetailDrawer.jsx';
 import { ChannelInfoDrawer } from './ChannelInfoDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
+import { Badge } from '../../components/common/Badge.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
 import { ListingCard } from './ListingCard.jsx';
 import { setPreviewUrl } from '../../utils/previewUrls.js';
+
+function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap, onSelectProperty }) {
+  const properties = useMemo(() => {
+    return propertiesOfSite(site.id, channels, currentUser);
+  }, [site.id, channels, currentUser]);
+
+  const summary = useMemo(() => {
+    return siteSummary(site.id, channels);
+  }, [site.id, channels]);
+
+  const summaryText = useMemo(() => {
+    if (summary.total === 0) return 'No properties yet.';
+    const parts = [];
+    const propWord = summary.total === 1 ? 'property' : 'properties';
+    parts.push(`${summary.total} ${propWord}`);
+    if (summary.available > 0) parts.push(`${summary.available} available`);
+    if (summary.underOffer > 0) parts.push(`${summary.underOffer} under offer`);
+    if (summary.sold > 0) parts.push(`${summary.sold} sold`);
+    return parts.join(' · ');
+  }, [summary]);
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+      <div className="p-3 sm:p-4 bg-surface-raised border-b border-line text-xs font-semibold text-ink-soft">
+        {summaryText}
+      </div>
+
+      {properties.length === 0 ? (
+        <div className="py-12 px-4 text-center text-xs text-ink-muted">
+          No properties yet.
+        </div>
+      ) : (
+        <div className="divide-y divide-line">
+          {properties.map((prop) => {
+            const rawStatus = prop.listing?.status || prop.status || 'Available';
+            const statusVariant =
+              rawStatus === 'Available'
+                ? 'success'
+                : rawStatus === 'Under offer'
+                ? 'warning'
+                : 'neutral';
+            const typeSize = [prop.listing?.type, prop.listing?.size].filter(Boolean).join(' · ');
+            const propPrice = prop.listing?.priceNgn || prop.price;
+            const unread = unreadCount(prop.id, messages, userReadMap?.[prop.id], currentUser?.id);
+
+            return (
+              <button
+                key={prop.id}
+                type="button"
+                onClick={() => onSelectProperty(prop.id)}
+                className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-surface-raised/70 transition-colors cursor-pointer group min-h-[56px]"
+              >
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-line shrink-0 bg-surface-raised shadow-2xs">
+                    <ListingPhoto channel={prop} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm font-semibold text-ink break-words line-clamp-1 group-hover:text-brand transition-colors">
+                      {prop.title}
+                    </div>
+                    {typeSize && (
+                      <p className="text-xs text-ink-muted line-clamp-1">
+                        {typeSize}
+                      </p>
+                    )}
+                    <div className="text-xs font-bold text-brand tabular-nums mt-0.5">
+                      {formatNaira(propPrice)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant={statusVariant} size="sm">
+                    {rawStatus}
+                  </Badge>
+                  {unread > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-xs bg-brand text-surface">
+                      {unread}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ChatAreaView({ defaultChannelId = 'general' }) {
   const { id: routeChannelId } = useParams();
@@ -53,7 +155,14 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     notifyPrefs,
     toggleMuteChannel,
     setListingStatus,
+    lastReadAtByUser,
   } = useChat();
+
+  const userReadMap = useMemo(() => {
+    return (currentUserId && lastReadAtByUser?.[currentUserId]) || {};
+  }, [lastReadAtByUser, currentUserId]);
+
+  const [activeSiteTab, setActiveSiteTab] = useState('properties');
 
   const [selectedActionMessage, setSelectedActionMessage] = useState(null);
   const [selectedThreadMessage, setSelectedThreadMessage] = useState(null);
@@ -85,6 +194,10 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   const isVisible = useMemo(() => {
     return canUserSeeChannel(currentUser, channel);
   }, [channel, currentUser]);
+
+  const parentSite = useMemo(() => {
+    return channel && channel.kind === 'listing' ? siteOfProperty(channel, channels) : null;
+  }, [channel, channels]);
 
   // Demo safety: redirect to /channels if active user cannot view this channel
   useEffect(() => {
@@ -304,10 +417,17 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     : null;
   const officeLabel = officeObj?.label || (officeObj ? officeObj.name : 'All offices');
 
+  const channelLocation = channel.listing?.area || channel.location || parentSite?.site?.location || '';
+
   const headerCaption = (() => {
     if (!channel) return '';
+    if (channel.kind === 'site') {
+      const loc = channel.site?.location || 'Location';
+      return `${loc} · ${officeLabel}`;
+    }
     if (channel.kind === 'listing') {
-      return `${channel.location || 'Listing'} · ${officeLabel}`;
+      const siteTitle = parentSite?.title || parentSite?.name || 'Site';
+      return channelLocation ? `${siteTitle} · ${channelLocation}` : siteTitle;
     }
     if (channel.kind === 'dm') {
       const otherId = channel.members?.find((id) => id !== currentUserId) || channel.members?.[0];
@@ -327,7 +447,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     if (channel.kind === 'private') {
       return <Lock className="w-5 h-5 text-ink-muted shrink-0" aria-hidden="true" />;
     }
-    if (channel.kind === 'listing') {
+    if (channel.kind === 'site' || channel.kind === 'listing') {
       return <Building2 className="w-5 h-5 text-brand shrink-0" aria-hidden="true" />;
     }
     if (channel.kind === 'group') {
@@ -357,8 +477,18 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
           {/* Back button on smaller screens (44px target) */}
           <button
             type="button"
-            onClick={() => navigate('/channels')}
-            aria-label="Back to channels"
+            onClick={() => {
+              if (channel.kind === 'listing' && (channel.listing?.siteId || channel.siteId)) {
+                navigate(`/channels/${channel.listing?.siteId || channel.siteId}`);
+              } else {
+                navigate('/channels');
+              }
+            }}
+            aria-label={
+              channel.kind === 'listing' && (channel.listing?.siteId || channel.siteId)
+                ? 'Back to site'
+                : 'Back to channels'
+            }
             className="lg:hidden w-11 h-11 flex items-center justify-center -ml-1 text-ink-muted hover:text-ink rounded-lg hover:bg-surface-raised cursor-pointer shrink-0"
           >
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
@@ -375,9 +505,25 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                 ? `#${displayName}`
                 : displayName}
             </h2>
-            <p className="text-xs text-ink-muted line-clamp-1 leading-normal">
-              {headerCaption}
-            </p>
+            {channel.kind === 'listing' && parentSite ? (
+              <p className="text-xs text-ink-muted line-clamp-1 leading-normal">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/channels/${parentSite.id}`);
+                  }}
+                  className="text-brand-ink hover:underline cursor-pointer font-medium"
+                >
+                  {parentSite.title || parentSite.name}
+                </button>
+                {channelLocation ? ` · ${channelLocation}` : ''}
+              </p>
+            ) : (
+              <p className="text-xs text-ink-muted line-clamp-1 leading-normal">
+                {headerCaption}
+              </p>
+            )}
           </div>
         </div>
 
@@ -404,132 +550,174 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         </div>
       </div>
 
-      {/* Listing Card directly under header for listing channels (flex-none) */}
-      {channel.kind === 'listing' && (
-        <div className="flex-none">
-          <ListingCard
-            channel={channel}
-            currentUser={currentUser}
-            onSetListingStatus={setListingStatus}
-          />
+      {/* Two-tab control under header for Site channels (44px tabs, default Properties, resets with site id) */}
+      {channel.kind === 'site' && (
+        <div key={channel.id} className="flex items-center border-b border-line bg-surface flex-none px-2 sm:px-4">
+          <button
+            type="button"
+            onClick={() => setActiveSiteTab('properties')}
+            className={`min-h-[44px] px-4 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeSiteTab === 'properties'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <span>Properties</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSiteTab('chat')}
+            className={`min-h-[44px] px-4 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeSiteTab === 'chat'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <span>Site chat</span>
+          </button>
         </div>
       )}
 
-      {/* Pinned Messages Banner (flex-none, 40px tall) */}
-      {pinnedMessages.length > 0 && (
-        <div
-          onClick={() => {
-            if (pinnedMessages.length === 1) {
-              handleJumpToMessage(pinnedMessages[0].id);
-            } else {
-              setIsPinnedDrawerOpen(true);
-            }
-          }}
-          className="min-h-10 py-1.5 px-3 sm:px-4 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors flex-none select-none"
-        >
-          <div className="flex items-center gap-2 min-w-0 pr-2">
-            <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
-            {pinnedMessages.length === 1 ? (
-              <div className="min-w-0 flex items-center gap-1.5 line-clamp-1">
-                <span className="font-bold text-ink shrink-0">
-                  {staffById[pinnedMessages[0].senderId]?.name || 'Staff'}:
-                </span>
-                <span className="text-ink-muted line-clamp-1">
-                  {pinnedMessages[0].type === 'voice'
-                    ? 'Voice note'
-                    : pinnedMessages[0].type === 'file'
-                    ? `File: ${pinnedMessages[0].fileName || 'Attachment'}`
-                    : pinnedMessages[0].text}
-                </span>
-              </div>
-            ) : (
-              <span className="font-semibold text-ink line-clamp-1">
-                {pinnedMessages.length} pinned messages
-              </span>
-            )}
-          </div>
+      {/* Main Channel Body: Properties Tab vs Chat View */}
+      {channel.kind === 'site' && activeSiteTab === 'properties' ? (
+        <SitePropertiesTab
+          site={channel}
+          channels={channels}
+          messages={messages}
+          currentUser={currentUser}
+          userReadMap={userReadMap}
+          onSelectProperty={(propId) => navigate(`/channels/${propId}`)}
+        />
+      ) : (
+        <>
+          {/* Listing Card directly under header for listing channels (flex-none) */}
+          {channel.kind === 'listing' && (
+            <div className="flex-none">
+              <ListingCard
+                channel={channel}
+                currentUser={currentUser}
+                onSetListingStatus={setListingStatus}
+              />
+            </div>
+          )}
 
-          <span className="text-xs text-brand-ink font-semibold shrink-0">
-            {pinnedMessages.length === 1 ? 'Jump' : 'View all'}
-          </span>
-        </div>
-      )}
-
-      {/* Message Timeline (flex-1, min-h-0, overflow-y-auto, overscroll-contain) */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-4 overscroll-contain"
-        style={{ overscrollBehavior: 'contain' }}
-      >
-        {groupedByDay.map((group, groupIdx) => (
-          <div key={group.day || groupIdx} className="space-y-1">
-            {/* Day Divider */}
-            <div className="relative flex items-center justify-center my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-line" />
+          {/* Pinned Messages Banner (flex-none, 40px tall) */}
+          {pinnedMessages.length > 0 && (
+            <div
+              onClick={() => {
+                if (pinnedMessages.length === 1) {
+                  handleJumpToMessage(pinnedMessages[0].id);
+                } else {
+                  setIsPinnedDrawerOpen(true);
+                }
+              }}
+              className="min-h-10 py-1.5 px-3 sm:px-4 bg-surface-raised border-b border-line flex items-center justify-between text-xs cursor-pointer hover:bg-surface-raised/80 transition-colors flex-none select-none"
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-2">
+                <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
+                {pinnedMessages.length === 1 ? (
+                  <div className="min-w-0 flex items-center gap-1.5 line-clamp-1">
+                    <span className="font-bold text-ink shrink-0">
+                      {staffById[pinnedMessages[0].senderId]?.name || 'Staff'}:
+                    </span>
+                    <span className="text-ink-muted line-clamp-1">
+                      {pinnedMessages[0].type === 'voice'
+                        ? 'Voice note'
+                        : pinnedMessages[0].type === 'file'
+                        ? `File: ${pinnedMessages[0].fileName || 'Attachment'}`
+                        : pinnedMessages[0].text}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="font-semibold text-ink line-clamp-1">
+                    {pinnedMessages.length} pinned messages
+                  </span>
+                )}
               </div>
-              <span className="relative px-3 py-0.5 rounded-full bg-surface-raised border border-line text-xs font-semibold text-ink-muted shadow-2xs">
-                {group.day}
+
+              <span className="text-xs text-brand-ink font-semibold shrink-0">
+                {pinnedMessages.length === 1 ? 'Jump' : 'View all'}
               </span>
             </div>
+          )}
 
-            {/* Messages in Day */}
-            {group.messages.map((msg, idx) => {
-              const prevMsg = idx > 0 ? group.messages[idx - 1] : null;
-              const isSameSender = prevMsg && prevMsg.senderId === msg.senderId && prevMsg.type !== 'system' && msg.type !== 'system';
-              const timeDiff = prevMsg ? Math.abs(new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) : Infinity;
-              const isConsecutive = isSameSender && timeDiff < 5 * 60 * 1000;
+          {/* Message Timeline (flex-1, min-h-0, overflow-y-auto, overscroll-contain) */}
+          <div
+            ref={scrollRef}
+            className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-4 overscroll-contain"
+            style={{ overscrollBehavior: 'contain' }}
+          >
+            {groupedByDay.map((group, groupIdx) => (
+              <div key={group.day || groupIdx} className="space-y-1">
+                {/* Day Divider */}
+                <div className="relative flex items-center justify-center my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-line" />
+                  </div>
+                  <span className="relative px-3 py-0.5 rounded-full bg-surface-raised border border-line text-xs font-semibold text-ink-muted shadow-2xs">
+                    {group.day}
+                  </span>
+                </div>
 
-              return (
-                <MessageRow
-                  key={msg.id}
-                  message={msg}
-                  sender={staffById[msg.senderId] || null}
-                  isConsecutive={isConsecutive}
-                  currentUser={currentUser}
-                  channel={channel}
-                  repliesCount={threadReplies(messages, msg.id).length}
-                  totalStaffCount={staff.length}
-                  onOpenActions={() => setSelectedActionMessage(msg)}
-                  onOpenThread={() => setSelectedThreadMessage(msg)}
-                  onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}
-                  onOpenSeenBy={() => setSelectedAnnouncementMessage(msg)}
-                  onOpenFileDetail={(fileMsg) => setSelectedFileForPreview(fileMsg)}
-                />
-              );
-            })}
+                {/* Messages in Day */}
+                {group.messages.map((msg, idx) => {
+                  const prevMsg = idx > 0 ? group.messages[idx - 1] : null;
+                  const isSameSender = prevMsg && prevMsg.senderId === msg.senderId && prevMsg.type !== 'system' && msg.type !== 'system';
+                  const timeDiff = prevMsg ? Math.abs(new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) : Infinity;
+                  const isConsecutive = isSameSender && timeDiff < 5 * 60 * 1000;
+
+                  return (
+                    <MessageRow
+                      key={msg.id}
+                      message={msg}
+                      sender={staffById[msg.senderId] || null}
+                      isConsecutive={isConsecutive}
+                      currentUser={currentUser}
+                      channel={channel}
+                      repliesCount={threadReplies(messages, msg.id).length}
+                      totalStaffCount={staff.length}
+                      onOpenActions={() => setSelectedActionMessage(msg)}
+                      onOpenThread={() => setSelectedThreadMessage(msg)}
+                      onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}
+                      onOpenSeenBy={() => setSelectedAnnouncementMessage(msg)}
+                      onOpenFileDetail={(fileMsg) => setSelectedFileForPreview(fileMsg)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Typing Indicator */}
-      {typingStatus && typingStatus.channelId === channel.id && (
-        <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface flex-none">
-          <span className="font-semibold text-ink">{typingStatus.staffName}</span>
-          <span>is typing...</span>
-        </div>
-      )}
+          {/* Typing Indicator */}
+          {typingStatus && typingStatus.channelId === channel.id && (
+            <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface flex-none">
+              <span className="font-semibold text-ink">{typingStatus.staffName}</span>
+              <span>is typing...</span>
+            </div>
+          )}
 
-      {/* Message Composer or Archived Notice */}
-      {channel?.archived ? (
-        <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium flex-none">
-          This channel is archived
-        </div>
-      ) : (
-        <div className="flex-none">
-          <MessageComposer
-            key={editingMessage ? editingMessage.id : 'composer'}
-            channel={channel}
-            currentUser={currentUser}
-            channelMembers={channelMembers}
-            editingMessage={editingMessage}
-            onSendMessage={(text) => sendMessage(channel.id, text)}
-            onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
-            onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
-            onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
-            onCancelEdit={() => setEditingMessage(null)}
-          />
-        </div>
+          {/* Message Composer or Archived Notice */}
+          {channel?.archived ? (
+            <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium flex-none">
+              This channel is archived
+            </div>
+          ) : (
+            <div className="flex-none">
+              <MessageComposer
+                key={editingMessage ? editingMessage.id : 'composer'}
+                channel={channel}
+                currentUser={currentUser}
+                channelMembers={channelMembers}
+                editingMessage={editingMessage}
+                onSendMessage={(text) => sendMessage(channel.id, text)}
+                onSendVoiceNote={(duration) => sendVoiceNote(channel.id, duration)}
+                onOpenAttachDrawer={() => setIsAttachmentDrawerOpen(true)}
+                onSaveEdit={(msgId, newText) => editMessage(msgId, newText)}
+                onCancelEdit={() => setEditingMessage(null)}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Action Drawers */}

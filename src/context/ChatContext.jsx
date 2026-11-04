@@ -33,7 +33,7 @@ import {
   getChannelSendPolicyChangedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-14';
+const CHAT_STATE_VERSION = 'chat-15';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -984,12 +984,22 @@ export function ChatProvider({ children }) {
 
   const setChannelArchived = useCallback((channelId, archived) => {
     setChatState((prev) => {
+      const targetChannel = prev.channels.find((ch) => ch.id === channelId);
+      const isSite = targetChannel?.kind === 'site';
       const nextChannels = prev.channels.map((ch) => {
-        if (ch.id !== channelId) return ch;
-        return {
-          ...ch,
-          archived: Boolean(archived),
-        };
+        if (ch.id === channelId) {
+          return {
+            ...ch,
+            archived: Boolean(archived),
+          };
+        }
+        if (isSite && ch.kind === 'listing' && (ch.listing?.siteId === channelId || ch.siteId === channelId)) {
+          return {
+            ...ch,
+            archived: Boolean(archived),
+          };
+        }
+        return ch;
       });
 
       return {

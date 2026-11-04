@@ -76,7 +76,7 @@ function officeNameOf(id) {
 function renderChannelIcon(ch) {
   if (ch.kind === 'announcement') return <Megaphone className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
   if (ch.kind === 'private') return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
-  if (ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
+  if (ch.kind === 'site' || ch.kind === 'listing') return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
   return <Hash className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
 }
 
@@ -549,6 +549,7 @@ function ChannelRow({
 }) {
   const isAnnouncement = channel.kind === 'announcement';
   const isListing = channel.kind === 'listing';
+  const isSite = channel.kind === 'site';
   const isPrivate = channel.kind === 'private';
   const isArchived = Boolean(channel.archived);
 
@@ -571,13 +572,16 @@ function ChannelRow({
                 isArchived ? 'line-through opacity-70' : ''
               }`}
             >
-              {channel.kind === 'listing' ? (channel.title || channel.name) : `#${channel.name}`}
+              {channel.kind === 'listing' || channel.kind === 'site' ? (channel.title || channel.name) : `#${channel.name}`}
             </span>
             {isAnnouncement && (
               <Badge variant="neutral">Announcement</Badge>
             )}
             {isListing && (
-              <Badge variant="neutral">Listing</Badge>
+              <Badge variant="neutral">Property</Badge>
+            )}
+            {isSite && (
+              <Badge variant="neutral">Site</Badge>
             )}
           </div>
 
@@ -616,7 +620,7 @@ function ChannelRow({
           <button
             type="button"
             onClick={() => onOpenSheet(channel)}
-            aria-label={`Actions for ${channel.kind === 'listing' ? (channel.title || channel.name) : `#${channel.name}`}`}
+            aria-label={`Actions for ${channel.kind === 'listing' || channel.kind === 'site' ? (channel.title || channel.name) : `#${channel.name}`}`}
             className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
           >
             <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
@@ -1677,13 +1681,18 @@ export function AdminView() {
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-ink">
-                    #{selectedChannelForSheet.name}
+                    {selectedChannelForSheet.kind === 'listing' || selectedChannelForSheet.kind === 'site'
+                      ? (selectedChannelForSheet.title || selectedChannelForSheet.name)
+                      : `#${selectedChannelForSheet.name}`}
                   </span>
                   {selectedChannelForSheet.kind === 'announcement' && (
                     <Badge variant="neutral">Announcement</Badge>
                   )}
                   {selectedChannelForSheet.kind === 'listing' && (
-                    <Badge variant="neutral">Listing</Badge>
+                    <Badge variant="neutral">Property</Badge>
+                  )}
+                  {selectedChannelForSheet.kind === 'site' && (
+                    <Badge variant="neutral">Site</Badge>
                   )}
                   {selectedChannelForSheet.archived && (
                     <Badge variant="neutral">Archived</Badge>
