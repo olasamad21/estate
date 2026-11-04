@@ -7,11 +7,13 @@ import { useChat } from '../../context/ChatContext.jsx';
 import { shareableListings, officeLabelOf } from '../../utils/chat.js';
 import { ListingPhoto } from './ListingPhoto.jsx';
 
-function ShareListingForm({ channel, onClose }) {
+function ShareListingForm({ isOpen, channel, onClose }) {
   const { currentUser, channels, shareListing } = useChat();
 
   const [selectedListingId, setSelectedListingId] = useState('');
   const [note, setNote] = useState('');
+
+  const isDirty = Boolean(selectedListingId || note.trim());
 
   const siteGroups = useMemo(() => {
     const list = shareableListings(currentUser, channels);
@@ -51,7 +53,15 @@ function ShareListingForm({ channel, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Share a property"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard this message?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
       {/* Property Selection */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">
@@ -160,7 +170,7 @@ function ShareListingForm({ channel, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="pt-3 flex items-center justify-end gap-2 border-t border-line">
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
         <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
@@ -174,6 +184,7 @@ function ShareListingForm({ channel, onClose }) {
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
@@ -185,12 +196,12 @@ export function ShareListingDrawer({ isOpen, onClose, channel }) {
     onClose();
   };
 
+  if (!isOpen || !channel) {
+    return <Drawer isOpen={false} onClose={onClose} title="Share a property" variant="form" />;
+  }
+
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Share a property">
-      {isOpen && channel && (
-        <ShareListingForm key={formKey} channel={channel} onClose={handleClose} />
-      )}
-    </Drawer>
+    <ShareListingForm key={`${channel.id}-${formKey}`} isOpen={isOpen} channel={channel} onClose={handleClose} />
   );
 }
 

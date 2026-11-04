@@ -13,6 +13,8 @@ export function AttachmentPreviewDrawer({
   const [caption, setCaption] = useState('');
   const textareaRef = useRef(null);
 
+  const isDirty = Boolean(caption.trim());
+
   if (!attachment) return null;
 
   const isPhoto = attachment.fileKind === 'photo';
@@ -47,29 +49,12 @@ export function AttachmentPreviewDrawer({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      panelClassName="h-[100dvh] max-h-[100dvh] rounded-none sm:h-auto sm:max-h-[85dvh] sm:rounded-t-2xl lg:self-center lg:max-h-[90dvh] lg:max-w-lg lg:rounded-2xl lg:border"
-      footer={
-        <div className="flex items-center justify-end gap-3 w-full">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            className="min-h-[44px] px-4"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleSend}
-            className="min-h-[44px] px-6 text-sm font-semibold justify-center"
-          >
-            Send
-          </Button>
-        </div>
-      }
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard this message?"
+      panelClassName="lg:max-w-lg"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1 flex flex-col">
         {/* Preview Area */}
         {isPhoto ? (
           attachment.isSample ? (
@@ -141,6 +126,25 @@ export function AttachmentPreviewDrawer({
               {caption.length}/300
             </div>
           )}
+        </div>
+        {/* Actions */}
+        <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-3 -mx-5 px-5 mt-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="min-h-[44px] px-4"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleSend}
+            className="min-h-[44px] px-6 text-sm font-semibold justify-center"
+          >
+            Send
+          </Button>
         </div>
       </div>
     </Drawer>

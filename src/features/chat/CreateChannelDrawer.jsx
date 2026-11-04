@@ -17,7 +17,7 @@ import {
 import { getChannelCreatedMessage } from '../../utils/messages.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 
-function CreateChannelForm({ onClose }) {
+function CreateChannelForm({ isOpen, onClose }) {
   const { currentUser, currentUserId, channels, staff, createChannel, createSite } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -53,6 +53,25 @@ function CreateChannelForm({ onClose }) {
   const [siteTitle, setSiteTitle] = useState('');
   const [siteLocation, setSiteLocation] = useState('');
   const [siteDescription, setSiteDescription] = useState('');
+
+  const isDirty =
+    kind === 'site'
+      ? Boolean(
+          siteTitle.trim() ||
+          siteLocation.trim() ||
+          siteDescription.trim() ||
+          siteOfficeId !== defaultSiteOffice
+        )
+      : Boolean(
+          kind !== 'public' ||
+          name.trim() ||
+          officeId !== defaultOfficeId ||
+          description.trim() ||
+          sendPolicy !== 'everyone' ||
+          selectedMemberIds.some((id) => id !== currentUserId)
+        );
+
+  const discardTitle = kind === 'site' ? 'Discard this site?' : 'Discard this channel?';
 
   // Clean and sanitize public/private channel name
   const handleNameChange = (e) => {
@@ -180,7 +199,15 @@ function CreateChannelForm({ onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={kind === 'site' ? 'Create New Site' : 'Create New Channel'}
+      variant="form"
+      isDirty={isDirty}
+      discardTitle={discardTitle}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5 flex-1 flex flex-col">
       {/* Kind Selection (Three radio rows: Public, Private, Site) */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">Channel Type</label>
@@ -604,15 +631,16 @@ function CreateChannelForm({ onClose }) {
       )}
 
       {/* Actions */}
-      <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
-        <Button type="button" variant="ghost" onClick={onClose}>
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
+        <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
-        <Button type="submit" variant="primary" disabled={touched && isSubmitDisabled}>
+        <Button type="submit" variant="primary" disabled={touched && isSubmitDisabled} className="min-h-[44px]">
           {kind === 'site' ? 'Create Site' : 'Create Channel'}
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
@@ -624,11 +652,11 @@ export function CreateChannelDrawer({ isOpen, onClose }) {
     onClose();
   };
 
-  return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Create New Channel">
-      {isOpen && <CreateChannelForm key={formKey} onClose={handleClose} />}
-    </Drawer>
-  );
+  if (!isOpen) {
+    return <Drawer isOpen={false} onClose={onClose} title="Create New Channel" variant="form" />;
+  }
+
+  return <CreateChannelForm key={formKey} isOpen={isOpen} onClose={handleClose} />;
 }
 
 export default CreateChannelDrawer;

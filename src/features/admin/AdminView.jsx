@@ -80,7 +80,7 @@ function renderChannelIcon(ch) {
   return <Hash className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
 }
 
-function AddStaffForm({ staff, onSave, onClose }) {
+function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
   const [addName, setAddName] = useState('');
   const [addCallName, setAddCallName] = useState('');
   const [addPhone, setAddPhone] = useState('+234 ');
@@ -90,6 +90,17 @@ function AddStaffForm({ staff, onSave, onClose }) {
   const [addSeesAllOffices, setAddSeesAllOffices] = useState(false);
   const [addCanMessageExecutives, setAddCanMessageExecutives] = useState(false);
   const [addTouched, setAddTouched] = useState(false);
+
+  const isDirty = Boolean(
+    addName.trim() ||
+    addCallName.trim() ||
+    (addPhone.trim() && addPhone.trim() !== '+234') ||
+    addRole !== 'agent' ||
+    addDepartment !== 'Sales' ||
+    addOffice !== (AVAILABLE_OFFICES[0]?.id || 'hq') ||
+    addSeesAllOffices ||
+    addCanMessageExecutives
+  );
 
   const addErrors = useMemo(() => {
     if (!addTouched) return {};
@@ -142,7 +153,15 @@ function AddStaffForm({ staff, onSave, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add Staff Member"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard this staff member?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5 flex-1 flex flex-col">
       {/* Full Name */}
       <div className="space-y-1.5">
         <label htmlFor="add-staff-name" className="block text-xs font-semibold text-ink">
@@ -343,19 +362,20 @@ function AddStaffForm({ staff, onSave, onClose }) {
       </div>
 
       {/* Submit cluster */}
-      <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
-        <Button type="button" variant="ghost" onClick={onClose}>
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
+        <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" className="min-h-[44px]">
           Save Staff Member
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
-function EditStaffForm({ staff: staffMember, onSave, onClose }) {
+function EditStaffContent({ isOpen, staff: staffMember, onSave, onClose }) {
   const [editRole, setEditRole] = useState(staffMember.role);
   const [editDepartment, setEditDepartment] = useState(staffMember.department || 'Sales');
   const [editOffice, setEditOffice] = useState(
@@ -366,6 +386,14 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
   );
   const [editCanMessageExecutives, setEditCanMessageExecutives] = useState(
     Boolean(staffMember.canMessageExecutives)
+  );
+
+  const isDirty = Boolean(
+    editRole !== staffMember.role ||
+    editDepartment !== (staffMember.department || 'Sales') ||
+    editOffice !== (staffMember.officeId || staffMember.office || AVAILABLE_OFFICES[0]?.id || 'hq') ||
+    editSeesAllOffices !== Boolean(staffMember.seesAllOffices) ||
+    editCanMessageExecutives !== Boolean(staffMember.canMessageExecutives)
   );
 
   const handleSubmit = (e) => {
@@ -381,7 +409,15 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Role and Office"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard these changes?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5 flex-1 flex flex-col">
       <div className="p-3 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
         <Avatar
           role={staffMember.role}
@@ -529,15 +565,32 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
       </div>
 
       {/* Submit */}
-      <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
-        <Button type="button" variant="ghost" onClick={onClose}>
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
+        <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" className="min-h-[44px]">
           Save Changes
         </Button>
       </div>
     </form>
+  </Drawer>
+  );
+}
+
+function EditStaffDrawer({ isOpen, staff: staffMember, onSave, onClose }) {
+  if (!isOpen || !staffMember) {
+    return <Drawer isOpen={false} onClose={onClose} title="Role and Office" variant="form" />;
+  }
+
+  return (
+    <EditStaffContent
+      key={`edit-${staffMember.id}`}
+      isOpen={isOpen}
+      staff={staffMember}
+      onSave={onSave}
+      onClose={onClose}
+    />
   );
 }
 
@@ -882,6 +935,15 @@ export function AdminView() {
   const [reviewOffice, setReviewOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
   const [reviewDepartment, setReviewDepartment] = useState('Sales');
   const [reviewCanMessageExecutives, setReviewCanMessageExecutives] = useState(false);
+
+  const isReviewDirty = Boolean(
+    reviewingRequest && (
+      reviewRole !== (reviewingRequest.requestedRole || 'agent') ||
+      reviewOffice !== (reviewingRequest.officeId || AVAILABLE_OFFICES[0]?.id || 'hq') ||
+      reviewDepartment !== defaultDepartmentForRole(reviewingRequest.requestedRole || 'agent') ||
+      reviewCanMessageExecutives !== false
+    )
+  );
   const [declineModalRequest, setDeclineModalRequest] = useState(null);
   const [isDecidedOpen, setIsDecidedOpen] = useState(false);
   const [staffFilter, setStaffFilter] = useState('all'); // 'all' | office.id | 'deactivated'
@@ -1751,35 +1813,22 @@ export function AdminView() {
       </main>
 
       {/* Add Staff Drawer */}
-      <Drawer
+      <AddStaffDrawer
+        key={`add-staff-${isAddStaffOpen}`}
         isOpen={isAddStaffOpen}
+        staff={staff}
+        onSave={handleAddStaff}
         onClose={() => setIsAddStaffOpen(false)}
-        title="Add Staff Member"
-      >
-        {isAddStaffOpen && (
-          <AddStaffForm
-            staff={staff}
-            onSave={handleAddStaff}
-            onClose={() => setIsAddStaffOpen(false)}
-          />
-        )}
-      </Drawer>
+      />
 
       {/* Edit Staff Drawer (Role and office) */}
-      <Drawer
+      <EditStaffDrawer
+        key={editingStaff ? `edit-staff-${editingStaff.id}` : 'edit-staff-none'}
         isOpen={Boolean(editingStaff)}
+        staff={editingStaff}
+        onSave={handleEditStaff}
         onClose={() => setEditingStaff(null)}
-        title="Role and Office"
-      >
-        {editingStaff && (
-          <EditStaffForm
-            key={editingStaff.id}
-            staff={editingStaff}
-            onSave={handleEditStaff}
-            onClose={() => setEditingStaff(null)}
-          />
-        )}
-      </Drawer>
+      />
 
       {/* Staff Action Sheet Drawer */}
       <Drawer
@@ -2097,9 +2146,12 @@ export function AdminView() {
         isOpen={Boolean(reviewingRequest)}
         onClose={() => setReviewingRequest(null)}
         title="Review Access Request"
+        variant="form"
+        isDirty={isReviewDirty}
+        discardTitle="Discard this review?"
       >
         {reviewingRequest && (
-          <div className="space-y-6">
+          <div className="space-y-6 flex-1 flex flex-col">
             {/* Person details */}
             <div className="p-4 rounded-xl border border-line bg-surface-raised space-y-3">
               <div className="flex items-center gap-3">
@@ -2242,7 +2294,7 @@ export function AdminView() {
             )}
 
             {/* Action buttons */}
-            <div className="space-y-2 pt-2 border-t border-line">
+            <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] space-y-2 -mx-5 px-5 mt-auto">
               <Button
                 type="submit"
                 variant="primary"

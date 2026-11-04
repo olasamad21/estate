@@ -10,7 +10,7 @@ function formatBudgetInput(raw) {
   return Number(digits).toLocaleString('en-US');
 }
 
-function PostLeadForm({ channel, onClose }) {
+function PostLeadForm({ isOpen, channel, onClose }) {
   const { postLead } = useChat();
 
   const [clientName, setClientName] = useState('');
@@ -18,6 +18,13 @@ function PostLeadForm({ channel, onClose }) {
   const [area, setArea] = useState('');
   const [budgetFormatted, setBudgetFormatted] = useState('');
   const [touched, setTouched] = useState(false);
+
+  const isDirty = Boolean(
+    clientName.trim() ||
+    enquiry.trim() ||
+    area.trim() ||
+    budgetFormatted.trim()
+  );
 
   const officeAreas = useMemo(() => {
     if (channel?.officeId) {
@@ -91,7 +98,15 @@ function PostLeadForm({ channel, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Post a Lead"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard this lead?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
       {/* Client Name */}
       <div className="space-y-1.5">
         <label htmlFor="post-lead-client-name" className="block text-xs font-semibold text-ink">
@@ -209,7 +224,7 @@ function PostLeadForm({ channel, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="pt-3 flex items-center justify-end gap-2 border-t border-line">
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
         <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
@@ -223,6 +238,7 @@ function PostLeadForm({ channel, onClose }) {
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
@@ -234,12 +250,12 @@ export function PostLeadDrawer({ isOpen, onClose, channel }) {
     onClose();
   };
 
+  if (!isOpen || !channel) {
+    return <Drawer isOpen={false} onClose={onClose} title="Post a Lead" variant="form" />;
+  }
+
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Post a Lead">
-      {isOpen && channel && (
-        <PostLeadForm key={formKey} channel={channel} onClose={handleClose} />
-      )}
-    </Drawer>
+    <PostLeadForm key={`${channel.id}-${formKey}`} isOpen={isOpen} channel={channel} onClose={handleClose} />
   );
 }
 

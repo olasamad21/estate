@@ -29,7 +29,7 @@ function formatPriceInput(raw) {
   return Number(digits).toLocaleString('en-US');
 }
 
-function AddPropertyForm({ site, onClose }) {
+function AddPropertyForm({ isOpen, site, onClose }) {
   const { createProperty } = useChat();
   const navigate = useNavigate();
 
@@ -44,6 +44,15 @@ function AddPropertyForm({ site, onClose }) {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [touched, setTouched] = useState(false);
   const photoInputRef = useRef(null);
+
+  const isDirty = Boolean(
+    title.trim() ||
+    type ||
+    size.trim() ||
+    priceFormatted.trim() ||
+    status !== 'Available' ||
+    photoFile
+  );
 
   const numericPrice = useMemo(() => {
     const digits = priceFormatted.replace(/\D/g, '');
@@ -120,7 +129,15 @@ function AddPropertyForm({ site, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add property"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard this property?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
       {/* Property Name */}
       <div className="space-y-1.5">
         <label htmlFor="add-property-title" className="block text-xs font-semibold text-ink">
@@ -326,7 +343,7 @@ function AddPropertyForm({ site, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
         <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
@@ -340,6 +357,7 @@ function AddPropertyForm({ site, onClose }) {
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
@@ -351,10 +369,17 @@ export function AddPropertyDrawer({ isOpen, onClose, site }) {
     onClose();
   };
 
+  if (!isOpen || !site) {
+    return <Drawer isOpen={false} onClose={onClose} title="Add property" variant="form" />;
+  }
+
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Add property">
-      {isOpen && site && <AddPropertyForm key={formKey} site={site} onClose={handleClose} />}
-    </Drawer>
+    <AddPropertyForm
+      key={`${site.id}-${formKey}`}
+      isOpen={isOpen}
+      site={site}
+      onClose={handleClose}
+    />
   );
 }
 

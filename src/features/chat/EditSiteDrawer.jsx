@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { useChat } from '../../context/ChatContext.jsx';
 
-function EditSiteForm({ site, onClose }) {
+function EditSiteForm({ isOpen, site, onClose }) {
   const { updateSite } = useChat();
 
   const office = useMemo(() => {
@@ -16,6 +16,16 @@ function EditSiteForm({ site, onClose }) {
   const [location, setLocation] = useState(site?.site?.location || site?.location || '');
   const [description, setDescription] = useState(site?.description || '');
   const [touched, setTouched] = useState(false);
+
+  const initialTitle = site?.title || site?.name || '';
+  const initialLocation = site?.site?.location || site?.location || '';
+  const initialDescription = site?.description || '';
+
+  const isDirty = Boolean(
+    title.trim() !== initialTitle.trim() ||
+    location.trim() !== initialLocation.trim() ||
+    description.trim() !== initialDescription.trim()
+  );
 
   const errors = useMemo(() => {
     const errs = {};
@@ -59,7 +69,15 @@ function EditSiteForm({ site, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit site details"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard these changes?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
       {/* Site Name */}
       <div className="space-y-1.5">
         <label htmlFor="edit-site-title" className="block text-xs font-semibold text-ink">
@@ -155,7 +173,7 @@ function EditSiteForm({ site, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
+      <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
         <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
           Cancel
         </Button>
@@ -169,6 +187,7 @@ function EditSiteForm({ site, onClose }) {
         </Button>
       </div>
     </form>
+  </Drawer>
   );
 }
 
@@ -180,10 +199,17 @@ export function EditSiteDrawer({ isOpen, onClose, site }) {
     onClose();
   };
 
+  if (!isOpen || !site) {
+    return <Drawer isOpen={false} onClose={onClose} title="Edit site details" variant="form" />;
+  }
+
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Edit site details">
-      {isOpen && site && <EditSiteForm key={formKey} site={site} onClose={handleClose} />}
-    </Drawer>
+    <EditSiteForm
+      key={`${site.id}-${formKey}`}
+      isOpen={isOpen}
+      site={site}
+      onClose={handleClose}
+    />
   );
 }
 

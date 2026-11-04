@@ -193,3 +193,8 @@
     display: none;
   }
 }
+
+.overscroll-y-none {
+  overscroll-behavior-y: none;
+}
+

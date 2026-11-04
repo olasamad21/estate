@@ -62,6 +62,22 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
   const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
   const [touched, setTouched] = useState(false);
 
+  const initialTitle = channel?.title || channel?.name || '';
+  const initialType = channel?.listing?.type || '';
+  const initialSize = channel?.listing?.size || '';
+  const initialPriceFormatted = formatPriceInput(channel?.priceNgn || channel?.price || '');
+  const initialStatus = channel?.status || 'Available';
+
+  const isDirty = Boolean(
+    title.trim() !== initialTitle.trim() ||
+    type !== initialType ||
+    size.trim() !== initialSize.trim() ||
+    priceFormatted.trim() !== initialPriceFormatted.trim() ||
+    status !== initialStatus ||
+    photoFile !== null ||
+    isPhotoRemoved
+  );
+
   const fileInputRef = useRef(null);
 
   const numericPrice = useMemo(() => {
@@ -146,8 +162,15 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
   if (!channel) return null;
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Edit property details">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit property details"
+      variant="form"
+      isDirty={isDirty}
+      discardTitle="Discard these changes?"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
         {/* Property Name */}
         <div className="space-y-1.5">
           <label htmlFor="edit-listing-title" className="block text-xs font-semibold text-ink">
@@ -363,7 +386,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
         </div>
 
         {/* Actions */}
-        <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
+        <div className="sticky bottom-0 bg-surface border-t border-line py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-end gap-2 -mx-5 px-5 mt-auto">
           <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
             Cancel
           </Button>
