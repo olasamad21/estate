@@ -88,6 +88,7 @@ function AddStaffForm({ staff, onSave, onClose }) {
   const [addDepartment, setAddDepartment] = useState('Sales');
   const [addOffice, setAddOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
   const [addSeesAllOffices, setAddSeesAllOffices] = useState(false);
+  const [addCanMessageExecutives, setAddCanMessageExecutives] = useState(false);
   const [addTouched, setAddTouched] = useState(false);
 
   const addErrors = useMemo(() => {
@@ -136,6 +137,7 @@ function AddStaffForm({ staff, onSave, onClose }) {
       office: addOffice,
       officeId: addOffice,
       seesAllOffices: addRole === 'admin' ? addSeesAllOffices : false,
+      canMessageExecutives: (addRole === 'agent' || addRole === 'support' || addRole === 'intern') ? addCanMessageExecutives : false,
     });
   };
 
@@ -264,6 +266,33 @@ function AddStaffForm({ staff, onSave, onClose }) {
         </div>
       )}
 
+      {/* Can message executives switch (agent, support, intern) */}
+      {(addRole === 'agent' || addRole === 'support' || addRole === 'intern') && (
+        <div className="p-3 rounded-xl border border-line bg-surface-raised flex items-center justify-between min-h-[44px]">
+          <div className="space-y-0.5 pr-2">
+            <span className="text-xs font-semibold text-ink block">Can message executives</span>
+            <span className="text-xs text-ink-muted block">Lets this person start a direct message with the MD, the Group Head and the General Manager.</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={addCanMessageExecutives}
+            aria-label="Can message executives"
+            onClick={() => setAddCanMessageExecutives(!addCanMessageExecutives)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              addCanMessageExecutives ? 'bg-brand' : 'bg-line-strong'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
+                addCanMessageExecutives ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
       {/* Department selection */}
       <div className="space-y-1.5">
         <label htmlFor="add-staff-department" className="block text-xs font-semibold text-ink">
@@ -335,6 +364,9 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
   const [editSeesAllOffices, setEditSeesAllOffices] = useState(
     Boolean(staffMember.seesAllOffices)
   );
+  const [editCanMessageExecutives, setEditCanMessageExecutives] = useState(
+    Boolean(staffMember.canMessageExecutives)
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -344,6 +376,7 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
       office: editOffice,
       officeId: editOffice,
       seesAllOffices: editRole === 'admin' ? editSeesAllOffices : false,
+      canMessageExecutives: (editRole === 'agent' || editRole === 'support' || editRole === 'intern') ? editCanMessageExecutives : false,
     });
   };
 
@@ -415,6 +448,33 @@ function EditStaffForm({ staff: staffMember, onSave, onClose }) {
               aria-hidden="true"
               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
                 editSeesAllOffices ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* Can message executives switch (agent, support, intern) */}
+      {(editRole === 'agent' || editRole === 'support' || editRole === 'intern') && (
+        <div className="p-3 rounded-xl border border-line bg-surface-raised flex items-center justify-between min-h-[44px]">
+          <div className="space-y-0.5 pr-2">
+            <span className="text-xs font-semibold text-ink block">Can message executives</span>
+            <span className="text-xs text-ink-muted block">Lets this person start a direct message with the MD, the Group Head and the General Manager.</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={editCanMessageExecutives}
+            aria-label="Can message executives"
+            onClick={() => setEditCanMessageExecutives(!editCanMessageExecutives)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              editCanMessageExecutives ? 'bg-brand' : 'bg-line-strong'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
+                editCanMessageExecutives ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
@@ -652,6 +712,7 @@ export function AdminView() {
   const [reviewRole, setReviewRole] = useState('agent');
   const [reviewOffice, setReviewOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
   const [reviewDepartment, setReviewDepartment] = useState('Sales');
+  const [reviewCanMessageExecutives, setReviewCanMessageExecutives] = useState(false);
   const [declineModalRequest, setDeclineModalRequest] = useState(null);
   const [isDecidedOpen, setIsDecidedOpen] = useState(false);
   const [staffFilter, setStaffFilter] = useState('all'); // 'all' | office.id | 'deactivated'
@@ -817,6 +878,7 @@ export function AdminView() {
     setReviewRole(role);
     setReviewOffice(req.officeId || AVAILABLE_OFFICES[0]?.id || 'hq');
     setReviewDepartment(defaultDepartmentForRole(role));
+    setReviewCanMessageExecutives(false);
   };
 
   const handleApprove = () => {
@@ -826,6 +888,7 @@ export function AdminView() {
       role: reviewRole,
       officeId: reviewOffice,
       department: reviewDepartment,
+      canMessageExecutives: (reviewRole === 'agent' || reviewRole === 'support' || reviewRole === 'intern') ? reviewCanMessageExecutives : false,
     });
     setReviewingRequest(null);
     showToast(getAccessRequestApprovedMessage(req.name));
@@ -1870,6 +1933,33 @@ export function AdminView() {
                 })}
               </div>
             </div>
+
+            {/* Can message executives switch (agent, support, intern) */}
+            {(reviewRole === 'agent' || reviewRole === 'support' || reviewRole === 'intern') && (
+              <div className="p-3 rounded-xl border border-line bg-surface-raised flex items-center justify-between min-h-[44px]">
+                <div className="space-y-0.5 pr-2">
+                  <span className="text-xs font-semibold text-ink block">Can message executives</span>
+                  <span className="text-xs text-ink-muted block">Lets this person start a direct message with the MD, the Group Head and the General Manager.</span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={reviewCanMessageExecutives}
+                  aria-label="Can message executives"
+                  onClick={() => setReviewCanMessageExecutives(!reviewCanMessageExecutives)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    reviewCanMessageExecutives ? 'bg-brand' : 'bg-line-strong'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow-xs transition duration-200 ease-in-out ${
+                      reviewCanMessageExecutives ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="space-y-2 pt-2 border-t border-line">

@@ -33,7 +33,7 @@ import {
   getChannelSendPolicyChangedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-13';
+const CHAT_STATE_VERSION = 'chat-14';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -515,7 +515,7 @@ export function ChatProvider({ children }) {
     safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
 
-  const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, seesAllOffices }) => {
+  const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, seesAllOffices, canMessageExecutives }) => {
     const effectiveOfficeId = officeId || office || 'hq';
     const effectiveCallName = (callName || name.trim().split(/\s+/)[0] || 'staff').trim();
     const baseSlug = slugify(effectiveCallName) || slugify(name);
@@ -544,6 +544,7 @@ export function ChatProvider({ children }) {
       office: effectiveOfficeId,
       phone: normalisedPhone,
       seesAllOffices: role === 'admin' ? Boolean(seesAllOffices) : false,
+      canMessageExecutives: (role === 'admin' || role === 'manager') ? false : Boolean(canMessageExecutives),
       isOnline: false,
       online: false,
       status: 'active',
@@ -569,12 +570,13 @@ export function ChatProvider({ children }) {
     return newPerson;
   }, [staff]);
 
-  const updateStaff = useCallback((staffId, { role, office, officeId, department, title, seesAllOffices, callName }) => {
+  const updateStaff = useCallback((staffId, { role, office, officeId, department, title, seesAllOffices, callName, canMessageExecutives }) => {
     setChatState((prev) => {
       const nextStaff = prev.staff.map((s) => {
         if (s.id !== staffId) return s;
         const effectiveOfficeId = officeId || office || s.officeId;
-        const roleLabel = ROLE_LABELS[role || s.role] || (role || s.role);
+        const targetRole = role || s.role;
+        const roleLabel = ROLE_LABELS[targetRole] || targetRole;
         const officeObj = (COMPANY_CONFIG.offices || []).find((o) => o.id === effectiveOfficeId);
         const officeName = officeObj ? officeObj.name : 'Head Quarters';
         const jobTitle = title || `${roleLabel}, ${officeName}`;
@@ -582,12 +584,15 @@ export function ChatProvider({ children }) {
         return {
           ...s,
           ...(callName ? { callName: callName.trim() } : {}),
-          role: role || s.role,
+          role: targetRole,
           office: effectiveOfficeId,
           officeId: effectiveOfficeId,
           department: department || s.department,
           title: jobTitle,
-          seesAllOffices: (role || s.role) === 'admin' ? Boolean(seesAllOffices ?? s.seesAllOffices) : false,
+          seesAllOffices: targetRole === 'admin' ? Boolean(seesAllOffices ?? s.seesAllOffices) : false,
+          canMessageExecutives: (targetRole === 'admin' || targetRole === 'manager')
+            ? false
+            : (canMessageExecutives !== undefined ? Boolean(canMessageExecutives) : Boolean(s.canMessageExecutives)),
         };
       });
 
@@ -699,7 +704,7 @@ export function ChatProvider({ children }) {
     return { ok: true };
   }, [staff, accessRequests]);
 
-  const approveAccessRequest = useCallback((id, { role, officeId, department, callName, title } = {}) => {
+  const approveAccessRequest = useCallback((id, { role, officeId, department, callName, title, canMessageExecutives } = {}) => {
     const targetReq = accessRequests.find((r) => r.id === id);
     if (!targetReq) return null;
     const chosenRole = role || targetReq.requestedRole;
@@ -714,6 +719,7 @@ export function ChatProvider({ children }) {
       officeId: chosenOffice,
       department,
       title,
+      canMessageExecutives: Boolean(canMessageExecutives),
     });
 
     const decidedAt = new Date().toISOString();

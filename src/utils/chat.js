@@ -67,33 +67,58 @@ export function canArchiveChannels(user) {
 }
 
 /**
- * Determines whether a user is permitted to initiate a 1-on-1 direct message with targetUser.
- * Hierarchy rules:
- * - Admin can DM anyone.
- * - Manager can DM anyone (Admins, other Managers, Agents, Support, Interns).
- * - Agent / Support / Intern can DM ANY Manager, or peers (other Agents/Support/Interns),
- *   but CANNOT initiate cold DMs to executive Admins.
+ * Determines whether a sender is permitted to initiate a 1-on-1 direct message with target.
+ * An executive is any active person whose role is 'admin'.
+ * Returns true when:
+ * - The sender is an admin or a manager; or
+ * - The target's role is not 'admin'; or
+ * - The sender's canMessageExecutives is true.
+ * Returns false for a missing, inactive or identical sender and target.
  */
-export function canInitiateDm(currentUser, targetUser) {
-  if (!currentUser || !targetUser) return false;
-  if (!isStaffActive(currentUser) || !isStaffActive(targetUser)) return false;
-  if (currentUser.id === targetUser.id) return false;
+export function canInitiateDm(sender, target) {
+  if (!sender || !target) return false;
+  if (!isStaffActive(sender) || !isStaffActive(target)) return false;
+  if (sender.id === target.id) return false;
 
-  const myRole = currentUser.role || 'agent';
-  const targetRole = targetUser.role || 'agent';
+  const senderRole = sender.role || 'agent';
+  const targetRole = target.role || 'agent';
 
-  // Admin can DM anyone
-  if (myRole === 'admin') return true;
-
-  // Manager can DM anyone
-  if (myRole === 'manager') return true;
-
-  // Subordinates cannot cold-message executive Admins
-  if (targetRole === 'admin') {
-    return false;
+  if (senderRole === 'admin' || senderRole === 'manager') {
+    return true;
   }
 
-  return true;
+  if (targetRole !== 'admin') {
+    return true;
+  }
+
+  if (sender.canMessageExecutives) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Returns list of colleagues the sender is permitted to initiate a direct message with.
+ */
+export function getPermittedDmRecipients(sender, staffList = []) {
+  if (!sender || !Array.isArray(staffList)) return [];
+  return staffList.filter((target) => canInitiateDm(sender, target));
+}
+
+/**
+ * Returns list of executives that the sender cannot start a direct message with.
+ */
+export function getRestrictedDmRecipients(sender, staffList = []) {
+  if (!sender || !Array.isArray(staffList)) return [];
+  return staffList.filter(
+    (target) =>
+      target &&
+      target.id !== sender.id &&
+      isStaffActive(target) &&
+      target.role === 'admin' &&
+      !canInitiateDm(sender, target)
+  );
 }
 
 /**

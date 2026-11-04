@@ -188,5 +188,5 @@ export function getCannotRemoveOnlyAdminMessage() {
 }
 
 export function getDirectMessageRestrictedMessage() {
-  return 'Direct messages with executive management are restricted. Please reach out to a manager or use the relevant department channel.';
+  return 'Direct messages with executive management are restricted. Please ask your manager, or post in a channel your team shares.';
 }

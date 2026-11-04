@@ -30,6 +30,8 @@ export const STAFF = [
     phone: "+2340000000001",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "ahmed",
@@ -43,6 +45,8 @@ export const STAFF = [
     phone: "+2340000000002",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "itivere",
@@ -56,6 +60,8 @@ export const STAFF = [
     phone: "+2340000000003",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "biobelene",
@@ -69,6 +75,8 @@ export const STAFF = [
     phone: "+2340000000004",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: true,
   },
   {
     id: "micheal",
@@ -82,6 +90,8 @@ export const STAFF = [
     phone: "+2340000000005",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "fortune",
@@ -95,6 +105,8 @@ export const STAFF = [
     phone: "+2340000000006",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "ngozi",
@@ -108,6 +120,8 @@ export const STAFF = [
     phone: "+2340000000007",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "imeh",
@@ -121,6 +135,8 @@ export const STAFF = [
     phone: "+2340000000008",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: true,
   },
   {
     id: "franca",
@@ -134,6 +150,8 @@ export const STAFF = [
     phone: "+2340000000009",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: true,
   },
   {
     id: "aniede",
@@ -147,6 +165,8 @@ export const STAFF = [
     phone: "+2340000000010",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: true,
   },
   {
     id: "efosa",
@@ -160,6 +180,8 @@ export const STAFF = [
     phone: "+2340000000011",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "uchechukwu",
@@ -173,6 +195,8 @@ export const STAFF = [
     phone: "+2340000000012",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "tamuno",
@@ -186,6 +210,8 @@ export const STAFF = [
     phone: "+2340000000013",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "faith",
@@ -199,6 +225,8 @@ export const STAFF = [
     phone: "+2340000000014",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "princess",
@@ -212,6 +240,8 @@ export const STAFF = [
     phone: "+2340000000015",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "christy",
@@ -225,6 +255,8 @@ export const STAFF = [
     phone: "+2340000000016",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "semira",
@@ -238,6 +270,8 @@ export const STAFF = [
     phone: "+2340000000017",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "moshood",
@@ -251,6 +285,8 @@ export const STAFF = [
     phone: "+2340000000018",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: true,
   },
   {
     id: "isaac",
@@ -264,6 +300,8 @@ export const STAFF = [
     phone: "+2340000000019",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "kingsley",
@@ -277,6 +315,8 @@ export const STAFF = [
     phone: "+2340000000020",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "jatau",
@@ -290,6 +330,8 @@ export const STAFF = [
     phone: "+2340000000021",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "ibrahim",
@@ -303,6 +345,8 @@ export const STAFF = [
     phone: "+2340000000022",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "oricha",
@@ -316,6 +360,8 @@ export const STAFF = [
     phone: "+2340000000023",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "taiye",
@@ -329,6 +375,8 @@ export const STAFF = [
     phone: "+2340000000024",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "zainab",
@@ -342,6 +390,8 @@ export const STAFF = [
     phone: "+2340000000025",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "godwin",
@@ -355,6 +405,8 @@ export const STAFF = [
     phone: "+2340000000026",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "george",
@@ -368,6 +420,8 @@ export const STAFF = [
     phone: "+2340000000027",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "peter",
@@ -381,6 +435,8 @@ export const STAFF = [
     phone: "+2340000000028",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "nneke",
@@ -394,6 +450,8 @@ export const STAFF = [
     phone: "+2340000000029",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "ndidiamaka",
@@ -407,6 +465,8 @@ export const STAFF = [
     phone: "+2340000000030",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "progress",
@@ -420,6 +480,8 @@ export const STAFF = [
     phone: "+2340000000031",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "solomon",
@@ -433,6 +495,8 @@ export const STAFF = [
     phone: "+2340000000032",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "maryam",
@@ -446,6 +510,8 @@ export const STAFF = [
     phone: "+2340000000033",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "sulaiman",
@@ -459,6 +525,8 @@ export const STAFF = [
     phone: "+2340000000034",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "amarachi",
@@ -472,6 +540,8 @@ export const STAFF = [
     phone: "+2340000000035",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "precious",
@@ -485,6 +555,8 @@ export const STAFF = [
     phone: "+2340000000036",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "chidinma",
@@ -498,6 +570,8 @@ export const STAFF = [
     phone: "+2340000000037",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "divine",
@@ -511,6 +585,8 @@ export const STAFF = [
     phone: "+2340000000038",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "hauwa",
@@ -524,6 +600,8 @@ export const STAFF = [
     phone: "+2340000000039",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "joseph",
@@ -537,6 +615,8 @@ export const STAFF = [
     phone: "+2340000000040",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "olamilekan",
@@ -550,6 +630,8 @@ export const STAFF = [
     phone: "+2340000000041",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "uche",
@@ -563,6 +645,8 @@ export const STAFF = [
     phone: "+2340000000042",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "pawa",
@@ -576,6 +660,8 @@ export const STAFF = [
     phone: "+2340000000043",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "christiana",
@@ -589,6 +675,8 @@ export const STAFF = [
     phone: "+2340000000044",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "patience",
@@ -602,6 +690,8 @@ export const STAFF = [
     phone: "+2340000000045",
     status: "active",
     isOnline: false,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "glory",
@@ -615,6 +705,8 @@ export const STAFF = [
     phone: "+2340000000046",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
   {
     id: "gladys",
@@ -628,6 +720,8 @@ export const STAFF = [
     phone: "+2340000000047",
     status: "active",
     isOnline: true,
+    // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
   },
 ];
 

@@ -65,7 +65,7 @@ export function NewDirectMessageDrawer({ isOpen, onClose }) {
       if (!matches(m)) return;
       if (canInitiateDm(currentUser, m)) {
         permittedList.push(m);
-      } else {
+      } else if (m.role === 'admin') {
         restrictedList.push(m);
       }
     });
@@ -184,18 +184,18 @@ export function NewDirectMessageDrawer({ isOpen, onClose }) {
                 <div className="space-y-2 pt-2 border-t border-line">
                   <div className="flex items-center justify-between px-2 py-1">
                     <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-                      Executive Administration
+                      Executive management
                     </span>
                     <span className="text-xs text-ink-muted flex items-center gap-1">
                       <Lock className="w-3 h-3" aria-hidden="true" />
-                      Restricted
+                      Contact via your manager
                     </span>
                   </div>
 
                   <div className="p-2.5 bg-surface-raised/60 border border-line rounded-xl flex items-start gap-2.5">
                     <ShieldAlert className="w-4 h-4 text-ink-soft shrink-0 mt-0.5" aria-hidden="true" />
                     <p className="text-xs text-ink-muted leading-relaxed">
-                      Direct messaging with executive leadership is routed through managers or departmental channels.
+                      Direct messages with executive management are restricted. Please ask your manager, or post in a channel your team shares.
                     </p>
                   </div>
 
@@ -226,8 +226,8 @@ export function NewDirectMessageDrawer({ isOpen, onClose }) {
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <Lock className="w-3.5 h-3.5 text-ink-muted" aria-hidden="true" />
-                          <Badge role={member.role} variant="neutral">
-                            {ROLE_LABELS[member.role] || member.role}
+                          <Badge variant="neutral">
+                            Contact via your manager
                           </Badge>
                         </div>
                       </button>
