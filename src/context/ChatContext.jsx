@@ -7,7 +7,7 @@ import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -836,6 +836,51 @@ export function ChatProvider({ children }) {
     return newChannel;
   }, [currentUserId, currentUser, chatState.channels]);
 
+  const openOrCreateDm = useCallback((targetUserId) => {
+    if (!currentUserId || !targetUserId || currentUserId === targetUserId) return null;
+
+    // 1. Check if a DM with these two members already exists
+    const existing = chatState.channels.find((c) => {
+      if (c.kind !== 'dm') return false;
+      const members = Array.isArray(c.members) ? c.members : (c.memberIds || []);
+      return members.includes(currentUserId) && members.includes(targetUserId);
+    });
+
+    if (existing) {
+      return existing.id;
+    }
+
+    // 2. Otherwise create a new DM channel
+    const dmSlug = getDmSlug(currentUserId, targetUserId);
+    const newDm = {
+      id: dmSlug,
+      name: dmSlug,
+      kind: 'dm',
+      description: '',
+      officeId: null,
+      postPolicy: 'all',
+      members: [currentUserId, targetUserId],
+      memberIds: [currentUserId, targetUserId],
+      createdById: currentUserId,
+      adminIds: [currentUserId],
+      sendPolicy: 'everyone',
+      archived: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    setChatState((prev) => {
+      if (prev.channels.some((c) => c.id === dmSlug)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        channels: [...prev.channels, newDm],
+      };
+    });
+
+    return dmSlug;
+  }, [currentUserId, chatState.channels]);
+
   const updateListingDetails = useCallback((channelId, { title, area, priceNgn, status }) => {
     if (!channelId) return;
 
@@ -1308,6 +1353,7 @@ export function ChatProvider({ children }) {
     updateStaff,
     setStaffActive,
     createChannel,
+    openOrCreateDm,
     setChannelArchived,
     setChannelAdmin,
     setChannelSendPolicy,
@@ -1355,6 +1401,7 @@ export function ChatProvider({ children }) {
     updateStaff,
     setStaffActive,
     createChannel,
+    openOrCreateDm,
     setChannelArchived,
     setChannelAdmin,
     setChannelSendPolicy,

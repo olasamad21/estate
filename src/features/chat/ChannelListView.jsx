@@ -12,6 +12,7 @@ import {
 import { ChannelRow } from './ChannelRow.jsx';
 import { GlobalSearchDrawer } from './GlobalSearchDrawer.jsx';
 import { CreateChannelDrawer } from './CreateChannelDrawer.jsx';
+import { NewDirectMessageDrawer } from './NewDirectMessageDrawer.jsx';
 
 const FILTER_TABS = [
   { id: 'all', label: 'All' },
@@ -38,6 +39,7 @@ export function ChannelListView() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isNewDmOpen, setIsNewDmOpen] = useState(false);
   const [isArchivedOpen, setIsArchivedOpen] = useState(false);
 
   // Keyboard shortcut Ctrl/Cmd+K to open search
@@ -227,12 +229,23 @@ export function ChannelListView() {
             )}
 
             {/* Direct Messages & Groups */}
-            {grouped.directMessages.length > 0 && (
-              <div className="space-y-1">
-                <div className="px-2 py-1 text-xs font-bold text-ink-muted uppercase tracking-wider">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between px-2 py-0.5">
+                <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
                   Direct Messages
-                </div>
-                {grouped.directMessages.map((channel) => (
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsNewDmOpen(true)}
+                  aria-label="New direct message"
+                  title="New direct message"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+              {grouped.directMessages.length > 0 ? (
+                grouped.directMessages.map((channel) => (
                   <ChannelRow
                     key={channel.id}
                     channel={channel}
@@ -245,9 +258,13 @@ export function ChannelListView() {
                     isMuted={isChannelMuted(channel.id)}
                     notifyMode={notifyPrefs?.mode || 'all'}
                   />
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="px-3 py-2 text-xs text-ink-muted">
+                  No direct messages yet
+                </div>
+              )}
+            </div>
 
             {/* Archived Channels (Admin only, collapsed by default) */}
             {canUseAdmin(currentUser) && grouped.archived.length > 0 && (
@@ -287,9 +304,25 @@ export function ChannelListView() {
           </>
         ) : (
           <div className="space-y-1">
+            {activeFilter === 'direct' && (
+              <div className="pb-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewDmOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-xl bg-surface-raised border border-line text-ink hover:border-brand hover:text-brand transition-colors cursor-pointer min-h-[44px]"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                  <span>New direct message</span>
+                </button>
+              </div>
+            )}
             {filteredChannels.length === 0 ? (
               <div className="text-center py-8 px-4 text-xs text-ink-muted">
-                {activeFilter === 'unread' ? 'No unread messages' : 'No matching channels found'}
+                {activeFilter === 'unread'
+                  ? 'No unread messages'
+                  : activeFilter === 'direct'
+                  ? 'No direct messages yet'
+                  : 'No matching channels found'}
               </div>
             ) : (
               filteredChannels.map((channel) => (
@@ -330,6 +363,13 @@ export function ChannelListView() {
           onClose={() => setIsCreateChannelOpen(false)}
         />
       )}
+
+      {/* New Direct Message Drawer */}
+      <NewDirectMessageDrawer
+        key={currentUser?.id}
+        isOpen={isNewDmOpen}
+        onClose={() => setIsNewDmOpen(false)}
+      />
     </div>
   );
 }

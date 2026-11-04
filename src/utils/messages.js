@@ -186,3 +186,7 @@ export function getChannelSendPolicyChangedMessage(policy = 'everyone') {
 export function getCannotRemoveOnlyAdminMessage() {
   return 'A channel must have at least one admin.';
 }
+
+export function getDirectMessageRestrictedMessage() {
+  return 'Direct messages with executive management are restricted. Please reach out to a manager or use the relevant department channel.';
+}

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
+import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import {
   visibleChannelsFor,
@@ -23,10 +24,11 @@ import {
   initialsOf,
   officeLabelOf,
   callNameOf,
+  canInitiateDm,
 } from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
-import { getNoDirectMessageToast } from '../../utils/messages.js';
+import { getDirectMessageRestrictedMessage } from '../../utils/messages.js';
 
 function HighlightMatch({ text = '', query = '' }) {
   if (!text || !query) return <span>{text}</span>;
@@ -67,6 +69,7 @@ export function GlobalSearchDrawer({
 }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { openOrCreateDm } = useChat();
   const inputRef = useRef(null);
 
   const [query, setQuery] = useState('');
@@ -195,6 +198,8 @@ export function GlobalSearchDrawer({
   };
 
   const handleSelectPerson = (person) => {
+    if (!person || person.id === currentUserId) return;
+
     // Check if DM channel exists with this person
     const dmChannel = visibleChannels.find(
       (c) => c.kind === 'dm' && Array.isArray(c.members) && c.members.includes(person.id)
@@ -203,8 +208,19 @@ export function GlobalSearchDrawer({
     if (dmChannel) {
       handleClose();
       navigate(`/channels/${dmChannel.id}`);
-    } else {
-      showToast(getNoDirectMessageToast(person.name));
+      return;
+    }
+
+    // Check hierarchy permissions before initiating a new DM
+    if (!canInitiateDm(currentUser, person)) {
+      showToast(getDirectMessageRestrictedMessage());
+      return;
+    }
+
+    const dmId = openOrCreateDm(person.id);
+    if (dmId) {
+      handleClose();
+      navigate(`/channels/${dmId}`);
     }
   };
 

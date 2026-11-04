@@ -66,6 +66,44 @@ export function canArchiveChannels(user) {
   return Boolean(user && user.role === 'admin' && isStaffActive(user));
 }
 
+/**
+ * Determines whether a user is permitted to initiate a 1-on-1 direct message with targetUser.
+ * Hierarchy rules:
+ * - Admin can DM anyone.
+ * - Manager can DM anyone (Admins, other Managers, Agents, Support, Interns).
+ * - Agent / Support / Intern can DM ANY Manager, or peers (other Agents/Support/Interns),
+ *   but CANNOT initiate cold DMs to executive Admins.
+ */
+export function canInitiateDm(currentUser, targetUser) {
+  if (!currentUser || !targetUser) return false;
+  if (!isStaffActive(currentUser) || !isStaffActive(targetUser)) return false;
+  if (currentUser.id === targetUser.id) return false;
+
+  const myRole = currentUser.role || 'agent';
+  const targetRole = targetUser.role || 'agent';
+
+  // Admin can DM anyone
+  if (myRole === 'admin') return true;
+
+  // Manager can DM anyone
+  if (myRole === 'manager') return true;
+
+  // Subordinates cannot cold-message executive Admins
+  if (targetRole === 'admin') {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Builds a deterministic slug for a 1-on-1 direct message channel.
+ */
+export function getDmSlug(userAId, userBId) {
+  const sorted = [String(userAId || ''), String(userBId || '')].sort();
+  return `dm-${sorted.join('-')}`;
+}
+
 export function slugify(text = '') {
   return String(text)
     .toLowerCase()
