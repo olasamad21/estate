@@ -1,9 +1,8 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hash, Lock, Check, Upload, Trash2 } from 'lucide-react';
+import { Hash, Lock, Check, Upload, Trash2, Building2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
-import { Badge } from '../../components/common/Badge.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../../components/common/useToast.js';
@@ -14,26 +13,19 @@ import {
   isChannelNameValid,
   isStaffActive,
   initialsOf,
+  canCreateSite,
 } from '../../utils/chat.js';
-import { getChannelCreatedMessage, getListingRoomCreatedMessage } from '../../utils/messages.js';
+import { getChannelCreatedMessage } from '../../utils/messages.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
 
-const LISTING_STATUS_OPTIONS = [
-  { id: 'Available', label: 'Available', variant: 'success', desc: 'Available for viewings and enquiries' },
-  { id: 'Under offer', label: 'Under offer', variant: 'warning', desc: 'Offer accepted, documentation in progress' },
-  { id: 'Sold', label: 'Sold', variant: 'neutral', desc: 'Transaction closed and title transferred' },
-];
-
-function formatPriceInput(raw) {
-  const digits = String(raw || '').replace(/\D/g, '');
-  if (!digits) return '';
-  return Number(digits).toLocaleString('en-US');
-}
-
 function CreateChannelForm({ onClose }) {
-  const { currentUser, currentUserId, channels, staff, createChannel } = useChat();
+  const { currentUser, currentUserId, channels, staff, createChannel, createSite } = useChat();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  const canUserCreateAnySite = useMemo(() => {
+    return COMPANY_CONFIG.offices.some((off) => canCreateSite(currentUser, off.id));
+  }, [currentUser]);
 
   const officeOptions = useMemo(() => {
     return officeChoicesFor(currentUser);
@@ -50,18 +42,20 @@ function CreateChannelForm({ onClose }) {
   const [selectedMemberIds, setSelectedMemberIds] = useState(currentUserId ? [currentUserId] : []);
   const [touched, setTouched] = useState(false);
 
-  // Listing room state
-  const managerOfficeId = currentUser?.officeId || currentUser?.office || COMPANY_CONFIG.offices[0]?.id || 'hq';
-  const defaultListingOffice = (currentUser?.role === 'admin' || currentUser?.seesAllOffices)
-    ? (COMPANY_CONFIG.offices[0]?.id || 'hq')
-    : managerOfficeId;
-  const [listingOfficeId, setListingOfficeId] = useState(defaultListingOffice);
-  const [listingTitle, setListingTitle] = useState('');
-  const [listingArea, setListingArea] = useState('');
-  const [listingPriceFormatted, setListingPriceFormatted] = useState('');
-  const [listingStatus, setListingStatus] = useState('Available');
-  const [listingPhotoFile, setListingPhotoFile] = useState(null);
-  const [listingPhotoPreview, setListingPhotoPreview] = useState(null);
+  // Site state
+  const defaultSiteOffice = useMemo(() => {
+    if (currentUser?.role === 'admin' || currentUser?.seesAllOffices) {
+      return COMPANY_CONFIG.offices[0]?.id || 'hq';
+    }
+    return currentUser?.officeId || currentUser?.office || COMPANY_CONFIG.offices[0]?.id || 'hq';
+  }, [currentUser]);
+
+  const [siteOfficeId, setSiteOfficeId] = useState(defaultSiteOffice);
+  const [siteTitle, setSiteTitle] = useState('');
+  const [siteLocation, setSiteLocation] = useState('');
+  const [siteDescription, setSiteDescription] = useState('');
+  const [sitePhotoFile, setSitePhotoFile] = useState(null);
+  const [sitePhotoPreview, setSitePhotoPreview] = useState(null);
   const photoInputRef = useRef(null);
 
   // Clean and sanitize public/private channel name
@@ -77,7 +71,7 @@ function CreateChannelForm({ onClose }) {
 
   // Inline validation for public/private channel
   const nameError = useMemo(() => {
-    if (kind === 'listing') return '';
+    if (kind === 'site') return '';
     if (!touched && !name) return '';
     if (!name.trim()) return 'Channel name is required.';
     if (!isChannelNameValid(name)) {
@@ -90,45 +84,37 @@ function CreateChannelForm({ onClose }) {
     return '';
   }, [kind, name, touched, channels]);
 
-  // Numeric price calculation for listing
-  const numericPrice = useMemo(() => {
-    const digits = listingPriceFormatted.replace(/\D/g, '');
-    return digits ? Number(digits) : 0;
-  }, [listingPriceFormatted]);
+  // Selected office object for site areas
+  const currentSiteOffice = useMemo(() => {
+    return COMPANY_CONFIG.offices.find((o) => o.id === siteOfficeId) || COMPANY_CONFIG.offices[0];
+  }, [siteOfficeId]);
 
-  // Selected office object for listing areas
-  const currentListingOffice = useMemo(() => {
-    return COMPANY_CONFIG.offices.find((o) => o.id === listingOfficeId) || COMPANY_CONFIG.offices[0];
-  }, [listingOfficeId]);
-
-  // Inline validation for listing room
-  const listingErrors = useMemo(() => {
-    if (kind !== 'listing') return {};
+  // Inline validation for site
+  const siteErrors = useMemo(() => {
+    if (kind !== 'site') return {};
     const errs = {};
-    const t = listingTitle.trim();
+    const t = siteTitle.trim();
     if (!t) {
-      errs.title = 'Property name is required.';
+      errs.title = 'Site name is required.';
     } else if (t.length < 3) {
-      errs.title = 'Property name must be at least 3 characters.';
+      errs.title = 'Site name must be at least 3 characters.';
     } else if (t.length > 40) {
-      errs.title = 'Property name must be at most 40 characters.';
+      errs.title = 'Site name must be at most 40 characters.';
     }
 
-    const a = listingArea.trim();
-    if (!a) {
-      errs.area = 'Area is required.';
-    } else if (a.length > 30) {
-      errs.area = 'Area must be at most 30 characters.';
+    const loc = siteLocation.trim();
+    if (!loc) {
+      errs.location = 'Location is required.';
+    } else if (loc.length > 30) {
+      errs.location = 'Location must be at most 30 characters.';
     }
 
-    if (!numericPrice || numericPrice <= 0) {
-      errs.price = 'Price must be greater than zero.';
-    } else if (numericPrice > 100000000000) {
-      errs.price = 'Price cannot exceed ₦100,000,000,000.';
+    if (!siteOfficeId) {
+      errs.office = 'Branch office is required.';
     }
 
     return errs;
-  }, [kind, listingTitle, listingArea, numericPrice]);
+  }, [kind, siteTitle, siteLocation, siteOfficeId]);
 
   // Eligible staff for private channel based on selected office
   const eligibleStaff = useMemo(() => {
@@ -151,31 +137,31 @@ function CreateChannelForm({ onClose }) {
     );
   };
 
-  const handleListingOfficeChange = (newOfficeId) => {
-    setListingOfficeId(newOfficeId);
-    setListingArea(''); // reset area on office switch per spec
+  const handleSiteOfficeChange = (newOfficeId) => {
+    setSiteOfficeId(newOfficeId);
+    setSiteLocation(''); // Changing the office resets the location per spec
   };
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setListingPhotoFile(file);
+      setSitePhotoFile(file);
       const url = URL.createObjectURL(file);
-      setListingPhotoPreview(url);
+      setSitePhotoPreview(url);
     }
   };
 
   const handleRemovePhoto = () => {
-    setListingPhotoFile(null);
-    setListingPhotoPreview(null);
+    setSitePhotoFile(null);
+    setSitePhotoPreview(null);
     if (photoInputRef.current) {
       photoInputRef.current.value = '';
     }
   };
 
   const isSubmitDisabled =
-    kind === 'listing'
-      ? Object.keys(listingErrors).length > 0
+    kind === 'site'
+      ? Object.keys(siteErrors).length > 0
       : Boolean(!name.trim() || nameError);
 
   const handleSubmit = (e) => {
@@ -183,24 +169,25 @@ function CreateChannelForm({ onClose }) {
     setTouched(true);
     if (isSubmitDisabled) return;
 
-    if (kind === 'listing') {
-      const newChannel = createChannel({
-        kind: 'listing',
-        title: listingTitle.trim(),
-        officeId: listingOfficeId,
-        area: listingArea.trim(),
-        priceNgn: numericPrice,
-        status: listingStatus,
+    if (kind === 'site') {
+      const result = createSite({
+        title: siteTitle.trim(),
+        officeId: siteOfficeId,
+        location: siteLocation.trim(),
+        description: siteDescription.trim(),
       });
 
-      if (listingPhotoFile) {
-        const url = URL.createObjectURL(listingPhotoFile);
-        setPreviewUrl(`listing:${newChannel.id}`, url);
+      if (!result.ok) {
+        return;
       }
 
-      showToast(getListingRoomCreatedMessage(newChannel.title || newChannel.name));
+      if (sitePhotoFile && result.id) {
+        const url = URL.createObjectURL(sitePhotoFile);
+        setPreviewUrl(`site:${result.id}`, url);
+      }
+
       onClose();
-      navigate(`/channels/${newChannel.id}`);
+      navigate(`/channels/${result.id}`);
       return;
     }
 
@@ -220,7 +207,7 @@ function CreateChannelForm({ onClose }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Kind Selection (Three radio rows: Public, Private, Listing room) */}
+      {/* Kind Selection (Three radio rows: Public, Private, Site) */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">Channel Type</label>
         <div className="space-y-2" role="radiogroup" aria-label="Channel Type">
@@ -283,34 +270,66 @@ function CreateChannelForm({ onClose }) {
             </div>
             {kind === 'private' && <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />}
           </label>
+
+          {/* Site (only for people allowed by canCreateSite for at least one office) */}
+          {canUserCreateAnySite && (
+            <label
+              className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
+                kind === 'site'
+                  ? 'border-brand bg-brand/5 shadow-2xs'
+                  : 'border-line bg-surface hover:bg-surface-raised'
+              }`}
+            >
+              <div className="flex items-start gap-2.5 min-w-0 pr-2">
+                <input
+                  type="radio"
+                  name="new_channel_kind"
+                  value="site"
+                  checked={kind === 'site'}
+                  onChange={() => setKind('site')}
+                  className="mt-0.5 accent-brand cursor-pointer"
+                />
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
+                    <Building2 className="w-3.5 h-3.5 text-brand" aria-hidden="true" />
+                    <span>Site</span>
+                  </div>
+                  <p className="text-xs text-ink-muted">
+                    A location or estate project containing multiple individual properties.
+                  </p>
+                </div>
+              </div>
+              {kind === 'site' && <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />}
+            </label>
+          )}
         </div>
       </div>
 
-      {/* Conditional Fields: Listing Room vs Public/Private */}
-      {kind === 'listing' ? (
-        /* Listing Room Fields */
+      {/* Conditional Fields: Site vs Public/Private */}
+      {kind === 'site' ? (
+        /* Site Fields */
         <div className="space-y-4 pt-1 border-t border-line">
-          {/* Property Name */}
+          {/* Site Name */}
           <div className="space-y-1.5">
-            <label htmlFor="create-listing-title" className="block text-xs font-semibold text-ink">
-              Property Name <span className="text-status-danger">*</span>
+            <label htmlFor="create-site-title" className="block text-xs font-semibold text-ink">
+              Site Name <span className="text-status-danger">*</span>
             </label>
             <input
-              id="create-listing-title"
-              name="new_listing_title"
+              id="create-site-title"
+              name="new_site_title"
               type="text"
-              value={listingTitle}
-              onChange={(e) => setListingTitle(e.target.value)}
+              value={siteTitle}
+              onChange={(e) => setSiteTitle(e.target.value)}
               onBlur={() => setTouched(true)}
-              placeholder="e.g. Maitama Terrace Duplex"
+              placeholder="e.g. Garden Court Estate"
               maxLength={40}
               required
               className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
             />
-            {touched && listingErrors.title ? (
-              <p className="text-xs text-status-danger font-medium">{listingErrors.title}</p>
+            {touched && siteErrors.title ? (
+              <p className="text-xs text-status-danger font-medium">{siteErrors.title}</p>
             ) : (
-              <p className="text-xs text-ink-muted">Shown as the room title (3–40 characters).</p>
+              <p className="text-xs text-ink-muted">3 to 40 characters.</p>
             )}
           </div>
 
@@ -323,17 +342,17 @@ function CreateChannelForm({ onClose }) {
                   <label
                     key={off.id}
                     className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-colors ${
-                      listingOfficeId === off.id
+                      siteOfficeId === off.id
                         ? 'border-brand bg-brand-bg text-brand-ink font-semibold'
                         : 'border-line bg-surface text-ink-soft hover:bg-surface-raised'
                     }`}
                   >
                     <input
                       type="radio"
-                      name="new_listing_office"
+                      name="new_site_office"
                       value={off.id}
-                      checked={listingOfficeId === off.id}
-                      onChange={() => handleListingOfficeChange(off.id)}
+                      checked={siteOfficeId === off.id}
+                      onChange={() => handleSiteOfficeChange(off.id)}
                       className="accent-brand cursor-pointer"
                     />
                     <span>{off.label}</span>
@@ -342,25 +361,25 @@ function CreateChannelForm({ onClose }) {
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-surface-raised border border-line text-xs font-semibold text-ink">
-                {currentListingOffice.label}
+                {currentSiteOffice.label}
               </div>
             )}
           </div>
 
-          {/* Area */}
+          {/* Location */}
           <div className="space-y-1.5">
-            <label htmlFor="create-listing-area" className="block text-xs font-semibold text-ink">
-              Area / Neighborhood <span className="text-status-danger">*</span>
+            <label htmlFor="create-site-location" className="block text-xs font-semibold text-ink">
+              Location <span className="text-status-danger">*</span>
             </label>
-            {currentListingOffice.areas && currentListingOffice.areas.length > 0 && (
+            {currentSiteOffice.areas && currentSiteOffice.areas.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {currentListingOffice.areas.map((a) => (
+                {currentSiteOffice.areas.map((a) => (
                   <button
                     key={a}
                     type="button"
-                    onClick={() => setListingArea(a)}
+                    onClick={() => setSiteLocation(a)}
                     className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-medium border cursor-pointer transition-colors ${
-                      listingArea === a
+                      siteLocation === a
                         ? 'border-brand bg-brand-bg text-brand-ink font-semibold'
                         : 'border-line bg-surface text-ink-soft hover:bg-surface-raised'
                     }`}
@@ -371,108 +390,63 @@ function CreateChannelForm({ onClose }) {
               </div>
             )}
             <input
-              id="create-listing-area"
-              name="new_listing_area"
+              id="create-site-location"
+              name="new_site_location"
               type="text"
-              value={listingArea}
-              onChange={(e) => setListingArea(e.target.value)}
+              value={siteLocation}
+              onChange={(e) => setSiteLocation(e.target.value)}
               onBlur={() => setTouched(true)}
               placeholder="e.g. Maitama"
               maxLength={30}
               required
               className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
             />
-            {touched && listingErrors.area && (
-              <p className="text-xs text-status-danger font-medium">{listingErrors.area}</p>
+            {touched && siteErrors.location && (
+              <p className="text-xs text-status-danger font-medium">{siteErrors.location}</p>
             )}
           </div>
 
-          {/* Price */}
+          {/* Description */}
           <div className="space-y-1.5">
-            <label htmlFor="create-listing-price" className="block text-xs font-semibold text-ink">
-              Price (NGN) <span className="text-status-danger">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs font-bold text-ink-muted">
-                ₦
+            <div className="flex items-center justify-between">
+              <label htmlFor="create-site-description" className="block text-xs font-semibold text-ink">
+                Description (optional)
+              </label>
+              <span className="text-xs text-ink-muted tabular-nums">
+                {siteDescription.length}/100
               </span>
-              <input
-                id="create-listing-price"
-                name="new_listing_price"
-                type="text"
-                inputMode="numeric"
-                value={listingPriceFormatted}
-                onChange={(e) => setListingPriceFormatted(formatPriceInput(e.target.value))}
-                onBlur={() => setTouched(true)}
-                placeholder="185,000,000"
-                required
-                className="w-full pl-8 pr-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink tabular-nums font-semibold focus:border-brand focus:outline-none"
-              />
             </div>
-            {touched && listingErrors.price && (
-              <p className="text-xs text-status-danger font-medium">{listingErrors.price}</p>
-            )}
-          </div>
-
-          {/* Status (Three radio rows) */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-ink">Transaction Status</label>
-            <div className="space-y-2" role="radiogroup" aria-label="Transaction Status">
-              {LISTING_STATUS_OPTIONS.map((opt) => {
-                const isSelected = listingStatus === opt.id;
-                return (
-                  <label
-                    key={opt.id}
-                    className={`flex items-start justify-between p-3 rounded-xl border transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'border-brand bg-brand/5 shadow-2xs'
-                        : 'border-line bg-surface hover:bg-surface-raised'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 min-w-0 pr-2">
-                      <input
-                        type="radio"
-                        name="new_listing_status"
-                        value={opt.id}
-                        checked={isSelected}
-                        onChange={() => setListingStatus(opt.id)}
-                        className="mt-0.5 accent-brand cursor-pointer"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-ink">{opt.label}</span>
-                          <Badge variant={opt.variant} size="sm">
-                            {opt.label}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-ink-muted mt-0.5">{opt.desc}</p>
-                      </div>
-                    </div>
-                    {isSelected && <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />}
-                  </label>
-                );
-              })}
-            </div>
+            <textarea
+              id="create-site-description"
+              name="new_site_description"
+              value={siteDescription}
+              onChange={(e) => setSiteDescription(e.target.value.slice(0, 100))}
+              maxLength={100}
+              rows={2}
+              placeholder="Brief description of this site location"
+              className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none resize-none"
+            />
           </div>
 
           {/* Photo (Optional) */}
           <div className="space-y-2 pt-1 border-t border-line">
-            <label className="block text-xs font-semibold text-ink">Listing Photo (optional)</label>
+            <label className="block text-xs font-semibold text-ink">Site Photo (optional)</label>
             <input
               ref={photoInputRef}
-              name="new_listing_photo_file"
+              id="create-site-photo"
+              name="new_site_photo_file"
               type="file"
               accept="image/*"
               onChange={handlePhotoSelect}
               className="hidden"
             />
 
-            {listingPhotoPreview ? (
+            {sitePhotoPreview ? (
               <div className="flex items-center gap-3 p-2.5 rounded-xl border border-line bg-surface-raised">
                 <div className="w-16 h-12 rounded-lg overflow-hidden border border-line shrink-0 bg-surface">
                   <img
-                    src={listingPhotoPreview}
-                    alt="Listing thumbnail preview"
+                    src={sitePhotoPreview}
+                    alt="Site thumbnail preview"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -719,7 +693,7 @@ function CreateChannelForm({ onClose }) {
           Cancel
         </Button>
         <Button type="submit" variant="primary" disabled={touched && isSubmitDisabled}>
-          {kind === 'listing' ? 'Create Listing Room' : 'Create Channel'}
+          {kind === 'site' ? 'Create Site' : 'Create Channel'}
         </Button>
       </div>
     </form>

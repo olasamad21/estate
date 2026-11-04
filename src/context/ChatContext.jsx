@@ -7,7 +7,7 @@ import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty } from '../utils/chat.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -31,9 +31,12 @@ import {
   getChannelAdminAddedMessage,
   getChannelAdminRemovedMessage,
   getChannelSendPolicyChangedMessage,
+  getSiteCreatedMessage,
+  getSiteUpdatedMessage,
+  getPropertyCreatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-15';
+const CHAT_STATE_VERSION = 'chat-16';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -887,9 +890,256 @@ export function ChatProvider({ children }) {
     return dmSlug;
   }, [currentUserId, chatState.channels]);
 
-  const updateListingDetails = useCallback((channelId, { title, area, priceNgn, status }) => {
-    if (!channelId) return;
+  const createSite = useCallback(({ title, officeId, location, description }) => {
+    if (!currentUser || !isStaffActive(currentUser)) {
+      return { ok: false, message: 'You must be logged in to create a site.' };
+    }
+    if (!canCreateSite(currentUser, officeId)) {
+      return { ok: false, message: 'You do not have permission to create a site in this office.' };
+    }
+    const cleanTitle = (title || '').trim();
+    if (!cleanTitle || cleanTitle.length < 3 || cleanTitle.length > 40) {
+      return { ok: false, field: 'title', message: 'Site name must be 3 to 40 characters.' };
+    }
+    if (!officeId) {
+      return { ok: false, field: 'officeId', message: 'Office is required.' };
+    }
+    const cleanLocation = (location || '').trim();
+    if (!cleanLocation || cleanLocation.length > 30) {
+      return { ok: false, field: 'location', message: 'Location is required (up to 30 characters).' };
+    }
+    const cleanDesc = (description || '').trim().slice(0, 100);
 
+    const channelSlug = generateUniqueSiteSlug(cleanTitle, chatState.channels);
+    const creatorCallName = callNameOf(currentUser) || 'Staff';
+    const now = new Date().toISOString();
+
+    const newSite = {
+      id: channelSlug,
+      name: channelSlug,
+      title: cleanTitle,
+      kind: 'site',
+      officeId,
+      location: cleanLocation,
+      description: cleanDesc,
+      members: undefined,
+      createdById: currentUserId,
+      adminIds: [currentUserId],
+      sendPolicy: 'everyone',
+      createdAt: now,
+      archived: false,
+      site: {
+        officeId,
+        location: cleanLocation,
+      },
+    };
+
+    const systemMsg = {
+      id: `msg-${Date.now()}`,
+      channelId: newSite.id,
+      senderId: 'system',
+      type: 'system',
+      text: `${creatorCallName} created this site`,
+      createdAt: now,
+      status: 'sent',
+    };
+
+    setChatState((prev) => ({
+      ...prev,
+      channels: [...prev.channels, newSite],
+      messages: [...prev.messages, systemMsg],
+    }));
+
+    showToast(getSiteCreatedMessage(cleanTitle));
+    return { ok: true, id: newSite.id };
+  }, [currentUser, currentUserId, chatState.channels, showToast]);
+
+  const updateSite = useCallback((siteId, { title, location, description }) => {
+    if (!siteId) return { ok: false, message: 'Site ID is required.' };
+    const targetSite = chatState.channels.find((c) => c.id === siteId && c.kind === 'site');
+    if (!targetSite) {
+      return { ok: false, message: 'Site not found.' };
+    }
+    if (!canAddProperty(currentUser, targetSite)) {
+      return { ok: false, message: 'You do not have permission to edit this site.' };
+    }
+
+    const cleanTitle = title !== undefined ? title.trim() : targetSite.title;
+    if (cleanTitle.length < 3 || cleanTitle.length > 40) {
+      return { ok: false, field: 'title', message: 'Site name must be 3 to 40 characters.' };
+    }
+
+    const cleanLocation = location !== undefined ? location.trim() : (targetSite.site?.location || targetSite.location);
+    if (!cleanLocation || cleanLocation.length > 30) {
+      return { ok: false, field: 'location', message: 'Location is required (up to 30 characters).' };
+    }
+
+    const cleanDesc = description !== undefined ? description.trim().slice(0, 100) : (targetSite.description || '');
+
+    const locationChanged = cleanLocation !== (targetSite.site?.location || targetSite.location);
+    const now = new Date().toISOString();
+
+    const sysMessages = [
+      {
+        id: `msg-sys-${Date.now()}-0`,
+        channelId: siteId,
+        senderId: 'system',
+        type: 'system',
+        text: 'Site details updated',
+        createdAt: now,
+        status: 'sent',
+      },
+    ];
+
+    if (locationChanged) {
+      sysMessages.push({
+        id: `msg-sys-${Date.now()}-1`,
+        channelId: siteId,
+        senderId: 'system',
+        type: 'system',
+        text: `Location changed to ${cleanLocation}`,
+        createdAt: now,
+        status: 'sent',
+      });
+    }
+
+    setChatState((prev) => {
+      const updatedChannels = prev.channels.map((ch) => {
+        if (ch.id === siteId) {
+          return {
+            ...ch,
+            title: cleanTitle,
+            location: cleanLocation,
+            description: cleanDesc,
+            site: {
+              ...(ch.site || {}),
+              location: cleanLocation,
+            },
+          };
+        }
+        if (locationChanged && ch.kind === 'listing' && ch.listing?.siteId === siteId) {
+          const propPrice = ch.listing?.priceNgn || ch.price;
+          const updatedDesc = `${cleanLocation} · ${formatNaira(propPrice)}`.slice(0, 100);
+          return {
+            ...ch,
+            location: cleanLocation,
+            area: cleanLocation,
+            description: updatedDesc,
+            listing: {
+              ...(ch.listing || {}),
+              area: cleanLocation,
+            },
+          };
+        }
+        return ch;
+      });
+
+      return {
+        ...prev,
+        channels: updatedChannels,
+        messages: [...prev.messages, ...sysMessages],
+      };
+    });
+
+    showToast(getSiteUpdatedMessage(cleanTitle));
+    return { ok: true, id: siteId };
+  }, [currentUser, chatState.channels, showToast]);
+
+  const createProperty = useCallback((siteId, { title, type, size, priceNgn, status }) => {
+    if (!siteId) return { ok: false, message: 'Site ID is required.' };
+    const siteChannel = chatState.channels.find((c) => c.id === siteId && c.kind === 'site');
+    if (!siteChannel) {
+      return { ok: false, message: 'Site not found.' };
+    }
+    if (!canAddProperty(currentUser, siteChannel)) {
+      return { ok: false, message: 'You do not have permission to add properties to this site.' };
+    }
+
+    const cleanTitle = (title || '').trim();
+    if (!cleanTitle || cleanTitle.length < 2 || cleanTitle.length > 40) {
+      return { ok: false, field: 'title', message: 'Property name must be 2 to 40 characters.' };
+    }
+
+    const numericPrice = Number(priceNgn) || 0;
+    if (numericPrice <= 0 || numericPrice > 100000000000) {
+      return { ok: false, field: 'price', message: 'Price must be greater than zero and at most ₦100,000,000,000.' };
+    }
+
+    const cleanType = (type || '').trim();
+    const cleanSize = (size || '').trim().slice(0, 20);
+    const cleanStatus = status || 'Available';
+    const siteOfficeId = siteChannel.officeId || siteChannel.site?.officeId || 'hq';
+    const siteLocation = siteChannel.site?.location || siteChannel.location || '';
+    const formattedPrice = formatNaira(numericPrice);
+    const desc = `${siteChannel.title} · ${formattedPrice}`.slice(0, 100);
+
+    const channelSlug = generateUniqueListingSlug(cleanTitle, chatState.channels);
+    const creatorCallName = callNameOf(currentUser) || 'Staff';
+    const now = new Date().toISOString();
+
+    const newProperty = {
+      id: channelSlug,
+      name: channelSlug,
+      title: cleanTitle,
+      kind: 'listing',
+      officeId: siteOfficeId,
+      location: siteLocation,
+      area: siteLocation,
+      price: numericPrice,
+      priceNgn: numericPrice,
+      status: cleanStatus,
+      description: desc,
+      members: [],
+      createdById: currentUserId,
+      adminIds: [currentUserId],
+      sendPolicy: 'everyone',
+      createdAt: now,
+      archived: Boolean(siteChannel.archived),
+      listing: {
+        siteId,
+        officeId: siteOfficeId,
+        area: siteLocation,
+        priceNgn: numericPrice,
+        status: cleanStatus,
+        type: cleanType,
+        size: cleanSize,
+      },
+    };
+
+    const propSysMsg = {
+      id: `msg-${Date.now()}-prop`,
+      channelId: newProperty.id,
+      senderId: 'system',
+      type: 'system',
+      text: `${creatorCallName} added this property`,
+      createdAt: now,
+      status: 'sent',
+    };
+
+    const siteSysMsg = {
+      id: `msg-${Date.now()}-site`,
+      channelId: siteId,
+      senderId: 'system',
+      type: 'system',
+      text: `Property added: ${cleanTitle}`,
+      createdAt: now,
+      status: 'sent',
+    };
+
+    setChatState((prev) => ({
+      ...prev,
+      channels: [...prev.channels, newProperty],
+      messages: [...prev.messages, propSysMsg, siteSysMsg],
+    }));
+
+    showToast(getPropertyCreatedMessage(cleanTitle));
+    return { ok: true, id: newProperty.id };
+  }, [currentUser, currentUserId, chatState.channels, showToast]);
+
+  const updateListingDetails = useCallback((channelId, { title, area, priceNgn, status, type, size }) => {
+    if (!channelId) return { ok: false, message: 'Channel id required' };
+
+    let success = false;
     setChatState((prev) => {
       const target = prev.channels.find((c) => c.id === channelId);
       if (!target || target.kind !== 'listing') return prev;
@@ -897,17 +1147,22 @@ export function ChatProvider({ children }) {
       if (!canManageListing(currentUser, target)) {
         return prev;
       }
+      success = true;
 
       const priceChanged = priceNgn !== undefined && Number(priceNgn) !== Number(target.price);
       const statusChanged = status !== undefined && status !== target.status;
       const detailsChanged =
         (title !== undefined && title.trim() !== target.title) ||
-        (area !== undefined && area.trim() !== (target.area || target.location));
+        (area !== undefined && area.trim() !== (target.area || target.location)) ||
+        (type !== undefined && type !== target.listing?.type) ||
+        (size !== undefined && size.trim() !== (target.listing?.size || ''));
 
       const newTitle = title !== undefined ? title.trim() : target.title;
       const newArea = area !== undefined ? area.trim() : (target.area || target.location);
       const newPrice = priceNgn !== undefined ? Number(priceNgn) : target.price;
       const newStatus = status !== undefined ? status : target.status;
+      const newType = type !== undefined ? type : (target.listing?.type || '');
+      const newSize = size !== undefined ? size.trim() : (target.listing?.size || '');
       const newDesc = `${newArea} · ${formatNaira(newPrice)}`.slice(0, 100);
 
       const sysMessages = [];
@@ -966,6 +1221,8 @@ export function ChatProvider({ children }) {
               area: newArea,
               priceNgn: newPrice,
               status: newStatus,
+              type: newType,
+              size: newSize,
             },
           };
         }
@@ -979,7 +1236,11 @@ export function ChatProvider({ children }) {
       };
     });
 
-    showToast(getListingDetailsUpdatedMessage());
+    if (success) {
+      showToast(getListingDetailsUpdatedMessage());
+      return { ok: true, id: channelId };
+    }
+    return { ok: false, message: 'Permission denied.' };
   }, [currentUser, showToast]);
 
   const setChannelArchived = useCallback((channelId, archived) => {
@@ -1369,6 +1630,9 @@ export function ChatProvider({ children }) {
     updateStaff,
     setStaffActive,
     createChannel,
+    createSite,
+    updateSite,
+    createProperty,
     openOrCreateDm,
     setChannelArchived,
     setChannelAdmin,
@@ -1417,6 +1681,9 @@ export function ChatProvider({ children }) {
     updateStaff,
     setStaffActive,
     createChannel,
+    createSite,
+    updateSite,
+    createProperty,
     openOrCreateDm,
     setChannelArchived,
     setChannelAdmin,

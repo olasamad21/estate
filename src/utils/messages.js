@@ -190,3 +190,19 @@ export function getCannotRemoveOnlyAdminMessage() {
 export function getDirectMessageRestrictedMessage() {
   return 'Direct messages with executive management are restricted. Please ask your manager, or post in a channel your team shares.';
 }
+
+export function getSiteCreatedMessage(title = '') {
+  return title ? `${title} created` : 'Site created';
+}
+
+export function getSiteUpdatedMessage(title = '') {
+  return title ? `${title} updated` : 'Site updated';
+}
+
+export function getPropertyCreatedMessage(title = '') {
+  return title ? `${title} added` : 'Property added';
+}
+
+export function getPropertyUpdatedMessage(title = '') {
+  return title ? `${title} updated` : 'Property updated';
+}

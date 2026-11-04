@@ -161,6 +161,21 @@ export function generateUniqueListingSlug(title = '', existingChannels = []) {
   return `${baseSlug}-${counter}`;
 }
 
+export function generateUniqueSiteSlug(title = '', existingChannels = []) {
+  const baseSlug = slugify(title) || 'site';
+  const existingSlugs = new Set(
+    (existingChannels || []).map((c) => (c.name || c.id || '').toLowerCase())
+  );
+  if (!existingSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+  let counter = 2;
+  while (existingSlugs.has(`${baseSlug}-${counter}`)) {
+    counter++;
+  }
+  return `${baseSlug}-${counter}`;
+}
+
 export function canManageListing(user, channel) {
   if (!user || !channel || !isStaffActive(user)) return false;
   if (user.role === 'admin') return true;

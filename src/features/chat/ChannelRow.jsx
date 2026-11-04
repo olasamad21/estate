@@ -12,6 +12,7 @@ import {
 } from '../../utils/chat.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
 
 export function ChannelRow({
   channel,
@@ -90,7 +91,18 @@ export function ChannelRow({
     if (channel.kind === 'private') {
       return <Lock className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />;
     }
-    if (channel.kind === 'site' || channel.kind === 'listing') {
+    if (channel.kind === 'site') {
+      return (
+        <div className="w-8 h-8 rounded-lg overflow-hidden border border-line shrink-0 bg-surface shadow-2xs">
+          <ListingPhoto
+            channel={channel}
+            previewKey={`site:${channel.id}`}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      );
+    }
+    if (channel.kind === 'listing') {
       return <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />;
     }
     if (channel.kind === 'group') {

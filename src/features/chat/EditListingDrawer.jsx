@@ -6,7 +6,16 @@ import { Badge } from '../../components/common/Badge.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { useChat } from '../../context/ChatContext.jsx';
 import { getPreviewUrl, setPreviewUrl } from '../../utils/previewUrls.js';
-import { ListingPhoto } from './ListingPhoto.jsx';
+
+const PROPERTY_TYPES = [
+  'Land',
+  'Detached house',
+  'Semi-detached',
+  'Terrace',
+  'Apartment',
+  'Commercial',
+  'Other',
+];
 
 const STATUS_OPTIONS = [
   { id: 'Available', label: 'Available', variant: 'success', desc: 'Available for viewings and enquiries' },
@@ -21,14 +30,22 @@ function formatPriceInput(raw) {
 }
 
 export function EditListingDrawer({ isOpen, onClose, channel }) {
-  const { updateListingDetails } = useChat();
+  const { updateListingDetails, channels } = useChat();
 
   const office = useMemo(() => {
     return COMPANY_CONFIG.offices.find((o) => o.id === channel?.officeId) || COMPANY_CONFIG.offices[0];
   }, [channel?.officeId]);
 
+  const parentSite = useMemo(() => {
+    const siteId = channel?.listing?.siteId;
+    return siteId ? channels.find((c) => c.id === siteId) : null;
+  }, [channel?.listing?.siteId, channels]);
+
+  const siteLocation = parentSite?.site?.location || parentSite?.location || channel?.listing?.area || channel?.location || '';
+
   const [title, setTitle] = useState(channel?.title || channel?.name || '');
-  const [area, setArea] = useState(channel?.area || channel?.location || '');
+  const [type, setType] = useState(channel?.listing?.type || '');
+  const [size, setSize] = useState(channel?.listing?.size || '');
   const [priceFormatted, setPriceFormatted] = useState(() => formatPriceInput(channel?.priceNgn || channel?.price || ''));
   const [status, setStatus] = useState(channel?.status || 'Available');
   const [photoFile, setPhotoFile] = useState(null);
@@ -52,17 +69,10 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       errs.title = 'Property name is required.';
-    } else if (trimmedTitle.length < 3) {
-      errs.title = 'Property name must be at least 3 characters.';
+    } else if (trimmedTitle.length < 2) {
+      errs.title = 'Property name must be at least 2 characters.';
     } else if (trimmedTitle.length > 40) {
       errs.title = 'Property name must be at most 40 characters.';
-    }
-
-    const trimmedArea = area.trim();
-    if (!trimmedArea) {
-      errs.area = 'Area is required.';
-    } else if (trimmedArea.length > 30) {
-      errs.area = 'Area must be at most 30 characters.';
     }
 
     if (!numericPrice || numericPrice <= 0) {
@@ -71,8 +81,12 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
       errs.price = 'Price cannot exceed ₦100,000,000,000.';
     }
 
+    if (size.trim().length > 20) {
+      errs.size = 'Size must be at most 20 characters.';
+    }
+
     return errs;
-  }, [title, area, numericPrice]);
+  }, [title, numericPrice, size]);
 
   const isSubmitDisabled = Object.keys(errors).length > 0;
 
@@ -106,9 +120,11 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
 
     updateListingDetails(channel.id, {
       title: title.trim(),
-      area: area.trim(),
+      area: siteLocation,
       priceNgn: numericPrice,
       status,
+      type: type || '',
+      size: size.trim(),
     });
 
     if (photoFile) {
@@ -124,7 +140,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
   if (!channel) return null;
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Edit listing details">
+    <Drawer isOpen={isOpen} onClose={onClose} title="Edit property details">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Property Name */}
         <div className="space-y-1.5">
@@ -138,7 +154,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => setTouched(true)}
-            placeholder="e.g. Maitama Duplex"
+            placeholder="For example Plot 12 or Block A, Flat 3"
             maxLength={40}
             required
             className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
@@ -146,7 +162,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
           {touched && errors.title ? (
             <p className="text-xs text-status-danger font-medium">{errors.title}</p>
           ) : (
-            <p className="text-xs text-ink-muted">Shown as the room title (3–40 characters).</p>
+            <p className="text-xs text-ink-muted">Shown as the room title (2–40 characters).</p>
           )}
         </div>
 
@@ -159,43 +175,58 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
           <p className="text-xs text-ink-muted">Office location cannot be changed after creation.</p>
         </div>
 
-        {/* Area */}
+        {/* Location (Read-only text from the site) */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-listing-area" className="block text-xs font-semibold text-ink">
-            Area / Neighborhood <span className="text-status-danger">*</span>
-          </label>
-          {office?.areas && office.areas.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {office.areas.map((a) => (
+          <label className="block text-xs font-semibold text-ink">Location</label>
+          <div className="p-2.5 rounded-lg bg-surface-raised border border-line text-xs font-semibold text-ink">
+            {siteLocation || 'Site location'}
+          </div>
+          <p className="text-xs text-ink-muted">Location is set by the parent site and cannot be changed here.</p>
+        </div>
+
+        {/* Property Type (Chips) */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-ink">Property Type (optional)</label>
+          <div className="flex flex-wrap gap-1.5">
+            {PROPERTY_TYPES.map((pt) => {
+              const isSelected = type === pt;
+              return (
                 <button
-                  key={a}
+                  key={pt}
                   type="button"
-                  onClick={() => setArea(a)}
-                  className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-medium border cursor-pointer transition-colors ${
-                    area === a
+                  onClick={() => setType(isSelected ? '' : pt)}
+                  className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-medium border cursor-pointer transition-colors ${
+                    isSelected
                       ? 'border-brand bg-brand-bg text-brand-ink font-semibold'
                       : 'border-line bg-surface text-ink-soft hover:bg-surface-raised'
                   }`}
                 >
-                  {a}
+                  {pt}
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Size */}
+        <div className="space-y-1.5">
+          <label htmlFor="edit-property-size" className="block text-xs font-semibold text-ink">
+            Size (optional)
+          </label>
           <input
-            id="edit-listing-area"
-            name="edit_listing_area"
+            id="edit-property-size"
+            name="edit_property_size"
             type="text"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            onBlur={() => setTouched(true)}
-            placeholder="e.g. Maitama"
-            maxLength={30}
-            required
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
+            placeholder="For example 450 sqm"
+            maxLength={20}
             className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
           />
-          {touched && errors.area && (
-            <p className="text-xs text-status-danger font-medium">{errors.area}</p>
+          {touched && errors.size ? (
+            <p className="text-xs text-status-danger font-medium">{errors.size}</p>
+          ) : (
+            <p className="text-xs text-ink-muted">For example 450 sqm</p>
           )}
         </div>
 
@@ -267,24 +298,25 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
           </div>
         </div>
 
-        {/* Photo Upload / Replace / Remove */}
+        {/* Photo Upload/Replace/Remove */}
         <div className="space-y-2 pt-1 border-t border-line">
-          <label className="block text-xs font-semibold text-ink">Listing Photo</label>
+          <label className="block text-xs font-semibold text-ink">Property Photo (optional)</label>
           <input
             ref={fileInputRef}
-            name="edit_listing_photo_input"
+            id="edit-listing-photo"
+            name="edit_listing_photo"
             type="file"
             accept="image/*"
             onChange={handlePhotoSelect}
             className="hidden"
           />
 
-          {photoPreview && !isPhotoRemoved ? (
+          {photoPreview ? (
             <div className="flex items-center gap-3 p-2.5 rounded-xl border border-line bg-surface-raised">
               <div className="w-16 h-12 rounded-lg overflow-hidden border border-line shrink-0 bg-surface">
                 <img
                   src={photoPreview}
-                  alt="Listing preview"
+                  alt="Property thumbnail preview"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -294,7 +326,7 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
                   onClick={() => fileInputRef.current?.click()}
                   className="min-h-[44px] px-3 py-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                 >
-                  Replace photo
+                  Replace
                 </button>
                 <button
                   type="button"
@@ -307,21 +339,16 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-12 rounded-lg overflow-hidden border border-line shrink-0 bg-surface-raised">
-                <ListingPhoto channel={channel} className="w-full h-full object-cover" />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Add a photo</span>
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer gap-1.5 min-h-[44px]"
+            >
+              <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Add a photo</span>
+            </Button>
           )}
 
           <p className="text-xs text-ink-muted">
@@ -329,13 +356,18 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
           </p>
         </div>
 
-        {/* Footer Actions */}
-        <div className="pt-3 flex items-center justify-end gap-2 border-t border-line">
-          <Button type="button" variant="ghost" onClick={onClose}>
+        {/* Actions */}
+        <div className="pt-2 flex items-center justify-end gap-2 border-t border-line">
+          <Button type="button" variant="ghost" onClick={onClose} className="min-h-[44px]">
             Cancel
           </Button>
-          <Button type="submit" variant="primary" disabled={touched && isSubmitDisabled}>
-            Save details
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={touched && isSubmitDisabled}
+            className="min-h-[44px]"
+          >
+            Save changes
           </Button>
         </div>
       </form>

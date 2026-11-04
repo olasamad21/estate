@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info } from 'lucide-react';
+import { ChevronLeft, Hash, Lock, Megaphone, Building2, Users, Pin, FolderOpen, Info, Plus } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import {
@@ -14,6 +14,7 @@ import {
   propertiesOfSite,
   siteSummary,
   unreadCount,
+  canAddProperty,
 } from '../../utils/chat.js';
 import { formatDayLabelNg, formatNaira } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
@@ -31,6 +32,7 @@ import { ShareListingDrawer } from './ShareListingDrawer.jsx';
 import { ChannelFilesDrawer } from './ChannelFilesDrawer.jsx';
 import { FileDetailDrawer } from './FileDetailDrawer.jsx';
 import { ChannelInfoDrawer } from './ChannelInfoDrawer.jsx';
+import { AddPropertyDrawer } from './AddPropertyDrawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
@@ -39,6 +41,8 @@ import { ListingCard } from './ListingCard.jsx';
 import { setPreviewUrl } from '../../utils/previewUrls.js';
 
 function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap, onSelectProperty }) {
+  const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+
   const properties = useMemo(() => {
     return propertiesOfSite(site.id, channels, currentUser);
   }, [site.id, channels, currentUser]);
@@ -46,6 +50,8 @@ function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap,
   const summary = useMemo(() => {
     return siteSummary(site.id, channels);
   }, [site.id, channels]);
+
+  const canAdd = canAddProperty(currentUser, site);
 
   const summaryText = useMemo(() => {
     if (summary.total === 0) return 'No properties yet.';
@@ -60,13 +66,55 @@ function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap,
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-      <div className="p-3 sm:p-4 bg-surface-raised border-b border-line text-xs font-semibold text-ink-soft">
-        {summaryText}
+      {/* Site Header Summary Bar with 56px thumbnail and Add Property Button */}
+      <div className="p-3 sm:p-4 bg-surface-raised border-b border-line flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 pr-2">
+          <div className="w-14 h-14 rounded-xl overflow-hidden border border-line shrink-0 bg-surface shadow-2xs">
+            <ListingPhoto
+              channel={site}
+              previewKey={`site:${site.id}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-bold text-ink break-words line-clamp-1">
+              {site.title || site.name}
+            </div>
+            <p className="text-xs font-medium text-ink-muted mt-0.5 line-clamp-1">
+              {summaryText}
+            </p>
+          </div>
+        </div>
+
+        {canAdd && (
+          <button
+            type="button"
+            onClick={() => setIsAddPropertyOpen(true)}
+            aria-label="Add property"
+            title="Add property"
+            className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl bg-brand text-surface hover:bg-brand/90 font-semibold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Add property</span>
+          </button>
+        )}
       </div>
 
       {properties.length === 0 ? (
-        <div className="py-12 px-4 text-center text-xs text-ink-muted">
-          No properties yet.
+        <div className="py-16 px-4 text-center space-y-3">
+          <p className="text-xs text-ink-muted">No properties yet.</p>
+          {canAdd && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAddPropertyOpen(true)}
+              className="min-h-[44px] cursor-pointer inline-flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              <span>Add property</span>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="divide-y divide-line">
@@ -122,6 +170,15 @@ function SitePropertiesTab({ site, channels, messages, currentUser, userReadMap,
             );
           })}
         </div>
+      )}
+
+      {canAdd && isAddPropertyOpen && (
+        <AddPropertyDrawer
+          key={`add-prop-${site.id}`}
+          isOpen={isAddPropertyOpen}
+          onClose={() => setIsAddPropertyOpen(false)}
+          site={site}
+        />
       )}
     </div>
   );

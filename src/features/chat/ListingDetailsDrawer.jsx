@@ -149,8 +149,20 @@ export function ListingDetailsDrawer({
             </Badge>
           </div>
 
-          {/* Area and Office metadata */}
+          {/* Area, Office, Type and Size metadata */}
           <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-1.5 text-xs">
+            {channel.listing?.type && (
+              <div className="flex items-center justify-between text-ink">
+                <span className="text-ink-muted">Type</span>
+                <span className="font-semibold">{channel.listing.type}</span>
+              </div>
+            )}
+            {channel.listing?.size && (
+              <div className="flex items-center justify-between text-ink">
+                <span className="text-ink-muted">Size</span>
+                <span className="font-semibold">{channel.listing.size}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-ink">
               <span className="text-ink-muted">Area / Neighborhood</span>
               <span className="font-semibold">{channel.location || 'Area'}</span>

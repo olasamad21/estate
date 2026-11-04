@@ -13,8 +13,11 @@ import {
   officeLabelOf,
   canManageChannel,
   siteOfProperty,
+  canAddProperty,
 } from '../../utils/chat.js';
 import { useChat } from '../../context/ChatContext.jsx';
+import { ListingPhoto } from './ListingPhoto.jsx';
+import { EditSiteDrawer } from './EditSiteDrawer.jsx';
 
 export function ChannelInfoDrawer({
   isOpen,
@@ -33,6 +36,7 @@ export function ChannelInfoDrawer({
   const currentUser = propCurrentUser || chatCurrentUser;
 
   const [selectedMemberForAdmin, setSelectedMemberForAdmin] = useState(null);
+  const [isEditSiteOpen, setIsEditSiteOpen] = useState(false);
 
   const members = useMemo(() => {
     if (!channel) return [];
@@ -66,26 +70,50 @@ export function ChannelInfoDrawer({
       >
         <div className="space-y-5">
           {/* Channel / DM Header Summary */}
-          <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-ink">
-                {isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
-              </h3>
-              {!isDm && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
-                  {officeLine}
-                </span>
-              )}
-              {channel.kind === 'site' && channel.site?.location && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
-                  {channel.site.location}
-                </span>
+          <div className="p-3.5 rounded-xl bg-surface-raised border border-line space-y-3">
+            {channel.kind === 'site' && (
+              <div className="w-full aspect-[16/9] rounded-xl overflow-hidden border border-line bg-surface">
+                <ListingPhoto
+                  channel={channel}
+                  previewKey={`site:${channel.id}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-ink">
+                  {isDm || isSiteOrProperty ? displayName : `#${channel.name}`}
+                </h3>
+                {!isDm && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
+                    {officeLine}
+                  </span>
+                )}
+                {channel.kind === 'site' && channel.site?.location && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-ink-muted border border-line font-medium">
+                    {channel.site.location}
+                  </span>
+                )}
+              </div>
+              {channel.description && (
+                <p className="text-xs text-ink-muted leading-relaxed break-words">
+                  {channel.description}
+                </p>
               )}
             </div>
-            {channel.description && (
-              <p className="text-xs text-ink-muted leading-relaxed break-words">
-                {channel.description}
-              </p>
+
+            {/* Site Edit Details Button */}
+            {channel.kind === 'site' && canAddProperty(currentUser, channel) && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsEditSiteOpen(true)}
+                  className="w-full min-h-[44px] px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  Edit details
+                </button>
+              </div>
             )}
           </div>
 
@@ -346,6 +374,15 @@ export function ChannelInfoDrawer({
           </Drawer>
         );
       })()}
+
+      {channel.kind === 'site' && isEditSiteOpen && (
+        <EditSiteDrawer
+          key={`edit-site-${channel.id}-${channel.title}-${channel.location}`}
+          isOpen={isEditSiteOpen}
+          onClose={() => setIsEditSiteOpen(false)}
+          site={channel}
+        />
+      )}
     </>
   );
 }

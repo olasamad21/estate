@@ -19,12 +19,16 @@ export function ListingPhoto({
   title,
   fit = 'cover',
   className = 'w-full h-full',
+  previewKey,
 }) {
   const targetId = channel?.id || channelId;
   const targetTitle = channel?.title || title || targetId || 'Listing';
 
-  const objectUrl = targetId
-    ? getPreviewUrl(`listing:${targetId}`) || getPreviewUrl(targetId)
+  const defaultKey = channel?.kind === 'site' ? `site:${targetId}` : `listing:${targetId}`;
+  const effectiveKey = previewKey || (targetId ? defaultKey : null);
+
+  const objectUrl = effectiveKey
+    ? getPreviewUrl(effectiveKey) || getPreviewUrl(targetId)
     : null;
   const [hasError, setHasError] = useState(false);
 
