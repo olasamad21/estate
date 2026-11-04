@@ -22,7 +22,7 @@ export function ListingPhoto({
   previewKey,
 }) {
   const targetId = channel?.id || channelId;
-  const targetTitle = channel?.title || title || targetId || 'Listing';
+  const targetTitle = channel?.title || title || targetId || 'Property';
 
   const defaultKey = channel?.kind === 'site' ? `site:${targetId}` : `listing:${targetId}`;
   const effectiveKey = previewKey || (targetId ? defaultKey : null);

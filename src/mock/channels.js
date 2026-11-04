@@ -276,6 +276,7 @@ export const CHANNELS = [
     createdAt: minutesFromNow(-25000),
   },
 
+  // kind 'listing' is a property; a site is kind 'site'.
   // 11. Properties (Individual units within sites, kind 'listing')
   // -- Garden Court Estate Properties (HQ / Maitama)
   {

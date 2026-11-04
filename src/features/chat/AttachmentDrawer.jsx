@@ -234,8 +234,8 @@ export function AttachmentDrawer({
               <Building2 className="w-5 h-5 text-brand" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-ink">Share a listing</p>
-              <p className="text-xs text-ink-muted">Share an existing property listing room into this channel</p>
+              <p className="text-xs font-bold text-ink">Share a property</p>
+              <p className="text-xs text-ink-muted">Share an existing property into this channel</p>
             </div>
           </button>
         )}

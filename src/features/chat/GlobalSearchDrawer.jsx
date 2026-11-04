@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
+import { Badge } from '../../components/common/Badge.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import {
@@ -26,7 +27,7 @@ import {
   callNameOf,
   canInitiateDm,
 } from '../../utils/chat.js';
-import { formatListTimeNg } from '../../utils/formatters.js';
+import { formatListTimeNg, formatNaira } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
 import { getDirectMessageRestrictedMessage } from '../../utils/messages.js';
 
@@ -118,6 +119,28 @@ export function GlobalSearchDrawer({
 
     // 1. Channels
     const matchedChannels = visibleChannels.filter((ch) => {
+      if (ch.kind === 'site') {
+        const title = (ch.title || ch.name || '').toLowerCase();
+        const loc = (ch.location || ch.site?.location || '').toLowerCase();
+        return title.includes(q) || loc.includes(q);
+      }
+      if (ch.kind === 'listing') {
+        const title = (ch.title || ch.name || '').toLowerCase();
+        const type = (ch.listing?.type || '').toLowerCase();
+        const size = (ch.listing?.size || '').toLowerCase();
+        const parentSite = channels.find(
+          (s) => s.kind === 'site' && s.id === (ch.listing?.siteId || ch.siteId)
+        );
+        const siteTitle = (parentSite?.title || '').toLowerCase();
+        const loc = (ch.location || ch.listing?.area || parentSite?.location || '').toLowerCase();
+        return (
+          title.includes(q) ||
+          type.includes(q) ||
+          size.includes(q) ||
+          siteTitle.includes(q) ||
+          loc.includes(q)
+        );
+      }
       const name = channelDisplayName(ch, currentUserId, staff).toLowerCase();
       const title = (ch.title || '').toLowerCase();
       const desc = (ch.description || '').toLowerCase();
@@ -167,7 +190,7 @@ export function GlobalSearchDrawer({
       files: matchedFiles,
       hasQuery: true,
     };
-  }, [query, visibleChannels, visibleChannelIds, channelMap, staff, messages, currentUserId]);
+  }, [query, visibleChannels, visibleChannelIds, channelMap, staff, messages, currentUserId, channels]);
 
   const totalResultsCount =
     results.channels.length +
@@ -298,41 +321,56 @@ export function GlobalSearchDrawer({
                   <span>Channels ({results.channels.length})</span>
                 </div>
                 <div className="space-y-1">
-                  {(expandedGroups.channels ? results.channels : results.channels.slice(0, 5)).map((ch) => (
-                    <button
-                      key={ch.id}
-                      type="button"
-                      onClick={() => handleSelectChannel(ch.id)}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-lg border border-line bg-surface hover:bg-surface-raised transition-colors cursor-pointer text-left"
-                    >
-                      {renderChannelIcon(ch)}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-ink break-words">
-                            <HighlightMatch
-                              text={channelDisplayName(ch, currentUserId, staff)}
-                              query={query}
-                            />
-                          </span>
-                          {ch.officeId && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
-                              {getOfficeName(ch.officeId)}
+                  {(expandedGroups.channels ? results.channels : results.channels.slice(0, 5)).map((ch) => {
+                    let caption = ch.description || '';
+                    if (ch.kind === 'site') {
+                      const loc = ch.location || ch.site?.location || '';
+                      caption = loc ? `Site · ${loc}` : 'Site';
+                    } else if (ch.kind === 'listing') {
+                      const parentSite = channels.find(
+                        (s) => s.kind === 'site' && s.id === (ch.listing?.siteId || ch.siteId)
+                      );
+                      const siteTitle = parentSite?.title || '';
+                      const priceStr = formatNaira(ch.listing?.priceNgn || ch.priceNgn || ch.price);
+                      caption = siteTitle ? `${siteTitle} · ${priceStr}` : priceStr;
+                    }
+
+                    return (
+                      <button
+                        key={ch.id}
+                        type="button"
+                        onClick={() => handleSelectChannel(ch.id)}
+                        className="w-full flex items-center gap-2.5 p-2.5 rounded-lg border border-line bg-surface hover:bg-surface-raised transition-colors cursor-pointer text-left"
+                      >
+                        {renderChannelIcon(ch)}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-ink break-words">
+                              <HighlightMatch
+                                text={channelDisplayName(ch, currentUserId, staff)}
+                                query={query}
+                              />
                             </span>
-                          )}
-                          {ch.archived && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
-                              Archived
-                            </span>
+                            {ch.officeId && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised text-ink-muted border border-line font-medium shrink-0">
+                                {getOfficeName(ch.officeId)}
+                              </span>
+                            )}
+                            {ch.archived && (
+                              <Badge variant="neutral" size="sm">
+                                Archived
+                              </Badge>
+                            )}
+                          </div>
+                          {caption && (
+                            <div className="text-xs text-ink-muted break-words mt-0.5">
+                              <HighlightMatch text={caption} query={query} />
+                            </div>
                           )}
                         </div>
-                        {ch.description && (
-                          <div className="text-xs text-ink-muted break-words mt-0.5">
-                            <HighlightMatch text={ch.description} query={query} />
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
                 {results.channels.length > 5 && (
                   <button

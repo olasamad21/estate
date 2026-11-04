@@ -548,8 +548,6 @@ function ChannelRow({
   onUnarchive,
 }) {
   const isAnnouncement = channel.kind === 'announcement';
-  const isListing = channel.kind === 'listing';
-  const isSite = channel.kind === 'site';
   const isPrivate = channel.kind === 'private';
   const isArchived = Boolean(channel.archived);
 
@@ -576,12 +574,6 @@ function ChannelRow({
             </span>
             {isAnnouncement && (
               <Badge variant="neutral">Announcement</Badge>
-            )}
-            {isListing && (
-              <Badge variant="neutral">Property</Badge>
-            )}
-            {isSite && (
-              <Badge variant="neutral">Site</Badge>
             )}
           </div>
 
@@ -652,6 +644,179 @@ function ChannelRow({
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+function SiteAdminRow({
+  site,
+  properties = [],
+  isExpanded,
+  onToggleExpand,
+  onOpenSheet,
+  onArchive,
+  onUnarchive,
+}) {
+  const isArchived = Boolean(site.archived);
+  const location = site.location || '';
+  const propCount = properties.length;
+  const caption = `${location ? `${location} · ` : ''}${propCount} ${propCount === 1 ? 'property' : 'properties'}`;
+
+  return (
+    <div className={`transition-colors ${isArchived ? 'bg-surface-raised/40' : ''}`}>
+      {/* Site Main Row */}
+      <div className="p-3.5 sm:p-4 flex items-center justify-between gap-3">
+        {/* Icon + Details */}
+        <div className="flex items-start gap-3 min-w-0 pr-2 flex-1">
+          <div className="mt-0.5">
+            <Building2 className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-xs font-bold text-ink break-words ${
+                  isArchived ? 'line-through opacity-70' : ''
+                }`}
+              >
+                {site.title || site.name}
+              </span>
+              {/* Sites and properties show no kind Badge */}
+            </div>
+            <div className="text-xs text-ink-muted mt-0.5">
+              {caption}
+            </div>
+            {/* Show properties toggle */}
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => onToggleExpand(site.id)}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? 'Hide properties' : 'Show properties'}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline cursor-pointer min-h-[44px] -my-2 py-2"
+              >
+                <span>{isExpanded ? 'Hide properties' : 'Show properties'}</span>
+                {isExpanded ? (
+                  <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {/* Mobile */}
+        <div className="flex lg:hidden items-center shrink-0">
+          <button
+            type="button"
+            onClick={() => onOpenSheet(site)}
+            aria-label={`Actions for ${site.title || site.name}`}
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+          >
+            <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center shrink-0">
+          {isArchived ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onUnarchive(site)}
+              className="shrink-0"
+            >
+              Unarchive
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onArchive(site)}
+              className="shrink-0"
+            >
+              Archive
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded properties of site */}
+      {isExpanded && (
+        <div className="border-t border-line divide-y divide-line bg-surface-raised/20 pl-6 sm:pl-8">
+          {properties.length === 0 ? (
+            <div className="p-3 text-xs text-ink-muted">No properties yet.</div>
+          ) : (
+            properties.map((prop) => {
+              const propArchived = Boolean(prop.archived);
+              const status = prop.listing?.status || prop.status || 'Available';
+              const statusVariant =
+                status === 'Available'
+                  ? 'success'
+                  : status === 'Under offer'
+                  ? 'warning'
+                  : 'neutral';
+
+              return (
+                <div
+                  key={prop.id}
+                  className="p-2.5 sm:p-3 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-xs font-semibold text-ink break-words ${
+                        propArchived ? 'line-through opacity-70' : ''
+                      }`}
+                    >
+                      {prop.title || prop.name}
+                    </span>
+                    <Badge variant={statusVariant} size="sm">
+                      {status}
+                    </Badge>
+                  </div>
+
+                  {/* Property Action Menu */}
+                  {/* Mobile */}
+                  <div className="flex lg:hidden items-center shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onOpenSheet(prop)}
+                      aria-label={`Actions for ${prop.title || prop.name}`}
+                      className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+                    >
+                      <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  {/* Desktop */}
+                  <div className="hidden lg:flex items-center shrink-0">
+                    {propArchived ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onUnarchive(prop)}
+                        className="shrink-0"
+                      >
+                        Unarchive
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onArchive(prop)}
+                        className="shrink-0"
+                      >
+                        Archive
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -731,8 +896,19 @@ export function AdminView() {
   // Channels state
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [channelToArchive, setChannelToArchive] = useState(null);
+  const [channelToUnarchive, setChannelToUnarchive] = useState(null);
   const [selectedChannelForSheet, setSelectedChannelForSheet] = useState(null);
   const [isArchivedSectionOpen, setIsArchivedSectionOpen] = useState(false);
+  const [expandedSiteIds, setExpandedSiteIds] = useState(() => new Set());
+
+  const toggleSiteExpanded = (siteId) => {
+    setExpandedSiteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(siteId)) next.delete(siteId);
+      else next.add(siteId);
+      return next;
+    });
+  };
 
   // Counts for staff filter chips
   const staffCounts = useMemo(() => {
@@ -863,8 +1039,20 @@ export function AdminView() {
 
   // Unarchive handler
   const handleUnarchive = (channel) => {
+    if (channel.kind === 'site') {
+      setChannelToUnarchive(channel);
+      return;
+    }
     setChannelArchived(channel.id, false);
     showToast(getChannelUnarchivedMessage(channel.name));
+  };
+
+  const handleConfirmUnarchive = () => {
+    if (!channelToUnarchive) return;
+    const target = channelToUnarchive;
+    setChannelArchived(target.id, false);
+    showToast(getChannelUnarchivedMessage(target.name));
+    setChannelToUnarchive(null);
   };
 
   // Default department helper based on role
@@ -1457,24 +1645,67 @@ export function AdminView() {
               )}
 
               {/* Office Sections */}
-              {channelsByOffice.map(({ office, channels: offChannels }) => (
-                <div key={office.id} className="space-y-2">
-                  <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                    {office.label} ({offChannels.length})
-                  </h2>
-                  <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
-                    {offChannels.map((ch) => (
-                      <ChannelRow
-                        key={ch.id}
-                        channel={ch}
-                        onOpenSheet={setSelectedChannelForSheet}
-                        onArchive={setChannelToArchive}
-                        onUnarchive={handleUnarchive}
-                      />
-                    ))}
+              {channelsByOffice.map(({ office, channels: offChannels }) => {
+                const regularChannels = offChannels.filter(
+                  (c) => c.kind !== 'site' && c.kind !== 'listing'
+                );
+                const sites = offChannels.filter((c) => c.kind === 'site');
+
+                return (
+                  <div key={office.id} className="space-y-4">
+                    <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                      {office.label} ({regularChannels.length + sites.length})
+                    </h2>
+
+                    {/* Regular Channels */}
+                    {regularChannels.length > 0 && (
+                      <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
+                        {regularChannels.map((ch) => (
+                          <ChannelRow
+                            key={ch.id}
+                            channel={ch}
+                            onOpenSheet={setSelectedChannelForSheet}
+                            onArchive={setChannelToArchive}
+                            onUnarchive={handleUnarchive}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Sites Group */}
+                    {sites.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                          Sites ({sites.length})
+                        </h3>
+                        <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
+                          {sites.map((site) => {
+                            const siteProperties = channels.filter(
+                              (c) =>
+                                c.kind === 'listing' &&
+                                !c.archived &&
+                                (c.listing?.siteId === site.id || c.siteId === site.id)
+                            );
+
+                            return (
+                              <SiteAdminRow
+                                key={site.id}
+                                site={site}
+                                properties={siteProperties}
+                                isExpanded={expandedSiteIds.has(site.id)}
+                                onToggleExpand={toggleSiteExpanded}
+                                onOpenSheet={setSelectedChannelForSheet}
+                                onArchive={setChannelToArchive}
+                                onUnarchive={handleUnarchive}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Collapsed Archived Section at Bottom */}
               <div className="border border-line rounded-2xl bg-surface overflow-hidden shadow-2xs">
@@ -1671,7 +1902,11 @@ export function AdminView() {
       <Drawer
         isOpen={Boolean(selectedChannelForSheet)}
         onClose={() => setSelectedChannelForSheet(null)}
-        title={`#${selectedChannelForSheet?.name ?? ''}`}
+        title={
+          selectedChannelForSheet?.kind === 'listing' || selectedChannelForSheet?.kind === 'site'
+            ? (selectedChannelForSheet?.title || selectedChannelForSheet?.name || '')
+            : `#${selectedChannelForSheet?.name ?? ''}`
+        }
       >
         {selectedChannelForSheet && (
           <div className="space-y-4">
@@ -1687,12 +1922,6 @@ export function AdminView() {
                   </span>
                   {selectedChannelForSheet.kind === 'announcement' && (
                     <Badge variant="neutral">Announcement</Badge>
-                  )}
-                  {selectedChannelForSheet.kind === 'listing' && (
-                    <Badge variant="neutral">Property</Badge>
-                  )}
-                  {selectedChannelForSheet.kind === 'site' && (
-                    <Badge variant="neutral">Site</Badge>
                   )}
                   {selectedChannelForSheet.archived && (
                     <Badge variant="neutral">Archived</Badge>
@@ -1795,11 +2024,23 @@ export function AdminView() {
       <Modal
         isOpen={Boolean(channelToArchive)}
         onClose={() => setChannelToArchive(null)}
-        title={`Archive #${channelToArchive?.name}?`}
+        title={
+          channelToArchive?.kind === 'site' || channelToArchive?.kind === 'listing'
+            ? `Archive ${channelToArchive?.title || channelToArchive?.name}?`
+            : `Archive #${channelToArchive?.name}?`
+        }
       >
         <div className="space-y-4">
           <p className="text-xs text-ink leading-relaxed">
-            Archiving this channel will disable new messages, reactions, edits, and pins. The channel will be moved to the archived section.
+            {channelToArchive?.kind === 'site'
+              ? `This also archives its ${
+                  channels.filter(
+                    (c) =>
+                      c.kind === 'listing' &&
+                      (c.listing?.siteId === channelToArchive.id || c.siteId === channelToArchive.id)
+                  ).length
+                } properties.`
+              : 'Archiving this channel will disable new messages, reactions, edits, and pins. The channel will be moved to the archived section.'}
           </p>
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setChannelToArchive(null)}>
@@ -1810,6 +2051,36 @@ export function AdminView() {
               onClick={handleConfirmArchive}
             >
               Archive Channel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Unarchive Site Modal */}
+      <Modal
+        isOpen={Boolean(channelToUnarchive)}
+        onClose={() => setChannelToUnarchive(null)}
+        title={`Unarchive ${channelToUnarchive?.title || channelToUnarchive?.name}?`}
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-ink leading-relaxed">
+            {`This also restores its ${
+              channels.filter(
+                (c) =>
+                  c.kind === 'listing' &&
+                  (c.listing?.siteId === channelToUnarchive?.id || c.siteId === channelToUnarchive?.id)
+              ).length
+            } properties.`}
+          </p>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => setChannelToUnarchive(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmUnarchive}
+            >
+              Unarchive Channel
             </Button>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   channelDisplayName,
   callNameOf,
   initialsOf,
+  siteOfProperty,
 } from '../../utils/chat.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
@@ -358,10 +359,16 @@ export function MessageRow({
               channelsById[message.listingChannelId] ||
               channels.find((c) => c.id === message.listingChannelId);
             const canSee = canUserSeeChannel(currentUser, listingChannel);
+            const parentSite = siteOfProperty(listingChannel, channels);
+            const siteTitle = parentSite?.title || '';
+            const location = listingChannel?.location || parentSite?.location || '';
+            const siteAndLocation = siteTitle && location ? `${siteTitle} · ${location}` : (siteTitle || location);
+            const price = listingChannel?.listing?.priceNgn || listingChannel?.priceNgn || listingChannel?.price;
+            const status = listingChannel?.listing?.status || listingChannel?.status || 'Available';
             const statusVariant =
-              listingChannel?.status === 'Available'
+              status === 'Available'
                 ? 'success'
-                : listingChannel?.status === 'Under offer'
+                : status === 'Under offer'
                 ? 'warning'
                 : 'neutral';
 
@@ -383,13 +390,11 @@ export function MessageRow({
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                         <h4 className="text-xs sm:text-sm font-bold text-ink">
-                          {listingChannel
-                            ? channelDisplayName(listingChannel, currentUser?.id, staff)
-                            : 'Listing Room'}
+                          {listingChannel?.title || (listingChannel ? channelDisplayName(listingChannel, currentUser?.id, staff) : 'Property')}
                         </h4>
-                        {listingChannel?.status && (
+                        {status && (
                           <Badge variant={statusVariant} size="sm">
-                            {listingChannel.status}
+                            {status}
                           </Badge>
                         )}
                       </div>
@@ -408,12 +413,14 @@ export function MessageRow({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs text-ink-muted mt-0.5">
-                      <span>{listingChannel?.location}</span>
-                      <span>·</span>
-                      <span className="font-semibold text-brand tabular-nums">
-                        {formatNaira(listingChannel?.price)}
-                      </span>
+                    {siteAndLocation && (
+                      <div className="text-xs text-ink-muted mt-0.5 break-words">
+                        {siteAndLocation}
+                      </div>
+                    )}
+
+                    <div className="text-xs font-semibold text-brand tabular-nums mt-0.5">
+                      {formatNaira(price)}
                     </div>
                   </div>
                 </div>
@@ -436,7 +443,7 @@ export function MessageRow({
                       }}
                       className="min-h-[44px] sm:min-h-0 h-10 sm:h-8 px-3 text-xs w-full sm:w-auto justify-center cursor-pointer"
                     >
-                      Open listing room
+                      Open property
                     </Button>
                   </div>
                 )}

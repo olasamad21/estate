@@ -13,9 +13,34 @@ function ShareListingForm({ channel, onClose }) {
   const [selectedListingId, setSelectedListingId] = useState('');
   const [note, setNote] = useState('');
 
-  const listings = useMemo(() => {
-    return shareableListings(currentUser, channels);
+  const siteGroups = useMemo(() => {
+    const list = shareableListings(currentUser, channels);
+    const groups = [];
+    const map = new Map();
+
+    list.forEach((prop) => {
+      const siteId = prop.listing?.siteId || prop.siteId || 'other';
+      if (!map.has(siteId)) {
+        const site = channels.find((c) => c.kind === 'site' && c.id === siteId) ?? null;
+        const groupObj = {
+          siteId,
+          site,
+          title: site?.title || 'Properties',
+          location: site?.location || '',
+          properties: [],
+        };
+        map.set(siteId, groupObj);
+        groups.push(groupObj);
+      }
+      map.get(siteId).properties.push(prop);
+    });
+
+    return groups;
   }, [currentUser, channels]);
+
+  const totalProperties = useMemo(() => {
+    return siteGroups.reduce((acc, g) => acc + g.properties.length, 0);
+  }, [siteGroups]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,70 +52,85 @@ function ShareListingForm({ channel, onClose }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Listing Selection */}
+      {/* Property Selection */}
       <div className="space-y-2">
         <label className="block text-xs font-semibold text-ink">
-          Select listing room <span className="text-status-danger">*</span>
+          Select property <span className="text-status-danger">*</span>
         </label>
 
-        {listings.length === 0 ? (
+        {totalProperties === 0 ? (
           <div className="p-4 rounded-xl border border-line bg-surface-raised text-center text-xs text-ink-muted">
-            No listing rooms yet.
+            No properties yet.
           </div>
         ) : (
-          <div className="space-y-2 max-h-[45dvh] overflow-y-auto pr-1" role="radiogroup" aria-label="Listing rooms">
-            {listings.map((item) => {
-              const isSelected = selectedListingId === item.id;
-              const officeName = officeLabelOf(item.officeId);
-              const statusVariant =
-                item.status === 'Available'
-                  ? 'success'
-                  : item.status === 'Under offer'
-                  ? 'warning'
-                  : 'neutral';
+          <div className="space-y-4 max-h-[45dvh] overflow-y-auto pr-1" role="radiogroup" aria-label="Properties">
+            {siteGroups.map((group) => {
+              const headingText = group.location
+                ? `${group.title} · ${group.location}`
+                : group.title;
 
               return (
-                <label
-                  key={item.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                    isSelected
-                      ? 'border-brand bg-brand/5 shadow-2xs'
-                      : 'border-line bg-surface hover:bg-surface-raised'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="share_listing_id"
-                    value={item.id}
-                    checked={isSelected}
-                    onChange={() => setSelectedListingId(item.id)}
-                    className="accent-brand cursor-pointer shrink-0"
-                  />
+                <div key={group.siteId} className="space-y-2">
+                  <h3 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
+                    {headingText}
+                  </h3>
+                  <div className="space-y-2">
+                    {group.properties.map((item) => {
+                      const isSelected = selectedListingId === item.id;
+                      const officeName = officeLabelOf(item.officeId);
+                      const statusVariant =
+                        item.status === 'Available'
+                          ? 'success'
+                          : item.status === 'Under offer'
+                          ? 'warning'
+                          : 'neutral';
 
-                  {/* Thumbnail */}
-                  <div className="w-12 h-10 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised">
-                    <ListingPhoto channel={item} className="w-full h-full object-cover" />
-                  </div>
+                      return (
+                        <label
+                          key={item.id}
+                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors min-h-[44px] ${
+                            isSelected
+                              ? 'border-brand bg-brand/5 shadow-2xs'
+                              : 'border-line bg-surface hover:bg-surface-raised'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="share_property_id"
+                            value={item.id}
+                            checked={isSelected}
+                            onChange={() => setSelectedListingId(item.id)}
+                            className="accent-brand cursor-pointer shrink-0"
+                          />
 
-                  {/* Details */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-bold text-ink">
-                        {item.title || item.name}
-                      </span>
-                      <Badge variant={statusVariant} size="sm">
-                        {item.status || 'Available'}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-ink-muted mt-0.5">
-                      <span className="font-semibold text-brand tabular-nums">
-                        {formatNaira(item.priceNgn || item.price)}
-                      </span>
-                      <span>·</span>
-                      <span>{officeName}</span>
-                    </div>
+                          {/* 48px Thumbnail */}
+                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-line bg-surface-raised">
+                            <ListingPhoto channel={item} className="w-full h-full object-cover" />
+                          </div>
+
+                          {/* Details */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-ink">
+                                {item.title || item.name}
+                              </span>
+                              <Badge variant={statusVariant} size="sm">
+                                {item.status || 'Available'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-ink-muted mt-0.5">
+                              <span className="font-semibold text-brand tabular-nums">
+                                {formatNaira(item.priceNgn || item.price)}
+                              </span>
+                              <span>·</span>
+                              <span>{officeName}</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -146,7 +186,7 @@ export function ShareListingDrawer({ isOpen, onClose, channel }) {
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} title="Share a Listing">
+    <Drawer isOpen={isOpen} onClose={handleClose} title="Share a property">
       {isOpen && channel && (
         <ShareListingForm key={formKey} channel={channel} onClose={handleClose} />
       )}

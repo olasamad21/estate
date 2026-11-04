@@ -153,7 +153,7 @@ export const RAW_SEED_MESSAGES = [
     channelId: 'announcements',
     senderId: 'ahmed',
     type: 'text',
-    text: 'Reminder: All corporate registry filings for current listings must follow the compliance checklist.',
+    text: 'Reminder: All corporate registry filings for current properties must follow the compliance checklist.',
     createdAt: minutesFromNow(-2200),
     seenBy: ['itivere', 'fortune', 'franca', 'faith', 'aniede', 'tamuno'],
   },
@@ -203,7 +203,7 @@ export const RAW_SEED_MESSAGES = [
     channelId: 'management',
     senderId: 'itivere',
     type: 'text',
-    text: 'Management review: Monthly target for new listings is set at twelve verified properties across all branches.',
+    text: 'Management review: Monthly target for new properties is set at twelve verified properties across all branches.',
     createdAt: minutesFromNow(-3800),
     reactions: {
       '\u{1F44D}': ['tamuno', 'uchechukwu', 'ngozi'],
@@ -224,7 +224,7 @@ export const RAW_SEED_MESSAGES = [
     parentId: 'msg-mgt-1',
     senderId: 'uchechukwu',
     type: 'text',
-    text: 'Lugbe branch has four residential listings ready for onboarding.',
+    text: 'Lugbe branch has four residential properties ready for onboarding.',
     createdAt: minutesFromNow(-3600),
   },
   {

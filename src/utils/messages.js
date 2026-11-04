@@ -133,15 +133,15 @@ export function getLeadSimulatedMessage(area = '') {
 }
 
 export function getListingStatusUpdatedMessage(status = '') {
-  return status ? `Listing status updated to ${status}` : 'Listing status updated';
+  return status ? `Property status updated to ${status}` : 'Property status updated';
 }
 
 export function getListingRoomCreatedMessage(title = '') {
-  return title ? `Listing room created for ${title}` : 'Listing room created';
+  return title ? `Property created for ${title}` : 'Property created';
 }
 
 export function getListingDetailsUpdatedMessage() {
-  return 'Listing details updated';
+  return 'Property details updated';
 }
 
 export function getLoggedOutMessage() {
@@ -161,12 +161,12 @@ export function getLeadPostedMessage() {
 }
 
 export function getListingSharedMessage() {
-  return 'Listing shared';
+  return 'Property shared';
 }
 
 export function getListingSharedInChannelMessage(channelName = '') {
   const clean = String(channelName || '').replace(/^#/, '').trim();
-  return clean ? `Listing shared in #${clean}` : 'Listing shared in channel';
+  return clean ? `Property shared in #${clean}` : 'Property shared in channel';
 }
 
 export function getChannelAdminAddedMessage(name = 'Member') {

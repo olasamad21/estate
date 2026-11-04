@@ -240,6 +240,7 @@ export function canUserSeeChannel(user, channel) {
     return isAdmin || (Array.isArray(channel.members) && channel.members.includes(user.id));
   }
 
+  // kind 'listing' is a property; a site is kind 'site'.
   // open kinds: public, announcement, listing, site
   if (kind === 'public' || kind === 'announcement' || kind === 'listing' || kind === 'site') {
     // with officeId null: every active staff member
@@ -813,8 +814,8 @@ export function messagePreview(message, staff) {
       message.title ||
       LISTING_TITLES[message.listingChannelId] ||
       (message.listingChannel ? message.listingChannel.title : '') ||
-      'Listing';
-    return `Listing: ${title}`;
+      'Property';
+    return `Property: ${title}`;
   }
 
   if (message.fileKind === 'photo' || (message.type === 'file' && message.fileKind === 'photo')) {

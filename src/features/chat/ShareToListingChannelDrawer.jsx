@@ -122,7 +122,7 @@ function ShareToListingChannelForm({ listingChannel, onClose }) {
           rows={2}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Please share this listing with interested buyers"
+          placeholder="e.g. Please share this property with interested buyers"
           maxLength={140}
           className="w-full px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none resize-none leading-relaxed"
         />

@@ -768,7 +768,7 @@ export function ChatProvider({ children }) {
       newChannel = {
         id: channelSlug,
         name: channelSlug,
-        title: title ? title.trim() : (name || 'Listing'),
+        title: title ? title.trim() : (name || 'Property'),
         kind: 'listing',
         officeId: officeId || (currentUser?.officeId || 'hq'),
         location: area || '',
@@ -815,7 +815,7 @@ export function ChatProvider({ children }) {
       senderId: 'system',
       type: 'system',
       text: isListing
-        ? `${creatorCallName} created this listing room`
+        ? `${creatorCallName} created this property room`
         : `${creatorCallName} created this channel`,
       createdAt: new Date().toISOString(),
       status: 'sent',
