@@ -20,7 +20,7 @@ function EditSiteForm({ site, onClose }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(() => {
     if (!site?.id) return null;
-    return getPreviewUrl(`site:${site.id}`) || null;
+    return getPreviewUrl(`site:${site.id}`) || site?.site?.photoUrl || site?.photoUrl || null;
   });
   const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -107,7 +107,7 @@ function EditSiteForm({ site, onClose }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={() => setTouched(true)}
-          placeholder="e.g. Garden Court Estate"
+          placeholder="e.g. Maitama 2"
           maxLength={40}
           required
           className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"

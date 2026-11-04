@@ -321,7 +321,7 @@ function CreateChannelForm({ onClose }) {
               value={siteTitle}
               onChange={(e) => setSiteTitle(e.target.value)}
               onBlur={() => setTouched(true)}
-              placeholder="e.g. Garden Court Estate"
+              placeholder="e.g. Maitama 2"
               maxLength={40}
               required
               className="w-full px-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"

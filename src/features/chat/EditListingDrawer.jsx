@@ -51,7 +51,13 @@ export function EditListingDrawer({ isOpen, onClose, channel }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(() => {
     if (!channel?.id) return null;
-    return getPreviewUrl(`listing:${channel.id}`) || getPreviewUrl(channel.id) || null;
+    return (
+      getPreviewUrl(`listing:${channel.id}`) ||
+      getPreviewUrl(channel.id) ||
+      channel?.listing?.photoUrl ||
+      channel?.photoUrl ||
+      null
+    );
   });
   const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
   const [touched, setTouched] = useState(false);

@@ -79,14 +79,14 @@ export const COMPANY_CONFIG = {
       id: 'hq',
       name: 'Head Quarters',
       label: 'Head Quarters',
-      areas: ['Maitama', 'Wuse 2', 'Garki'],
+      areas: ['Maitama 2', 'Apo', 'Ketti', 'Maitama', 'Wuse 2', 'Garki'],
       consentLabel: "Minister's Consent",
     },
     {
       id: 'lugbe',
       name: 'Lugbe',
       label: 'Lugbe office',
-      areas: ['Lugbe', 'Airport Road', 'Kuje'],
+      areas: ['Pyakasa', 'Kabusa', 'Karshi', 'Kuje', 'Lugbe', 'Airport Road'],
       consentLabel: "Minister's Consent",
     },
     {

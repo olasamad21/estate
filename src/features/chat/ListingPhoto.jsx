@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getPreviewUrl } from '../../utils/previewUrls.js';
 import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
+import { CHANNELS_BY_ID } from '../../mock/channels.js';
 
 /**
  * ListingPhoto renders an <img> with an object URL when registered under `listing:<channelId>`,
@@ -22,14 +23,21 @@ export function ListingPhoto({
   previewKey,
 }) {
   const targetId = channel?.id || channelId;
-  const targetTitle = channel?.title || title || targetId || 'Property';
+  const resolvedChannel = channel || (targetId && CHANNELS_BY_ID ? CHANNELS_BY_ID[targetId] : null);
+  const targetTitle = resolvedChannel?.title || title || targetId || 'Property';
 
-  const defaultKey = channel?.kind === 'site' ? `site:${targetId}` : `listing:${targetId}`;
+  const defaultKey = resolvedChannel?.kind === 'site' ? `site:${targetId}` : `listing:${targetId}`;
   const effectiveKey = previewKey || (targetId ? defaultKey : null);
 
+  const staticPhotoUrl =
+    resolvedChannel?.listing?.photoUrl ||
+    resolvedChannel?.site?.photoUrl ||
+    resolvedChannel?.photoUrl ||
+    null;
+
   const objectUrl = effectiveKey
-    ? getPreviewUrl(effectiveKey) || getPreviewUrl(targetId)
-    : null;
+    ? getPreviewUrl(effectiveKey) || (targetId ? getPreviewUrl(targetId) : null) || staticPhotoUrl
+    : staticPhotoUrl;
   const [hasError, setHasError] = useState(false);
 
   if (objectUrl && !hasError) {
