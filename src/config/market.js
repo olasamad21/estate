@@ -68,6 +68,7 @@ export default MARKET_CONFIG;
 // Placeholder company configuration values to be swapped
 export const COMPANY_CONFIG = {
   name: 'Ace Realm Integrated Services',
+  companyName: 'Ace Realm Integrated Services',
   currency: 'NGN',
   currencySymbol: '\u20A6',
   locale: 'en-NG',
