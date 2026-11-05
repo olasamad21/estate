@@ -882,19 +882,19 @@ export const RAW_SEED_MESSAGES = [
   // 10. Sites & Property Rooms Seed Messages
   // ==========================================
 
-  // --- Site 1: Maitama 2 (#site-maitama-2) ---
+  // --- Site 1: NAF Valley (Maitama) (#site-naf-valley) ---
   {
     id: 'msg-m2-1',
-    channelId: 'site-maitama-2',
+    channelId: 'site-naf-valley',
     senderId: 'tamuno',
     type: 'text',
-    text: `Site operations notice: Perimeter security fencing and gatehouse construction for Maitama 2 have been certified under ${hqConsent} documentation.`,
+    text: `Site operations notice: Perimeter security fencing and gatehouse construction for NAF Valley (Maitama) have been certified under ${hqConsent} documentation.`,
     createdAt: minutesFromNow(-3600),
     pinned: true,
   },
   {
     id: 'msg-m2-2',
-    channelId: 'site-maitama-2',
+    channelId: 'site-naf-valley',
     senderId: 'isaac',
     type: 'text',
     text: 'Survey beacons for Blocks A and B verified on site yesterday. Boundary line pegs are all marked.',
@@ -902,7 +902,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-m2-3',
-    channelId: 'site-maitama-2',
+    channelId: 'site-naf-valley',
     senderId: 'jatau',
     type: 'text',
     text: 'Security access gate is fully operational. Field agents coordinating viewings should check in at the main gate.',
@@ -910,7 +910,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-m2-4',
-    channelId: 'site-maitama-2',
+    channelId: 'site-naf-valley',
     senderId: 'ibrahim',
     type: 'text',
     text: 'Central water trenching connection along the secondary access road begins tomorrow morning.',
@@ -918,26 +918,26 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-m2-5',
-    channelId: 'site-maitama-2',
+    channelId: 'site-naf-valley',
     senderId: 'tamuno',
     type: 'text',
     text: 'Weekly site walkthrough scheduled for Thursday at 10:00 AM. Team leads should confirm attendance.',
     createdAt: minutesFromNow(-40),
   },
 
-  // --- Site 2: Apo (#site-apo) ---
+  // --- Site 2: Lavender Grove (Apo) (#site-lavender-grove) ---
   {
     id: 'msg-apo-1',
-    channelId: 'site-apo',
+    channelId: 'site-lavender-grove',
     senderId: 'tamuno',
     type: 'text',
-    text: `Engineering update: Drainage channels and access road paving for Apo development certified under ${hqConsent}.`,
+    text: `Engineering update: Drainage channels and access road paving for Lavender Grove (Apo) development certified under ${hqConsent}.`,
     createdAt: minutesFromNow(-3400),
     pinned: true,
   },
   {
     id: 'msg-apo-2',
-    channelId: 'site-apo',
+    channelId: 'site-lavender-grove',
     senderId: 'isaac',
     type: 'text',
     text: 'Electrification poles installed and cabling run to the central distribution transformer.',
@@ -945,7 +945,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-apo-3',
-    channelId: 'site-apo',
+    channelId: 'site-lavender-grove',
     senderId: 'jatau',
     type: 'text',
     text: 'Terrace foundation checks complete. Viewing access from the Apo expressway entry is clear.',
@@ -953,7 +953,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-apo-4',
-    channelId: 'site-apo',
+    channelId: 'site-lavender-grove',
     senderId: 'tamuno',
     type: 'text',
     text: 'On-site facilities management desk is open weekdays from 8:00 AM for incoming viewings.',
@@ -961,26 +961,69 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-apo-5',
-    channelId: 'site-apo',
+    channelId: 'site-lavender-grove',
     senderId: 'isaac',
     type: 'text',
     text: 'Water borehole test pumping completed with excellent flow rate.',
     createdAt: minutesFromNow(-30),
   },
 
-  // --- Site 3: Ketti-Kabus (#site-ketti-kabus) ---
+  // --- Site 3: The Embassy (Apo) (#site-the-embassy) ---
   {
-    id: 'msg-kk-1',
-    channelId: 'site-ketti-kabus',
+    id: 'msg-emb-1',
+    channelId: 'site-the-embassy',
     senderId: 'tamuno',
     type: 'text',
-    text: `Land registry update: Cadastral coordinates and boundary beacons for Ketti-Kabus logged under ${hqConsent}.`,
+    text: `Master planning update: Commercial plot zoning and diplomatic access corridor for The Embassy (Apo) certified under ${hqConsent}.`,
+    createdAt: minutesFromNow(-3350),
+    pinned: true,
+  },
+  {
+    id: 'msg-emb-2',
+    channelId: 'site-the-embassy',
+    senderId: 'isaac',
+    type: 'text',
+    text: 'Cadastral beacons and boundary demarcation pegs inspected with town planning officials.',
+    createdAt: minutesFromNow(-2150),
+  },
+  {
+    id: 'msg-emb-3',
+    channelId: 'site-the-embassy',
+    senderId: 'jatau',
+    type: 'text',
+    text: 'Security gatehouse and dual-lane access boulevard grading completed.',
+    createdAt: minutesFromNow(-1150),
+  },
+  {
+    id: 'msg-emb-4',
+    channelId: 'site-the-embassy',
+    senderId: 'tamuno',
+    type: 'text',
+    text: 'VIP investor inspection scheduled for Friday afternoon. Escort protocol confirmed.',
+    createdAt: minutesFromNow(-480),
+  },
+  {
+    id: 'msg-emb-5',
+    channelId: 'site-the-embassy',
+    senderId: 'isaac',
+    type: 'text',
+    text: 'Site perimeter lighting and solar backup system operational.',
+    createdAt: minutesFromNow(-28),
+  },
+
+  // --- Site 4: Elysian Fort (Ketti-Kabusa) (#site-elysian-fort) ---
+  {
+    id: 'msg-kk-1',
+    channelId: 'site-elysian-fort',
+    senderId: 'tamuno',
+    type: 'text',
+    text: `Land registry update: Cadastral coordinates and boundary beacons for Elysian Fort (Ketti-Kabusa) logged under ${hqConsent}.`,
     createdAt: minutesFromNow(-3500),
     pinned: true,
   },
   {
     id: 'msg-kk-2',
-    channelId: 'site-ketti-kabus',
+    channelId: 'site-elysian-fort',
     senderId: 'isaac',
     type: 'text',
     text: 'Survey beacons across Plots 1 to 25 verified and beacon numbers painted clearly.',
@@ -988,7 +1031,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kk-3',
-    channelId: 'site-ketti-kabus',
+    channelId: 'site-elysian-fort',
     senderId: 'jatau',
     type: 'text',
     text: 'Primary spine road earthwork completed. Access is smooth for inspection vehicles.',
@@ -996,7 +1039,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kk-4',
-    channelId: 'site-ketti-kabus',
+    channelId: 'site-elysian-fort',
     senderId: 'ibrahim',
     type: 'text',
     text: 'Perimeter fencing along the southern boundary line commences on Friday.',
@@ -1004,17 +1047,60 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kk-5',
-    channelId: 'site-ketti-kabus',
+    channelId: 'site-elysian-fort',
     senderId: 'tamuno',
     type: 'text',
     text: 'Client site viewing convoy departs HQ every Saturday at 11:00 AM.',
     createdAt: minutesFromNow(-35),
   },
 
-  // --- Site 4: Pyakasa 2 (#site-pyakasa-2) ---
+  // --- Site 5: Dominion Villa (Ketti-Kabusa) (#site-dominion-villa) ---
+  {
+    id: 'msg-dv-1',
+    channelId: 'site-dominion-villa',
+    senderId: 'tamuno',
+    type: 'text',
+    text: `Site development status: Exclusive villa plots and gated perimeter layout for Dominion Villa (Ketti-Kabusa) approved under ${hqConsent}.`,
+    createdAt: minutesFromNow(-3450),
+    pinned: true,
+  },
+  {
+    id: 'msg-dv-2',
+    channelId: 'site-dominion-villa',
+    senderId: 'isaac',
+    type: 'text',
+    text: 'Plot 22 and neighbouring corner-piece boundary pillars verified and documented.',
+    createdAt: minutesFromNow(-2250),
+  },
+  {
+    id: 'msg-dv-3',
+    channelId: 'site-dominion-villa',
+    senderId: 'jatau',
+    type: 'text',
+    text: 'Main gatehouse stone cladding finished. Private driveway grading complete.',
+    createdAt: minutesFromNow(-1350),
+  },
+  {
+    id: 'msg-dv-4',
+    channelId: 'site-dominion-villa',
+    senderId: 'ibrahim',
+    type: 'text',
+    text: 'Underground conduit laying for estate power and smart streetlights underway.',
+    createdAt: minutesFromNow(-520),
+  },
+  {
+    id: 'msg-dv-5',
+    channelId: 'site-dominion-villa',
+    senderId: 'tamuno',
+    type: 'text',
+    text: 'Private viewing appointments for premium plots open from this Thursday.',
+    createdAt: minutesFromNow(-32),
+  },
+
+  // --- Site 6: Sancta Ville (Pyakasa 2) (#site-sancta-ville) ---
   {
     id: 'msg-p2-1',
-    channelId: 'site-pyakasa-2',
+    channelId: 'site-sancta-ville',
     senderId: 'efosa',
     type: 'text',
     text: `Infrastructure update: Phase 1 culvert drainage and earthworks completed under verified ${lugbeConsent} documentation.`,
@@ -1023,7 +1109,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-p2-2',
-    channelId: 'site-pyakasa-2',
+    channelId: 'site-sancta-ville',
     senderId: 'uchechukwu',
     type: 'text',
     text: 'Survey beacons across Plots 21 to 35 tagged with high-visibility markers for prospective buyers.',
@@ -1031,7 +1117,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-p2-3',
-    channelId: 'site-pyakasa-2',
+    channelId: 'site-sancta-ville',
     senderId: 'godwin',
     type: 'text',
     text: 'Access road grading from the expressway junction is completed. Saloon cars can drive in smoothly.',
@@ -1039,7 +1125,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-p2-4',
-    channelId: 'site-pyakasa-2',
+    channelId: 'site-sancta-ville',
     senderId: 'george',
     type: 'text',
     text: 'Site security update: Solar perimeter lights are operational along the main spine road.',
@@ -1047,26 +1133,26 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-p2-5',
-    channelId: 'site-pyakasa-2',
+    channelId: 'site-sancta-ville',
     senderId: 'efosa',
     type: 'text',
     text: 'Foundation concrete pour for the terrace block commences on Wednesday.',
     createdAt: minutesFromNow(-25),
   },
 
-  // --- Site 5: Kabusa (#site-kabusa) ---
+  // --- Site 7: Upper Heaven (Kabusa) (#site-upper-heaven) ---
   {
     id: 'msg-kab-1',
-    channelId: 'site-kabusa',
+    channelId: 'site-upper-heaven',
     senderId: 'efosa',
     type: 'text',
-    text: `Operations notice: Compound boundary wall and estate gatehouse for Kabusa have been certified under ${lugbeConsent}.`,
+    text: `Operations notice: Compound boundary wall and estate gatehouse for Upper Heaven (Kabusa) have been certified under ${lugbeConsent}.`,
     createdAt: minutesFromNow(-3100),
     pinned: true,
   },
   {
     id: 'msg-kab-2',
-    channelId: 'site-kabusa',
+    channelId: 'site-upper-heaven',
     senderId: 'uchechukwu',
     type: 'text',
     text: 'Detached duplex roofing inspected. Interior finishing work proceeding on schedule.',
@@ -1074,7 +1160,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kab-3',
-    channelId: 'site-kabusa',
+    channelId: 'site-upper-heaven',
     senderId: 'kingsley',
     type: 'text',
     text: 'Security personnel stationed at the main gate 24/7. Visitors badge system active.',
@@ -1082,7 +1168,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kab-4',
-    channelId: 'site-kabusa',
+    channelId: 'site-upper-heaven',
     senderId: 'joseph',
     type: 'text',
     text: 'Dedicated borehole water system operational and water treatment unit tested.',
@@ -1090,17 +1176,17 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kab-5',
-    channelId: 'site-kabusa',
+    channelId: 'site-upper-heaven',
     senderId: 'efosa',
     type: 'text',
     text: 'Landscaping along the entry boulevard underway. Trees planted along the curb.',
     createdAt: minutesFromNow(-20),
   },
 
-  // --- Site 6: Karshi (#site-karshi) ---
+  // --- Site 8: Verola (Karshi) (#site-verola) ---
   {
     id: 'msg-kar-1',
-    channelId: 'site-karshi',
+    channelId: 'site-verola',
     senderId: 'efosa',
     type: 'text',
     text: `Commercial plaza vetting: Office suite floor layouts and MEP installations passed inspection under ${lugbeConsent}.`,
@@ -1109,7 +1195,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kar-2',
-    channelId: 'site-karshi',
+    channelId: 'site-verola',
     senderId: 'uchechukwu',
     type: 'text',
     text: 'High-speed fibre internet distribution ducting completed for all executive suites.',
@@ -1117,7 +1203,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kar-3',
-    channelId: 'site-karshi',
+    channelId: 'site-verola',
     senderId: 'pawa',
     type: 'text',
     text: 'Backup generator test run successful. Automatic transfer switch functioning properly.',
@@ -1125,7 +1211,7 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kar-4',
-    channelId: 'site-karshi',
+    channelId: 'site-verola',
     senderId: 'olamilekan',
     type: 'text',
     text: 'Commercial parking lot markings painted. Ample space for client vehicles.',
@@ -1133,54 +1219,11 @@ export const RAW_SEED_MESSAGES = [
   },
   {
     id: 'msg-kar-5',
-    channelId: 'site-karshi',
+    channelId: 'site-verola',
     senderId: 'efosa',
     type: 'text',
     text: 'Facilities management reception is fully staffed and ready for incoming corporate viewings.',
     createdAt: minutesFromNow(-15),
-  },
-
-  // --- Site 7: Kuje (#site-kuje) ---
-  {
-    id: 'msg-kj-1',
-    channelId: 'site-kuje',
-    senderId: 'efosa',
-    type: 'text',
-    text: `Site development status: Ground retail units and residential duplex plots cleared under ${lugbeConsent}.`,
-    createdAt: minutesFromNow(-3000),
-    pinned: true,
-  },
-  {
-    id: 'msg-kj-2',
-    channelId: 'site-kuje',
-    senderId: 'uchechukwu',
-    type: 'text',
-    text: 'Shop frontage glazing and commercial rolling shutters delivered to site.',
-    createdAt: minutesFromNow(-1900),
-  },
-  {
-    id: 'msg-kj-3',
-    channelId: 'site-kuje',
-    senderId: 'kingsley',
-    type: 'text',
-    text: 'Main road access grading finished. Direct connection to the Kuje township road.',
-    createdAt: minutesFromNow(-900),
-  },
-  {
-    id: 'msg-kj-4',
-    channelId: 'site-kuje',
-    senderId: 'joseph',
-    type: 'text',
-    text: 'Duplex unit exterior painting completed. Interior tiling commencing next week.',
-    createdAt: minutesFromNow(-350),
-  },
-  {
-    id: 'msg-kj-5',
-    channelId: 'site-kuje',
-    senderId: 'efosa',
-    type: 'text',
-    text: 'Inspection slots available this weekend for prospective residential and retail clients.',
-    createdAt: minutesFromNow(-10),
   },
 
   // --- Garden Court Estate Property Rooms ---

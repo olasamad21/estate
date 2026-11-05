@@ -67,7 +67,7 @@ export default MARKET_CONFIG;
 
 // Placeholder company configuration values to be swapped
 export const COMPANY_CONFIG = {
-  name: 'Da Ace Cribs',
+  name: 'Ace Integrated Services',
   currency: 'NGN',
   currencySymbol: '\u20A6',
   locale: 'en-NG',
@@ -79,14 +79,14 @@ export const COMPANY_CONFIG = {
       id: 'hq',
       name: 'Head Quarters',
       label: 'Head Quarters',
-      areas: ['Maitama 2', 'Apo', 'Ketti', 'Maitama', 'Wuse 2', 'Garki'],
+      areas: ['Maitama', 'Maitama 2', 'Apo', 'Ketti', 'Ketti-Kabusa', 'Wuse 2', 'Garki'],
       consentLabel: "Minister's Consent",
     },
     {
       id: 'lugbe',
       name: 'Lugbe',
       label: 'Lugbe office',
-      areas: ['Pyakasa', 'Kabusa', 'Karshi', 'Kuje', 'Lugbe', 'Airport Road'],
+      areas: ['Kabusa', 'Pyakasa', 'Pyakasa 2', 'Karshi', 'Kuje', 'Lugbe', 'Airport Road'],
       consentLabel: "Minister's Consent",
     },
     {

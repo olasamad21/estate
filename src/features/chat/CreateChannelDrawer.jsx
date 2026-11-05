@@ -77,9 +77,8 @@ function CreateChannelForm({ isOpen, onClose }) {
   const handleNameChange = (e) => {
     const raw = e.target.value;
     const sanitized = raw
-      .toLowerCase()
       .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+      .replace(/[^A-Za-z0-9-]/g, '');
     setName(sanitized);
     setTouched(true);
   };
@@ -90,7 +89,7 @@ function CreateChannelForm({ isOpen, onClose }) {
     if (!touched && !name) return '';
     if (!name.trim()) return 'Channel name is required.';
     if (!isChannelNameValid(name)) {
-      return 'Lowercase letters, digits and hyphens only (2–50 characters).';
+      return 'Letters, digits and hyphens only (2–50 characters).';
     }
     const duplicate = channels.some(
       (c) => c.name.toLowerCase() === name.trim().toLowerCase()
@@ -452,7 +451,7 @@ function CreateChannelForm({ isOpen, onClose }) {
                 value={name}
                 onChange={handleNameChange}
                 onBlur={() => setTouched(true)}
-                placeholder="e.g. maitama-inspections"
+                placeholder="e.g. Maitama-inspections"
                 required
                 className="w-full pl-9 pr-3 py-2.5 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
               />
@@ -461,7 +460,7 @@ function CreateChannelForm({ isOpen, onClose }) {
               <p className="text-xs text-status-danger font-medium">{nameError}</p>
             ) : (
               <p className="text-xs text-ink-muted">
-                Use lowercase letters, numbers, and hyphens. Spaces convert automatically.
+                Letters, numbers, and hyphens. Spaces convert automatically.
               </p>
             )}
           </div>
