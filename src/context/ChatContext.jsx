@@ -4,10 +4,11 @@ import { normalisePhoneNg, isValidPhoneNg, minutesFromNow } from '../utils/forma
 import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
-import { SEED_ACCESS_REQUESTS } from '../mock/accessRequests.js';
+import { SEED_ACCESS_REQUESTS, SEED_ACTIVATION_LINKS } from '../mock/accessRequests.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty } from '../utils/chat.js';
+import { hashPassword, passwordRules, isPasswordValid, checkPassword } from '../utils/password.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
 import { formatNaira } from '../utils/formatters.js';
@@ -17,10 +18,10 @@ import {
   getMessageUnpinnedMessage,
   getChannelMutedMessage,
   getChannelUnmutedMessage,
-  getDeactivatedLoginErrorMessage,
-  getPendingRequestLoginErrorMessage,
-  getDeclinedRequestLoginErrorMessage,
-  getUnregisteredPhoneLoginErrorMessage,
+  getBrowserCannotSetPasswordMessage,
+  getAccountActivatedMessage,
+  getPasswordUpdatedSignInMessage,
+  getPasswordUpdatedMessage,
   getLeadClaimedMessage,
   getLeadSimulatedMessage,
   getListingStatusUpdatedMessage,
@@ -36,7 +37,7 @@ import {
   getPropertyCreatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-19';
+const CHAT_STATE_VERSION = 'chat-20';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -62,7 +63,7 @@ const ChatContext = createContext(null);
 export function ChatProvider({ children }) {
   const { showToast } = useToast();
 
-  // 1. Chat state (messages, staff, channels, accessRequests & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
+  // 1. Chat state (messages, staff, channels, accessRequests, activationLinks, resetLinks & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
   const [chatState, setChatState] = useState(() => {
     const stored = safeSessionStorage.get('chat_state', null);
     if (
@@ -72,6 +73,8 @@ export function ChatProvider({ children }) {
       Array.isArray(stored.staff) &&
       Array.isArray(stored.channels) &&
       Array.isArray(stored.accessRequests) &&
+      Array.isArray(stored.activationLinks) &&
+      Array.isArray(stored.resetLinks) &&
       stored.lastReadAtByUser
     ) {
       return stored;
@@ -82,6 +85,8 @@ export function ChatProvider({ children }) {
       staff: STAFF,
       channels: CHANNELS,
       accessRequests: SEED_ACCESS_REQUESTS,
+      activationLinks: SEED_ACTIVATION_LINKS,
+      resetLinks: [],
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
   });
@@ -90,7 +95,12 @@ export function ChatProvider({ children }) {
   const channels = chatState.channels;
   const messages = chatState.messages;
   const accessRequests = chatState.accessRequests;
+  const activationLinks = useMemo(() => chatState.activationLinks || [], [chatState.activationLinks]);
+  const resetLinks = useMemo(() => chatState.resetLinks || [], [chatState.resetLinks]);
   const lastReadAtByUser = chatState.lastReadAtByUser;
+
+  // Session-only login attempt counters for lockout calculation (never in localStorage)
+  const loginAttemptsRef = useRef({});
 
   // 2. Current logged-in staff id (persisted in safeLocalStorage as 'session_user')
   const [currentUserId, setCurrentUserId] = useState(() => {
@@ -185,31 +195,212 @@ export function ChatProvider({ children }) {
     setTypingStatus(null);
   }, []);
 
-  const login = useCallback((phone) => {
+  const signIn = useCallback(async (phone, password) => {
     const normalised = normalisePhoneNg(phone);
-    if (!normalised) {
-      return { success: false, error: 'Please enter a valid Nigerian phone number.' };
+    const now = Date.now();
+    const attempts = loginAttemptsRef.current[normalised || phone] || { count: 0, lastAttemptAt: 0 };
+
+    // Check lockout computed from stored timestamp
+    if (attempts.count >= 5 && now - attempts.lastAttemptAt < 60000) {
+      const retryInSeconds = Math.max(1, Math.ceil((60000 - (now - attempts.lastAttemptAt)) / 1000));
+      return { ok: false, reason: 'locked', retryInSeconds };
     }
-    const matched = staff.find((s) => normalisePhoneNg(s.phone) === normalised);
-    if (matched) {
-      if (!isStaffActive(matched)) {
-        return { success: false, error: getDeactivatedLoginErrorMessage() };
+
+    if (!normalised || typeof password !== 'string' || !password) {
+      const isLockExpired = attempts.count >= 5 && now - attempts.lastAttemptAt >= 60000;
+      const nextCount = isLockExpired ? 1 : attempts.count + 1;
+      loginAttemptsRef.current[normalised || phone] = { count: nextCount, lastAttemptAt: now };
+      if (nextCount >= 5) {
+        return { ok: false, reason: 'locked', retryInSeconds: 60 };
       }
+      return { ok: false, reason: 'invalid' };
+    }
+
+    const matched = staff.find((s) => normalisePhoneNg(s.phone) === normalised);
+    const isPasswordValidMatch = matched && isStaffActive(matched)
+      ? await checkPassword(matched, password)
+      : false;
+
+    if (isPasswordValidMatch && matched && isStaffActive(matched)) {
+      delete loginAttemptsRef.current[normalised];
+      clearTypingTimer();
       setCurrentUserId(matched.id);
       safeLocalStorage.set('session_user', matched.id);
-      return { success: true, user: matched };
+      return { ok: true, user: matched };
     }
-    const req = requestForPhone(accessRequests, normalised);
-    if (req) {
-      if (req.status === 'pending') {
-        return { success: false, error: getPendingRequestLoginErrorMessage() };
-      }
-      if (req.status === 'declined') {
-        return { success: false, error: getDeclinedRequestLoginErrorMessage() };
-      }
+
+    // Failure: all invalid numbers, invited, deactivated, pending, declined follow this exact path
+    const isLockExpired = attempts.count >= 5 && now - attempts.lastAttemptAt >= 60000;
+    const nextCount = isLockExpired ? 1 : attempts.count + 1;
+    loginAttemptsRef.current[normalised] = { count: nextCount, lastAttemptAt: now };
+    if (nextCount >= 5) {
+      return { ok: false, reason: 'locked', retryInSeconds: 60 };
     }
-    return { success: false, error: getUnregisteredPhoneLoginErrorMessage() };
-  }, [staff, accessRequests]);
+    return { ok: false, reason: 'invalid' };
+  }, [staff, clearTypingTimer]);
+
+  const activateAccount = useCallback(async (token, phone, password) => {
+    const link = (chatState.activationLinks || []).find((l) => l.token === token);
+    const linkStatus = linkState(link);
+    if (!link || linkStatus !== 'valid') {
+      return { ok: false, reason: linkStatus || 'unknown' };
+    }
+
+    const targetPerson = staff.find((s) => s.id === link.staffId);
+    if (!targetPerson) {
+      return { ok: false, reason: 'unknown' };
+    }
+
+    const normalisedPhone = normalisePhoneNg(phone);
+    const personPhone = normalisePhoneNg(targetPerson.phone);
+    if (!normalisedPhone || normalisedPhone !== personPhone) {
+      const nextWrongs = (link.wrongConfirmations ?? 0) + 1;
+      setChatState((prev) => ({
+        ...prev,
+        activationLinks: (prev.activationLinks || []).map((l) =>
+          l.token === token ? { ...l, wrongConfirmations: nextWrongs } : l
+        ),
+      }));
+      if (nextWrongs >= 3) {
+        return { ok: false, reason: 'locked' };
+      }
+      return { ok: false, reason: 'phone' };
+    }
+
+    const rules = passwordRules(password, phone);
+    if (!isPasswordValid(rules)) {
+      return { ok: false, reason: 'password_invalid', rules };
+    }
+
+    const hash = await hashPassword(targetPerson.id, password);
+    if (!hash) {
+      showToast(getBrowserCannotSetPasswordMessage());
+      return { ok: false, reason: 'crypto_unavailable' };
+    }
+
+    const nowIso = new Date().toISOString();
+    setChatState((prev) => ({
+      ...prev,
+      staff: prev.staff.map((s) =>
+        s.id === targetPerson.id
+          ? { ...s, status: 'active', active: true, passwordHash: hash }
+          : s
+      ),
+      activationLinks: (prev.activationLinks || []).map((l) =>
+        l.token === token ? { ...l, usedAt: nowIso } : l
+      ),
+    }));
+
+    clearTypingTimer();
+    setCurrentUserId(targetPerson.id);
+    safeLocalStorage.set('session_user', targetPerson.id);
+    showToast(getAccountActivatedMessage());
+    return { ok: true, user: targetPerson };
+  }, [chatState.activationLinks, staff, showToast, clearTypingTimer]);
+
+  const requestPasswordReset = useCallback((phone) => {
+    const normalised = normalisePhoneNg(phone);
+    if (!normalised) {
+      return { ok: true, demoToken: null };
+    }
+
+    const matched = staff.find((s) => normalisePhoneNg(s.phone) === normalised && isStaffActive(s));
+    if (matched) {
+      const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `reset-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      const newLink = {
+        token,
+        staffId: matched.id,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        usedAt: null,
+      };
+
+      setChatState((prev) => ({
+        ...prev,
+        resetLinks: [...(prev.resetLinks || []), newLink],
+      }));
+
+      return { ok: true, demoToken: token };
+    }
+
+    return { ok: true, demoToken: null };
+  }, [staff]);
+
+  const resetPassword = useCallback(async (token, password) => {
+    const link = (chatState.resetLinks || []).find((l) => l.token === token);
+    const linkStatus = linkState(link);
+    if (!link || linkStatus !== 'valid') {
+      return { ok: false, reason: linkStatus || 'unknown' };
+    }
+
+    const targetPerson = staff.find((s) => s.id === link.staffId);
+    if (!targetPerson) {
+      return { ok: false, reason: 'unknown' };
+    }
+
+    const rules = passwordRules(password, targetPerson.phone);
+    if (!isPasswordValid(rules)) {
+      return { ok: false, reason: 'password_invalid', rules };
+    }
+
+    const hash = await hashPassword(targetPerson.id, password);
+    if (!hash) {
+      showToast(getBrowserCannotSetPasswordMessage());
+      return { ok: false, reason: 'crypto_unavailable' };
+    }
+
+    const nowIso = new Date().toISOString();
+    setChatState((prev) => ({
+      ...prev,
+      staff: prev.staff.map((s) =>
+        s.id === targetPerson.id ? { ...s, passwordHash: hash } : s
+      ),
+      resetLinks: (prev.resetLinks || []).map((l) =>
+        l.token === token ? { ...l, usedAt: nowIso } : l
+      ),
+    }));
+
+    showToast(getPasswordUpdatedSignInMessage());
+    return { ok: true };
+  }, [chatState.resetLinks, staff, showToast]);
+
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    if (!currentUser) {
+      return { ok: false, reason: 'unauthenticated' };
+    }
+
+    const isCurrentValid = await checkPassword(currentUser, currentPassword);
+    if (!isCurrentValid) {
+      return { ok: false, reason: 'current_incorrect' };
+    }
+
+    const rules = passwordRules(newPassword, currentUser.phone);
+    if (!isPasswordValid(rules)) {
+      return { ok: false, reason: 'password_invalid', rules };
+    }
+
+    const hash = await hashPassword(currentUser.id, newPassword);
+    if (!hash) {
+      showToast(getBrowserCannotSetPasswordMessage());
+      return { ok: false, reason: 'crypto_unavailable' };
+    }
+
+    setChatState((prev) => ({
+      ...prev,
+      staff: prev.staff.map((s) =>
+        s.id === currentUser.id ? { ...s, passwordHash: hash } : s
+      ),
+    }));
+
+    showToast(getPasswordUpdatedMessage());
+    return { ok: true };
+  }, [currentUser, showToast]);
+
+  // Backward compatibility alias
+  const login = signIn;
 
   const logout = useCallback(() => {
     clearTypingTimer();
@@ -503,6 +694,7 @@ export function ChatProvider({ children }) {
 
   const resetDemo = useCallback(() => {
     clearTypingTimer();
+    loginAttemptsRef.current = {};
     safeSessionStorage.remove('chat_state');
     const fresh = {
       version: CHAT_STATE_VERSION,
@@ -510,6 +702,8 @@ export function ChatProvider({ children }) {
       staff: STAFF,
       channels: CHANNELS,
       accessRequests: SEED_ACCESS_REQUESTS,
+      activationLinks: SEED_ACTIVATION_LINKS,
+      resetLinks: [],
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
     setChatState(fresh);
@@ -518,7 +712,7 @@ export function ChatProvider({ children }) {
     safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
 
-  const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, seesAllOffices, canMessageExecutives }) => {
+  const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, email, seesAllOffices, canMessageExecutives }) => {
     const effectiveOfficeId = officeId || office || 'hq';
     const effectiveCallName = (callName || name.trim().split(/\s+/)[0] || 'staff').trim();
     const baseSlug = slugify(effectiveCallName) || slugify(name);
@@ -546,13 +740,30 @@ export function ChatProvider({ children }) {
       officeId: effectiveOfficeId,
       office: effectiveOfficeId,
       phone: normalisedPhone,
+      email: email ? email.trim() : null,
+      passwordHash: null,
       seesAllOffices: role === 'admin' ? Boolean(seesAllOffices) : false,
       canMessageExecutives: (role === 'admin' || role === 'manager') ? false : Boolean(canMessageExecutives),
       isOnline: false,
       online: false,
-      status: 'active',
-      active: true,
+      status: 'invited',
+      active: false,
     };
+
+    const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    const newLink = {
+      token,
+      staffId: newPerson.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+      usedAt: null,
+      wrongConfirmations: 0,
+    };
+
+    newPerson.link = newLink;
 
     setChatState((prev) => {
       const nextStaff = [...prev.staff, newPerson];
@@ -566,6 +777,7 @@ export function ChatProvider({ children }) {
       return {
         ...prev,
         staff: nextStaff,
+        activationLinks: [...(prev.activationLinks || []), newLink],
         lastReadAtByUser: nextReadState,
       };
     });
@@ -635,9 +847,15 @@ export function ChatProvider({ children }) {
     }
   }, [currentUserId, staff]);
 
-  const submitAccessRequest = useCallback(({ name, phone, officeId, requestedRole }) => {
+  const submitAccessRequest = useCallback(({ name, phone, email, officeId, requestedRole }) => {
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return { ok: false, field: 'name', message: 'Full name is required (at least 2 characters).' };
+    }
+
+    const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || trimmedEmail.length > 80 || !emailRegex.test(trimmedEmail)) {
+      return { ok: false, field: 'email', message: 'Please enter a valid email address (maximum 80 characters).' };
     }
 
     const normalised = normalisePhoneNg(phone);
@@ -645,19 +863,11 @@ export function ChatProvider({ children }) {
       return { ok: false, field: 'phone', message: 'Please enter a valid Nigerian phone number (+234 80X XXX XXXX).' };
     }
 
-    // Phone must not belong to an existing staff member (any status)
+    // Silent skip if phone belongs to an existing staff member (any status) or pending/approved request
     const staffMatch = staff.some((s) => normalisePhoneNg(s.phone) === normalised);
-    if (staffMatch) {
-      return { ok: false, field: 'phone', message: 'This number already has an account or a pending request.' };
-    }
-
-    // Phone must not belong to a pending request
     const existingReq = requestForPhone(accessRequests, normalised);
-    if (existingReq) {
-      if (existingReq.status === 'pending' || existingReq.status === 'approved') {
-        return { ok: false, field: 'phone', message: 'This number already has an account or a pending request.' };
-      }
-      // If status is 'declined', we will replace that request!
+    if (staffMatch || (existingReq && (existingReq.status === 'pending' || existingReq.status === 'approved'))) {
+      return { ok: true, silentSkip: true };
     }
 
     const allowedRoles = ['agent', 'support', 'intern'];
@@ -682,6 +892,7 @@ export function ChatProvider({ children }) {
     const newRequest = {
       id,
       name: name.trim(),
+      email: trimmedEmail,
       phone: normalised,
       officeId,
       requestedRole,
@@ -717,6 +928,7 @@ export function ChatProvider({ children }) {
       name: targetReq.name,
       callName: callName || (targetReq.name.trim().split(/\s+/)[0] || ''),
       phone: targetReq.phone,
+      email: targetReq.email || null,
       role: chosenRole,
       office: chosenOffice,
       officeId: chosenOffice,
@@ -1611,6 +1823,13 @@ export function ChatProvider({ children }) {
     typingStatus,
     clearTypingTimer,
     login,
+    signIn,
+    activateAccount,
+    requestPasswordReset,
+    resetPassword,
+    changePassword,
+    activationLinks,
+    resetLinks,
     logout,
     switchUser,
     sendMessage,
@@ -1662,6 +1881,13 @@ export function ChatProvider({ children }) {
     typingStatus,
     clearTypingTimer,
     login,
+    signIn,
+    activateAccount,
+    requestPasswordReset,
+    resetPassword,
+    changePassword,
+    activationLinks,
+    resetLinks,
     logout,
     switchUser,
     sendMessage,

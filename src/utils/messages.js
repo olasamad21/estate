@@ -116,8 +116,24 @@ export function getUnregisteredPhoneLoginErrorMessage() {
   return 'This number is not registered. Request access below.';
 }
 
-export function getAccessRequestApprovedMessage(name = '') {
-  return name ? `${name} approved and added to workspace` : 'Access request approved';
+export function getAccessRequestApprovedMessage() {
+  return 'Approved. An activation email is ready to send.';
+}
+
+export function getBrowserCannotSetPasswordMessage() {
+  return 'This browser cannot set a password in the demo';
+}
+
+export function getAccountActivatedMessage() {
+  return 'Account activated. Welcome.';
+}
+
+export function getPasswordUpdatedSignInMessage() {
+  return 'Password updated. Sign in with your new password.';
+}
+
+export function getPasswordUpdatedMessage() {
+  return 'Password updated.';
 }
 
 export function getAccessRequestDeclinedMessage(name = '') {

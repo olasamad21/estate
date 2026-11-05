@@ -976,7 +976,7 @@ export function AdminView() {
   const staffCounts = useMemo(() => {
     const counts = {
       all: staff.length,
-      deactivated: staff.filter((s) => !isStaffActive(s)).length,
+      deactivated: staff.filter((s) => s.status === 'deactivated').length,
     };
     (COMPANY_CONFIG.offices || []).forEach((o) => {
       counts[o.id] = staff.filter((s) => (s.officeId || s.office) === o.id).length;
@@ -988,7 +988,7 @@ export function AdminView() {
   const filteredStaff = useMemo(() => {
     let list = staff;
     if (staffFilter === 'deactivated') {
-      list = list.filter((s) => !isStaffActive(s));
+      list = list.filter((s) => s.status === 'deactivated');
     } else if (staffFilter !== 'all') {
       list = list.filter((s) => (s.officeId || s.office) === staffFilter);
     }

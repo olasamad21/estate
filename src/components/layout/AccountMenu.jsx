@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus } from 'lucide-react';
+import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus, KeyRound } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
@@ -14,6 +14,7 @@ import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
 import { TextSizeDrawer } from '../../features/settings/TextSizeDrawer.jsx';
+import { ChangePasswordDrawer } from '../../features/auth/ChangePasswordDrawer.jsx';
 
 export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const { currentUser, logout, accessRequests } = useChat();
@@ -23,6 +24,7 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
   const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const pendingRequestsCount = useMemo(() => {
     return canUseAdmin(currentUser) ? pendingRequests(accessRequests).length : 0;
@@ -154,6 +156,19 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
               <span className="text-xs text-ink-muted">{textSizeLabel}</span>
             </button>
 
+            {/* Change password */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setIsChangePasswordOpen(true);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <KeyRound className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Change password</span>
+            </button>
+
             {/* Admin (Admins only) */}
             {canUseAdmin(currentUser) && (
               <button
@@ -221,6 +236,12 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
       <TextSizeDrawer
         isOpen={isTextSizeOpen}
         onClose={() => setIsTextSizeOpen(false)}
+      />
+
+      {/* Change Password Drawer */}
+      <ChangePasswordDrawer
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
     </>
   );

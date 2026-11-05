@@ -42,11 +42,26 @@ export function officeLabelOf(officeId) {
 }
 
 /**
- * Checks if a staff user is active (not deactivated).
+ * Checks if a staff user is active.
+ * Only users with status 'active' are considered active/present.
  */
 export function isStaffActive(user) {
   if (!user) return false;
-  return user.active !== false && user.status !== 'deactivated';
+  return user.status === 'active';
+}
+
+/**
+ * Returns the state of an activation or reset link.
+ * Returns 'valid', 'used', 'expired', or 'locked' (locked when wrongConfirmations >= 3).
+ */
+export function linkState(link, now = new Date().toISOString()) {
+  if (!link) return 'unknown';
+  if ((link.wrongConfirmations ?? 0) >= 3) return 'locked';
+  if (link.usedAt) return 'used';
+  const expiresAtMs = new Date(link.expiresAt).getTime();
+  const nowMs = new Date(now).getTime();
+  if (isNaN(expiresAtMs) || nowMs >= expiresAtMs) return 'expired';
+  return 'valid';
 }
 
 /**
@@ -688,7 +703,7 @@ export function lastMessage(channelId, messages = []) {
  * Checks for @CallName (e.g. @Ruth, @Fortune) or @all in text or caption.
  */
 export function mentionsUser(message, user) {
-  if (!message || !user || message.deletedAt) return false;
+  if (!message || !user || !isStaffActive(user) || message.deletedAt) return false;
   const callName = callNameOf(user);
   if (!callName) return false;
   const regex = new RegExp(`@(?:${callName}|all)\\b`, 'i');

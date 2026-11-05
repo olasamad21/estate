@@ -6,6 +6,9 @@ import { useChat } from './context/ChatContext.jsx';
 import { AppToastBridge } from './components/common/AppToastBridge.jsx';
 import { AppLayout } from './components/layout/AppLayout.jsx';
 import { LoginView } from './features/auth/LoginView.jsx';
+import { ActivateView } from './features/auth/ActivateView.jsx';
+import { ForgotView } from './features/auth/ForgotView.jsx';
+import { ResetPasswordView } from './features/auth/ResetPasswordView.jsx';
 import { ChannelListView } from './features/chat/ChannelListView.jsx';
 import { ChatAreaView } from './features/chat/ChatAreaView.jsx';
 import { AdminView } from './features/admin/AdminView.jsx';
@@ -60,6 +63,22 @@ function AppContent() {
           element={
             isAuthenticated ? <Navigate to="/channels" replace /> : <LoginView />
           }
+        />
+
+        {/* Public Activation Route (works whether or not someone is signed in) */}
+        <Route
+          path="/activate/:token"
+          element={<ActivateView />}
+        />
+
+        {/* Public Forgot & Reset Routes */}
+        <Route
+          path="/forgot"
+          element={<ForgotView />}
+        />
+        <Route
+          path="/reset/:token"
+          element={<ResetPasswordView />}
         />
 
         {/* Authenticated Workspace Routes */}

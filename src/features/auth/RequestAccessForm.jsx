@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, User, CheckCircle2 } from 'lucide-react';
+import { Phone, User, CheckCircle2, Mail } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { Button } from '../../components/common/Button.jsx';
@@ -15,6 +15,7 @@ export function RequestAccessForm({ onBackToSignIn }) {
   const { submitAccessRequest } = useChat();
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+234 ');
   const [officeId, setOfficeId] = useState(COMPANY_CONFIG?.offices?.[0]?.id || 'hq');
   const [requestedRole, setRequestedRole] = useState('agent');
@@ -31,6 +32,11 @@ export function RequestAccessForm({ onBackToSignIn }) {
       newErrors.name = 'Full name is required (at least 2 characters).';
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || email.trim().length > 80 || !emailRegex.test(email.trim())) {
+      newErrors.email = 'Please enter a valid email address (up to 80 characters).';
+    }
+
     const normalised = normalisePhoneNg(phone);
     if (!normalised || !isValidPhoneNg(phone)) {
       newErrors.phone = 'Please enter a valid Nigerian phone number (+234 80X XXX XXXX).';
@@ -43,6 +49,7 @@ export function RequestAccessForm({ onBackToSignIn }) {
 
     const result = submitAccessRequest({
       name: name.trim(),
+      email: email.trim(),
       phone: phone.trim(),
       officeId,
       requestedRole,
@@ -65,9 +72,9 @@ export function RequestAccessForm({ onBackToSignIn }) {
           <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-base font-bold text-ink tracking-tight">Request sent</h2>
+          <h2 className="text-base font-bold text-ink tracking-tight">Request received</h2>
           <p className="text-xs text-ink-muted leading-relaxed max-w-xs mx-auto">
-            We will let your admin know. You can sign in once your request is approved.
+            If your details are approved, you will get an email with a link to activate your account.
           </p>
         </div>
         <Button
@@ -122,6 +129,38 @@ export function RequestAccessForm({ onBackToSignIn }) {
           {errors.name && (
             <p className="text-xs text-status-danger" role="alert">
               {errors.name}
+            </p>
+          )}
+        </div>
+
+        {/* Email Address */}
+        <div className="space-y-1.5">
+          <label htmlFor="request-email" className="block text-xs font-semibold text-ink">
+            Email address
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
+              <Mail className="w-4 h-4" aria-hidden="true" />
+            </div>
+            <input
+              id="request-email"
+              name="request_email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (touched && errors.email) {
+                  setErrors((prev) => ({ ...prev, email: null }));
+                }
+              }}
+              placeholder="name@example.com"
+              required
+              className="w-full pl-9 pr-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+            />
+          </div>
+          {errors.email && (
+            <p className="text-xs text-status-danger" role="alert">
+              {errors.email}
             </p>
           )}
         </div>

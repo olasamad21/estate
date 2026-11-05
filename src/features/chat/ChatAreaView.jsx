@@ -15,6 +15,7 @@ import {
   siteSummary,
   unreadCount,
   canAddProperty,
+  isStaffActive,
 } from '../../utils/chat.js';
 import { formatDayLabelNg, formatNaira } from '../../utils/formatters.js';
 import { useToast } from '../../components/common/useToast.js';
@@ -281,6 +282,11 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     if (!channel) return [];
     return channelMembersFor(channel, staff);
   }, [channel, staff]);
+
+  // Active staff count for announcement read receipt calculations
+  const activeStaffCount = useMemo(() => {
+    return staff.filter((s) => isStaffActive(s)).length;
+  }, [staff]);
 
   // Keep selected thread message updated from latest state
   const currentThreadParentMessage = useMemo(() => {
@@ -728,7 +734,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                       currentUser={currentUser}
                       channel={channel}
                       repliesCount={threadReplies(messages, msg.id).length}
-                      totalStaffCount={staff.length}
+                      totalStaffCount={activeStaffCount}
                       onOpenActions={() => setSelectedActionMessage(msg)}
                       onOpenThread={() => setSelectedThreadMessage(msg)}
                       onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}

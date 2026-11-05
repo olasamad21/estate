@@ -17,7 +17,7 @@ export const DEPARTMENTS = [
 ];
 
 // Call names are guesses. Confirm with the company.
-export const STAFF = [
+const RAW_STAFF = [
   {
     id: "ruth",
     name: "Ruth Obasanjo",
@@ -721,6 +721,32 @@ export const STAFF = [
     status: "active",
     isOnline: true,
     // Lets non-managers start a direct message with executives. Admins and managers can already message anyone.
+    canMessageExecutives: false,
+  },
+];
+
+export const STAFF = [
+  ...RAW_STAFF.map((s) => ({
+    ...s,
+    email: null,
+    passwordHash: null,
+  })),
+  {
+    id: "yusuf-danjuma",
+    name: "Yusuf Danjuma",
+    callName: "Yusuf",
+    role: "intern",
+    title: "Intern, Port Harcourt",
+    department: "Interns",
+    officeId: "port-harcourt",
+    office: "port-harcourt",
+    seesAllOffices: false,
+    phone: "+2340000000102",
+    email: "yusuf.danjuma@example.com",
+    passwordHash: null,
+    status: "invited",
+    active: false,
+    isOnline: false,
     canMessageExecutives: false,
   },
 ];
