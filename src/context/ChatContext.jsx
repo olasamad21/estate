@@ -5,6 +5,7 @@ import { STAFF, ROLE_LABELS } from '../mock/staff.js';
 import { CHANNELS } from '../mock/channels.js';
 import { SEED_MESSAGES } from '../mock/chatSeed.js';
 import { SEED_ACCESS_REQUESTS, SEED_ACTIVATION_LINKS } from '../mock/accessRequests.js';
+import { SEED_ACTIVITY_LOG } from '../mock/activityLog.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
 import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty } from '../utils/chat.js';
@@ -37,7 +38,7 @@ import {
   getPropertyCreatedMessage,
 } from '../utils/messages.js';
 
-const CHAT_STATE_VERSION = 'chat-20';
+const CHAT_STATE_VERSION = 'chat-21';
 
 const DEFAULT_USER_NOTIFY_PREFS = {
   mutedChannelIds: [],
@@ -45,6 +46,22 @@ const DEFAULT_USER_NOTIFY_PREFS = {
   quietStart: '21:00',
   quietEnd: '07:00',
 };
+
+function prependActivity(log = [], entry) {
+  if (!entry) return log;
+  return [entry, ...log].slice(0, 200);
+}
+
+function createActivityEntry({ type, actorId, subject, detail }) {
+  return {
+    id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    at: new Date().toISOString(),
+    actorId: actorId || 'ruth',
+    type,
+    subject: subject || 'Action',
+    detail: detail || '',
+  };
+}
 
 function buildInitialReadState(staffList = STAFF, channelList = CHANNELS) {
   const seedThreshold = minutesFromNow(-300);
@@ -63,7 +80,7 @@ const ChatContext = createContext(null);
 export function ChatProvider({ children }) {
   const { showToast } = useToast();
 
-  // 1. Chat state (messages, staff, channels, accessRequests, activationLinks, resetLinks & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
+  // 1. Chat state (messages, staff, channels, accessRequests, activationLinks, resetLinks, activityLog & lastReadAtByUser persisted in safeSessionStorage as 'chat_state')
   const [chatState, setChatState] = useState(() => {
     const stored = safeSessionStorage.get('chat_state', null);
     if (
@@ -75,6 +92,7 @@ export function ChatProvider({ children }) {
       Array.isArray(stored.accessRequests) &&
       Array.isArray(stored.activationLinks) &&
       Array.isArray(stored.resetLinks) &&
+      Array.isArray(stored.activityLog) &&
       stored.lastReadAtByUser
     ) {
       return stored;
@@ -87,6 +105,7 @@ export function ChatProvider({ children }) {
       accessRequests: SEED_ACCESS_REQUESTS,
       activationLinks: SEED_ACTIVATION_LINKS,
       resetLinks: [],
+      activityLog: SEED_ACTIVITY_LOG,
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
   });
@@ -97,6 +116,7 @@ export function ChatProvider({ children }) {
   const accessRequests = chatState.accessRequests;
   const activationLinks = useMemo(() => chatState.activationLinks || [], [chatState.activationLinks]);
   const resetLinks = useMemo(() => chatState.resetLinks || [], [chatState.resetLinks]);
+  const activityLog = useMemo(() => chatState.activityLog || [], [chatState.activityLog]);
   const lastReadAtByUser = chatState.lastReadAtByUser;
 
   // Session-only login attempt counters for lockout calculation (never in localStorage)
@@ -704,6 +724,7 @@ export function ChatProvider({ children }) {
       accessRequests: SEED_ACCESS_REQUESTS,
       activationLinks: SEED_ACTIVATION_LINKS,
       resetLinks: [],
+      activityLog: SEED_ACTIVITY_LOG,
       lastReadAtByUser: buildInitialReadState(STAFF, CHANNELS),
     };
     setChatState(fresh);
@@ -711,6 +732,20 @@ export function ChatProvider({ children }) {
     setIsOffline(false);
     safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
+
+  const logActivity = useCallback(({ type, actorId, subject, detail }) => {
+    const entry = createActivityEntry({
+      type,
+      actorId: actorId || currentUserId || 'ruth',
+      subject,
+      detail,
+    });
+    setChatState((prev) => ({
+      ...prev,
+      activityLog: prependActivity(prev.activityLog, entry),
+    }));
+    return entry;
+  }, [currentUserId]);
 
   const addStaff = useCallback(({ name, callName, phone, role, office, officeId, department, title, email, seesAllOffices, canMessageExecutives }) => {
     const effectiveOfficeId = officeId || office || 'hq';
@@ -765,6 +800,13 @@ export function ChatProvider({ children }) {
 
     newPerson.link = newLink;
 
+    const entry = createActivityEntry({
+      type: 'staff_added',
+      actorId: currentUserId || 'ruth',
+      subject: newPerson.name,
+      detail: `${roleLabel}, ${officeName}`,
+    });
+
     setChatState((prev) => {
       const nextStaff = [...prev.staff, newPerson];
       const nextReadState = { ...prev.lastReadAtByUser };
@@ -779,13 +821,48 @@ export function ChatProvider({ children }) {
         staff: nextStaff,
         activationLinks: [...(prev.activationLinks || []), newLink],
         lastReadAtByUser: nextReadState,
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
     return newPerson;
-  }, [staff]);
+  }, [staff, currentUserId]);
 
-  const updateStaff = useCallback((staffId, { role, office, officeId, department, title, seesAllOffices, callName, canMessageExecutives }) => {
+  const updateStaff = useCallback((staffId, { role, office, officeId, department, title, email, seesAllOffices, callName, canMessageExecutives }) => {
+    const targetStaff = staff.find((s) => s.id === staffId);
+    let entry = null;
+
+    if (targetStaff) {
+      const effectiveOfficeId = officeId || office || targetStaff.officeId;
+      const targetRole = role || targetStaff.role;
+      const roleLabel = ROLE_LABELS[targetRole] || targetRole;
+      const officeObj = (COMPANY_CONFIG.offices || []).find((o) => o.id === effectiveOfficeId);
+      const officeName = officeObj ? officeObj.name : 'Head Quarters';
+
+      if (role && role !== targetStaff.role) {
+        entry = createActivityEntry({
+          type: 'role_or_office_changed',
+          actorId: currentUserId || 'ruth',
+          subject: targetStaff.name,
+          detail: `Role changed to ${roleLabel}`,
+        });
+      } else if (effectiveOfficeId && effectiveOfficeId !== targetStaff.officeId) {
+        entry = createActivityEntry({
+          type: 'role_or_office_changed',
+          actorId: currentUserId || 'ruth',
+          subject: targetStaff.name,
+          detail: `Office updated to ${officeName}`,
+        });
+      } else if (department && department !== targetStaff.department) {
+        entry = createActivityEntry({
+          type: 'department_changed',
+          actorId: currentUserId || 'ruth',
+          subject: targetStaff.name,
+          detail: `Department changed to ${department}`,
+        });
+      }
+    }
+
     setChatState((prev) => {
       const nextStaff = prev.staff.map((s) => {
         if (s.id !== staffId) return s;
@@ -799,6 +876,7 @@ export function ChatProvider({ children }) {
         return {
           ...s,
           ...(callName ? { callName: callName.trim() } : {}),
+          ...(email !== undefined ? { email: email ? email.trim() : null } : {}),
           role: targetRole,
           office: effectiveOfficeId,
           officeId: effectiveOfficeId,
@@ -814,11 +892,20 @@ export function ChatProvider({ children }) {
       return {
         ...prev,
         staff: nextStaff,
+        ...(entry ? { activityLog: prependActivity(prev.activityLog, entry) } : {}),
       };
     });
-  }, []);
+  }, [staff, currentUserId]);
 
   const setStaffActive = useCallback((staffId, active) => {
+    const target = staff.find((s) => s.id === staffId);
+    const entry = createActivityEntry({
+      type: active ? 'reactivated' : 'deactivated',
+      actorId: currentUserId || 'ruth',
+      subject: target?.name || 'Staff member',
+      detail: active ? 'Account reactivated' : 'Account deactivated',
+    });
+
     setChatState((prev) => {
       const nextStaff = prev.staff.map((s) => {
         if (s.id !== staffId) return s;
@@ -832,6 +919,7 @@ export function ChatProvider({ children }) {
       return {
         ...prev,
         staff: nextStaff,
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
@@ -918,6 +1006,181 @@ export function ChatProvider({ children }) {
     return { ok: true };
   }, [staff, accessRequests]);
 
+  const sendActivationLink = useCallback((staffId) => {
+    const target = staff.find((s) => s.id === staffId);
+    if (!target) return null;
+
+    const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    const nowIso = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+    const newLink = {
+      token,
+      staffId: target.id,
+      createdAt: nowIso,
+      expiresAt,
+      usedAt: null,
+      wrongConfirmations: 0,
+    };
+
+    const entry = createActivityEntry({
+      type: 'activation_link_sent',
+      actorId: currentUserId || 'ruth',
+      subject: target.name,
+      detail: 'Sent new activation link',
+    });
+
+    setChatState((prev) => {
+      const nextLinks = (prev.activationLinks || []).map((l) => {
+        if (l.staffId === target.id && !l.usedAt) {
+          return { ...l, expiresAt: nowIso };
+        }
+        return l;
+      });
+
+      return {
+        ...prev,
+        activationLinks: [...nextLinks, newLink],
+        activityLog: prependActivity(prev.activityLog, entry),
+      };
+    });
+
+    return { ok: true, link: newLink, person: target };
+  }, [staff, currentUserId]);
+
+  const sendPasswordResetLink = useCallback((staffId) => {
+    const target = staff.find((s) => s.id === staffId);
+    if (!target) return null;
+
+    const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `reset-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    const nowIso = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    const newLink = {
+      token,
+      staffId: target.id,
+      createdAt: nowIso,
+      expiresAt,
+      usedAt: null,
+    };
+
+    const entry = createActivityEntry({
+      type: 'password_reset_link_sent',
+      actorId: currentUserId || 'ruth',
+      subject: target.name,
+      detail: 'Sent password reset link',
+    });
+
+    setChatState((prev) => {
+      const nextLinks = (prev.resetLinks || []).map((l) => {
+        if (l.staffId === target.id && !l.usedAt) {
+          return { ...l, expiresAt: nowIso };
+        }
+        return l;
+      });
+
+      return {
+        ...prev,
+        resetLinks: [...nextLinks, newLink],
+        activityLog: prependActivity(prev.activityLog, entry),
+      };
+    });
+
+    return { ok: true, link: newLink, person: target };
+  }, [staff, currentUserId]);
+
+  const importStaff = useCallback((rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return 0;
+
+    const nowIso = new Date().toISOString();
+    const newStaffList = [];
+    const newLinksList = [];
+    const currentStaffSlugs = new Set(staff.map((s) => s.id));
+
+    rows.forEach((row) => {
+      const effectiveCallName = (row.callName || row.name.trim().split(/\s+/)[0] || 'staff').trim();
+      const baseSlug = slugify(effectiveCallName) || slugify(row.name);
+      let id = baseSlug || 'staff';
+      let counter = 2;
+      while (currentStaffSlugs.has(id)) {
+        id = `${baseSlug}-${counter}`;
+        counter++;
+      }
+      currentStaffSlugs.add(id);
+
+      const token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      const newPerson = {
+        id,
+        name: row.name.trim(),
+        callName: effectiveCallName,
+        role: row.role || 'agent',
+        title: row.title || `${ROLE_LABELS[row.role || 'agent']}, ${row.officeName || 'Head Quarters'}`,
+        department: row.department || 'Sales',
+        officeId: row.officeId || 'hq',
+        office: row.officeId || 'hq',
+        phone: normalisePhoneNg(row.phone),
+        email: row.email ? row.email.trim() : null,
+        passwordHash: null,
+        seesAllOffices: row.role === 'admin',
+        canMessageExecutives: false,
+        isOnline: false,
+        online: false,
+        status: 'invited',
+        active: false,
+      };
+
+      const link = {
+        token,
+        staffId: newPerson.id,
+        createdAt: nowIso,
+        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        usedAt: null,
+        wrongConfirmations: 0,
+      };
+
+      newPerson.link = link;
+      newStaffList.push(newPerson);
+      newLinksList.push(link);
+    });
+
+    const entry = createActivityEntry({
+      type: 'staff_imported',
+      actorId: currentUserId || 'ruth',
+      subject: `${newStaffList.length} accounts`,
+      detail: 'Imported staff members',
+    });
+
+    setChatState((prev) => {
+      const nextReadState = { ...prev.lastReadAtByUser };
+      const seedThreshold = minutesFromNow(-300);
+      newStaffList.forEach((person) => {
+        nextReadState[person.id] = {};
+        prev.channels.forEach((ch) => {
+          nextReadState[person.id][ch.id] = seedThreshold;
+        });
+      });
+
+      return {
+        ...prev,
+        staff: [...prev.staff, ...newStaffList],
+        activationLinks: [...(prev.activationLinks || []), ...newLinksList],
+        lastReadAtByUser: nextReadState,
+        activityLog: prependActivity(prev.activityLog, entry),
+      };
+    });
+
+    return newStaffList.length;
+  }, [staff, currentUserId]);
+
   const approveAccessRequest = useCallback((id, { role, officeId, department, callName, title, canMessageExecutives } = {}) => {
     const targetReq = accessRequests.find((r) => r.id === id);
     if (!targetReq) return null;
@@ -938,6 +1201,13 @@ export function ChatProvider({ children }) {
     });
 
     const decidedAt = new Date().toISOString();
+    const entry = createActivityEntry({
+      type: 'request_approved',
+      actorId: currentUserId || 'ruth',
+      subject: targetReq.name,
+      detail: `Approved request for ${ROLE_LABELS[chosenRole] || chosenRole}`,
+    });
+
     setChatState((prev) => {
       const prevReqs = Array.isArray(prev.accessRequests) ? prev.accessRequests : [];
       return {
@@ -947,14 +1217,23 @@ export function ChatProvider({ children }) {
             ? { ...r, status: 'approved', decidedAt }
             : r
         ),
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
     return newPerson;
-  }, [accessRequests, addStaff]);
+  }, [accessRequests, addStaff, currentUserId]);
 
   const declineAccessRequest = useCallback((id) => {
+    const targetReq = accessRequests.find((r) => r.id === id);
     const decidedAt = new Date().toISOString();
+    const entry = createActivityEntry({
+      type: 'request_declined',
+      actorId: currentUserId || 'ruth',
+      subject: targetReq?.name || 'Applicant',
+      detail: 'Declined access request',
+    });
+
     setChatState((prev) => {
       const prevReqs = Array.isArray(prev.accessRequests) ? prev.accessRequests : [];
       return {
@@ -962,9 +1241,10 @@ export function ChatProvider({ children }) {
         accessRequests: prevReqs.map((r) =>
           r.id === id ? { ...r, status: 'declined', decidedAt } : r
         ),
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
-  }, []);
+  }, [accessRequests, currentUserId]);
 
   const createChannel = useCallback(({ name, kind, officeId, description, memberIds, title, area, priceNgn, status, sendPolicy }) => {
     const isListing = kind === 'listing';
@@ -1033,6 +1313,13 @@ export function ChatProvider({ children }) {
       status: 'sent',
     };
 
+    const entry = createActivityEntry({
+      type: 'channel_created',
+      actorId: currentUserId || 'ruth',
+      subject: isListing ? (title || name) : `#${newChannel.name}`,
+      detail: isListing ? 'Property room created' : `${newChannel.kind} channel created`,
+    });
+
     setChatState((prev) => {
       const nextChannels = [...prev.channels, newChannel];
       const nextMessages = [...prev.messages, systemMsg];
@@ -1051,6 +1338,7 @@ export function ChatProvider({ children }) {
         channels: nextChannels,
         messages: nextMessages,
         lastReadAtByUser: nextReadState,
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
@@ -1156,10 +1444,18 @@ export function ChatProvider({ children }) {
       status: 'sent',
     };
 
+    const entry = createActivityEntry({
+      type: 'site_created',
+      actorId: currentUserId || 'ruth',
+      subject: cleanTitle,
+      detail: 'Site created',
+    });
+
     setChatState((prev) => ({
       ...prev,
       channels: [...prev.channels, newSite],
       messages: [...prev.messages, systemMsg],
+      activityLog: prependActivity(prev.activityLog, entry),
     }));
 
     showToast(getSiteCreatedMessage(cleanTitle));
@@ -1338,10 +1634,18 @@ export function ChatProvider({ children }) {
       status: 'sent',
     };
 
+    const entry = createActivityEntry({
+      type: 'property_created',
+      actorId: currentUserId || 'ruth',
+      subject: cleanTitle,
+      detail: `Property added to ${siteChannel.title || 'site'}`,
+    });
+
     setChatState((prev) => ({
       ...prev,
       channels: [...prev.channels, newProperty],
       messages: [...prev.messages, propSysMsg, siteSysMsg],
+      activityLog: prependActivity(prev.activityLog, entry),
     }));
 
     showToast(getPropertyCreatedMessage(cleanTitle));
@@ -1459,6 +1763,15 @@ export function ChatProvider({ children }) {
     setChatState((prev) => {
       const targetChannel = prev.channels.find((ch) => ch.id === channelId);
       const isSite = targetChannel?.kind === 'site';
+      const entry = createActivityEntry({
+        type: archived ? 'channel_archived' : 'channel_unarchived',
+        actorId: currentUserId || 'ruth',
+        subject: targetChannel?.kind === 'listing' || targetChannel?.kind === 'site'
+          ? (targetChannel?.title || targetChannel?.name || 'Property')
+          : `#${targetChannel?.name || 'channel'}`,
+        detail: archived ? 'Channel archived' : 'Channel unarchived',
+      });
+
       const nextChannels = prev.channels.map((ch) => {
         if (ch.id === channelId) {
           return {
@@ -1478,9 +1791,10 @@ export function ChatProvider({ children }) {
       return {
         ...prev,
         channels: nextChannels,
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
-  }, []);
+  }, [currentUserId]);
 
   const setChannelAdmin = useCallback((channelId, staffId, makeAdmin) => {
     if (!channelId || !staffId || !currentUser) return 'Invalid request.';
@@ -1538,6 +1852,13 @@ export function ChatProvider({ children }) {
       status: 'sent',
     };
 
+    const entry = createActivityEntry({
+      type: 'channel_admin_changed',
+      actorId: currentUserId || 'ruth',
+      subject: channel.kind === 'listing' || channel.kind === 'site' ? (channel.title || channel.name) : `#${channel.name}`,
+      detail: `${targetCallName} ${makeAdmin ? 'promoted to' : 'removed from'} channel admin`,
+    });
+
     setChatState((prev) => {
       const nextChannels = prev.channels.map((ch) =>
         ch.id === channelId ? { ...ch, adminIds: nextAdminIds } : ch
@@ -1546,6 +1867,7 @@ export function ChatProvider({ children }) {
         ...prev,
         channels: nextChannels,
         messages: [...prev.messages, systemMsg],
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
@@ -1556,7 +1878,7 @@ export function ChatProvider({ children }) {
     }
 
     return null;
-  }, [currentUser, channels, staff, showToast]);
+  }, [currentUser, currentUserId, channels, staff, showToast]);
 
   const setChannelSendPolicy = useCallback((channelId, policy) => {
     if (!channelId || !currentUser) return;
@@ -1586,6 +1908,13 @@ export function ChatProvider({ children }) {
       status: 'sent',
     };
 
+    const entry = createActivityEntry({
+      type: 'send_policy_changed',
+      actorId: currentUserId || 'ruth',
+      subject: channel.kind === 'listing' || channel.kind === 'site' ? (channel.title || channel.name) : `#${channel.name}`,
+      detail: `Posting policy set to ${policy}`,
+    });
+
     setChatState((prev) => {
       const nextChannels = prev.channels.map((ch) =>
         ch.id === channelId ? { ...ch, sendPolicy: policy } : ch
@@ -1594,11 +1923,12 @@ export function ChatProvider({ children }) {
         ...prev,
         channels: nextChannels,
         messages: [...prev.messages, systemMsg],
+        activityLog: prependActivity(prev.activityLog, entry),
       };
     });
 
     showToast(getChannelSendPolicyChangedMessage(policy));
-  }, [currentUser, channels, showToast]);
+  }, [currentUser, currentUserId, channels, showToast]);
 
   const claimLead = useCallback((messageId) => {
     if (!messageId || !currentUserId) return;
@@ -1866,6 +2196,11 @@ export function ChatProvider({ children }) {
     submitAccessRequest,
     approveAccessRequest,
     declineAccessRequest,
+    activityLog,
+    logActivity,
+    sendActivationLink,
+    sendPasswordResetLink,
+    importStaff,
   }), [
     currentUserId,
     currentUser,
@@ -1924,6 +2259,11 @@ export function ChatProvider({ children }) {
     submitAccessRequest,
     approveAccessRequest,
     declineAccessRequest,
+    activityLog,
+    logActivity,
+    sendActivationLink,
+    sendPasswordResetLink,
+    importStaff,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

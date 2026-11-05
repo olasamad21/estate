@@ -222,3 +222,24 @@ export function getPropertyCreatedMessage(title = '') {
 export function getPropertyUpdatedMessage(title = '') {
   return title ? `${title} updated` : 'Property updated';
 }
+
+export function getLinkCopiedMessage() {
+  return 'Link copied to clipboard';
+}
+
+export function getActivationLinkCopiedMessage() {
+  return 'Activation link copied to clipboard';
+}
+
+export function getActivationLinkSentMessage(name = '') {
+  return name ? `Activation link sent to ${name}` : 'Activation link sent';
+}
+
+export function getPasswordResetLinkSentMessage(name = '') {
+  return name ? `Password reset link sent to ${name}` : 'Password reset link sent';
+}
+
+export function getStaffImportedMessage(count = 0) {
+  return count === 1 ? '1 staff account created' : `${count} staff accounts created`;
+}
+

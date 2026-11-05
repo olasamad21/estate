@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   MoreHorizontal,
+  Upload,
 } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../../components/common/useToast.js';
@@ -22,6 +23,9 @@ import { Avatar } from '../../components/common/Avatar.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { CreateChannelDrawer } from '../chat/CreateChannelDrawer.jsx';
+import { EmailPreviewDrawer } from './EmailPreviewDrawer.jsx';
+import { ImportStaffDrawer } from './ImportStaffDrawer.jsx';
+import { ActivityLogTab } from './ActivityLogTab.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import {
   canUseAdmin,
@@ -47,6 +51,10 @@ import {
   getChannelUnarchivedMessage,
   getAccessRequestApprovedMessage,
   getAccessRequestDeclinedMessage,
+  getActivationLinkCopiedMessage,
+  getActivationLinkSentMessage,
+  getPasswordResetLinkSentMessage,
+  getStaffImportedMessage,
 } from '../../utils/messages.js';
 import { ROLE_LABELS, DEPARTMENTS } from '../../mock/staff.js';
 
@@ -84,6 +92,7 @@ function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
   const [addName, setAddName] = useState('');
   const [addCallName, setAddCallName] = useState('');
   const [addPhone, setAddPhone] = useState('+234 ');
+  const [addEmail, setAddEmail] = useState('');
   const [addRole, setAddRole] = useState('agent');
   const [addDepartment, setAddDepartment] = useState('Sales');
   const [addOffice, setAddOffice] = useState(AVAILABLE_OFFICES[0]?.id || 'hq');
@@ -95,6 +104,7 @@ function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
     addName.trim() ||
     addCallName.trim() ||
     (addPhone.trim() && addPhone.trim() !== '+234') ||
+    addEmail.trim() ||
     addRole !== 'agent' ||
     addDepartment !== 'Sales' ||
     addOffice !== (AVAILABLE_OFFICES[0]?.id || 'hq') ||
@@ -131,8 +141,15 @@ function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
         errs.phone = 'A staff member with this phone number already exists.';
       }
     }
+    const emailTrimmed = addEmail.trim();
+    if (emailTrimmed) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailTrimmed.length > 80 || !emailRegex.test(emailTrimmed)) {
+        errs.email = 'Please enter a valid email address (maximum 80 characters).';
+      }
+    }
     return errs;
-  }, [addName, addCallName, addPhone, addTouched, staff]);
+  }, [addName, addCallName, addPhone, addEmail, addTouched, staff]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -143,6 +160,7 @@ function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
       name: addName.trim(),
       callName: addCallName.trim(),
       phone: addPhone.trim(),
+      email: addEmail.trim() || null,
       role: addRole,
       department: addDepartment,
       office: addOffice,
@@ -221,6 +239,26 @@ function AddStaffDrawer({ isOpen, staff, onSave, onClose }) {
           <p className="text-xs text-status-danger font-medium">{addErrors.phone}</p>
         ) : (
           <p className="text-xs text-ink-muted">Format: +234 80X XXX XXXX</p>
+        )}
+      </div>
+
+      {/* Email (optional) */}
+      <div className="space-y-1.5">
+        <label htmlFor="add-staff-email" className="block text-xs font-semibold text-ink">
+          Email Address <span className="text-ink-muted font-normal">(optional)</span>
+        </label>
+        <input
+          id="add-staff-email"
+          name="staff_email"
+          type="email"
+          maxLength={80}
+          value={addEmail}
+          onChange={(e) => setAddEmail(e.target.value)}
+          placeholder="e.g. aminu@example.com"
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+        />
+        {addErrors.email && (
+          <p className="text-xs text-status-danger font-medium">{addErrors.email}</p>
         )}
       </div>
 
@@ -381,6 +419,7 @@ function EditStaffContent({ isOpen, staff: staffMember, onSave, onClose }) {
   const [editOffice, setEditOffice] = useState(
     staffMember.officeId || staffMember.office || AVAILABLE_OFFICES[0]?.id || 'hq'
   );
+  const [editEmail, setEditEmail] = useState(staffMember.email || '');
   const [editSeesAllOffices, setEditSeesAllOffices] = useState(
     Boolean(staffMember.seesAllOffices)
   );
@@ -388,21 +427,34 @@ function EditStaffContent({ isOpen, staff: staffMember, onSave, onClose }) {
     Boolean(staffMember.canMessageExecutives)
   );
 
+  const editEmailError = useMemo(() => {
+    const trimmed = editEmail.trim();
+    if (!trimmed) return null;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (trimmed.length > 80 || !emailRegex.test(trimmed)) {
+      return 'Please enter a valid email address (maximum 80 characters).';
+    }
+    return null;
+  }, [editEmail]);
+
   const isDirty = Boolean(
     editRole !== staffMember.role ||
     editDepartment !== (staffMember.department || 'Sales') ||
     editOffice !== (staffMember.officeId || staffMember.office || AVAILABLE_OFFICES[0]?.id || 'hq') ||
+    (editEmail.trim() || '') !== (staffMember.email || '') ||
     editSeesAllOffices !== Boolean(staffMember.seesAllOffices) ||
     editCanMessageExecutives !== Boolean(staffMember.canMessageExecutives)
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (editEmailError) return;
     onSave({
       role: editRole,
       department: editDepartment,
       office: editOffice,
       officeId: editOffice,
+      email: editEmail.trim() || null,
       seesAllOffices: editRole === 'admin' ? editSeesAllOffices : false,
       canMessageExecutives: (editRole === 'agent' || editRole === 'support' || editRole === 'intern') ? editCanMessageExecutives : false,
     });
@@ -429,6 +481,26 @@ function EditStaffContent({ isOpen, staff: staffMember, onSave, onClose }) {
           <div className="text-xs font-bold text-ink">{staffMember.name}</div>
           <div className="text-xs text-ink-muted">{formatPhoneNg(staffMember.phone)}</div>
         </div>
+      </div>
+
+      {/* Email (optional) */}
+      <div className="space-y-1.5">
+        <label htmlFor="edit-staff-email" className="block text-xs font-semibold text-ink">
+          Email Address <span className="text-ink-muted font-normal">(optional)</span>
+        </label>
+        <input
+          id="edit-staff-email"
+          name="staff_email"
+          type="email"
+          maxLength={80}
+          value={editEmail}
+          onChange={(e) => setEditEmail(e.target.value)}
+          placeholder="e.g. aminu@example.com"
+          className="w-full min-h-[44px] px-3 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+        />
+        {editEmailError && (
+          <p className="text-xs text-status-danger font-medium">{editEmailError}</p>
+        )}
       </div>
 
       {/* Role Radio Rows */}
@@ -887,6 +959,11 @@ export function AdminView() {
     accessRequests,
     approveAccessRequest,
     declineAccessRequest,
+    activityLog,
+    sendActivationLink,
+    sendPasswordResetLink,
+    importStaff,
+    activationLinks,
   } = useChat();
 
   const navigate = useNavigate();
@@ -946,10 +1023,31 @@ export function AdminView() {
   );
   const [declineModalRequest, setDeclineModalRequest] = useState(null);
   const [isDecidedOpen, setIsDecidedOpen] = useState(false);
-  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | office.id | 'deactivated'
+  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | office.id | 'not_activated' | 'deactivated'
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [staffSearchQuery, setStaffSearchQuery] = useState('');
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
+  const [isImportStaffOpen, setIsImportStaffOpen] = useState(false);
+  const [emailPreviewState, setEmailPreviewState] = useState({
+    isOpen: false,
+    kind: 'activation',
+    person: null,
+    token: '',
+  });
+
+  const openEmailPreview = (kind, person, token) => {
+    setEmailPreviewState({
+      isOpen: true,
+      kind,
+      person,
+      token: token || '',
+    });
+  };
+
+  const closeEmailPreview = () => {
+    setEmailPreviewState((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const [editingStaff, setEditingStaff] = useState(null);
   const [deactivatingStaff, setDeactivatingStaff] = useState(null);
   const [reactivatingStaff, setReactivatingStaff] = useState(null);
@@ -972,10 +1070,17 @@ export function AdminView() {
     });
   };
 
+  const totalActiveStaff = useMemo(() => staff.filter(isStaffActive).length, [staff]);
+  const totalNotActivatedStaff = useMemo(
+    () => staff.filter((s) => s.status === 'invited').length,
+    [staff]
+  );
+
   // Counts for staff filter chips
   const staffCounts = useMemo(() => {
     const counts = {
       all: staff.length,
+      not_activated: staff.filter((s) => s.status === 'invited').length,
       deactivated: staff.filter((s) => s.status === 'deactivated').length,
     };
     (COMPANY_CONFIG.offices || []).forEach((o) => {
@@ -987,7 +1092,9 @@ export function AdminView() {
   // Combined search and chip filter for staff
   const filteredStaff = useMemo(() => {
     let list = staff;
-    if (staffFilter === 'deactivated') {
+    if (staffFilter === 'not_activated') {
+      list = list.filter((s) => s.status === 'invited');
+    } else if (staffFilter === 'deactivated') {
       list = list.filter((s) => s.status === 'deactivated');
     } else if (staffFilter !== 'all') {
       list = list.filter((s) => (s.officeId || s.office) === staffFilter);
@@ -1056,8 +1163,16 @@ export function AdminView() {
 
   const handleAddStaff = (staffData) => {
     const newPerson = addStaff(staffData);
-    showToast(getStaffAddedMessage(newPerson.name));
     setIsAddStaffOpen(false);
+    showToast(getStaffAddedMessage(newPerson.name));
+    const token = newPerson.link?.token || '';
+    openEmailPreview('activation', newPerson, token);
+  };
+
+  const handleImportStaff = (readyRows) => {
+    const count = importStaff(readyRows);
+    showToast(getStaffImportedMessage(count));
+    setStaffFilter('not_activated');
   };
 
   const handleEditStaff = (updatedData) => {
@@ -1138,7 +1253,7 @@ export function AdminView() {
   const handleApprove = () => {
     if (!reviewingRequest) return;
     const req = reviewingRequest;
-    approveAccessRequest(req.id, {
+    const newPerson = approveAccessRequest(req.id, {
       role: reviewRole,
       officeId: reviewOffice,
       department: reviewDepartment,
@@ -1146,6 +1261,10 @@ export function AdminView() {
     });
     setReviewingRequest(null);
     showToast(getAccessRequestApprovedMessage(req.name));
+    if (newPerson) {
+      const token = newPerson.link?.token || '';
+      openEmailPreview('activation', newPerson, token);
+    }
   };
 
   const handleStartDecline = () => {
@@ -1195,7 +1314,7 @@ export function AdminView() {
                     : 'text-ink-soft hover:text-ink'
                 }`}
               >
-                Staff ({staff.length})
+                Staff ({totalActiveStaff})
               </button>
               <button
                 type="button"
@@ -1222,6 +1341,17 @@ export function AdminView() {
               >
                 Channels ({nonDirectChannels.length})
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('activity')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === 'activity'
+                    ? 'bg-surface text-ink shadow-2xs'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                Activity ({activityLog.length})
+              </button>
             </div>
           </div>
         </div>
@@ -1232,7 +1362,22 @@ export function AdminView() {
         <div className="max-w-[56rem] mx-auto space-y-6">
           {activeTab === 'staff' && (
             <div className="space-y-4">
-              {/* Controls bar: search input (full width) + Add staff button */}
+              {/* Staff tab count heading: active + not activated */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <div>
+                  <h2 className="text-base font-bold text-ink">
+                    Staff{' '}
+                    <span className="text-xs font-normal text-ink-muted">
+                      ({totalActiveStaff} active{totalNotActivatedStaff > 0 ? `, ${totalNotActivatedStaff} not activated` : ''})
+                    </span>
+                  </h2>
+                  <p className="text-xs text-ink-muted">
+                    Manage team members, roles, and offices.
+                  </p>
+                </div>
+              </div>
+
+              {/* Controls bar: search input (full width) + Import & Add staff buttons */}
               <div className="flex items-center justify-between gap-2.5 sm:gap-3">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
@@ -1247,20 +1392,33 @@ export function AdminView() {
                     className="w-full h-11 pl-9 pr-3 text-xs bg-surface border border-line rounded-xl text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none"
                   />
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setIsAddStaffOpen(true)}
-                  className="h-11 px-3 sm:px-4 shrink-0 whitespace-nowrap"
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <UserPlus className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    <span>Add staff</span>
-                  </span>
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsImportStaffOpen(true)}
+                    className="h-11 px-3 sm:px-4 shrink-0 whitespace-nowrap"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <Upload className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>Import</span>
+                    </span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsAddStaffOpen(true)}
+                    className="h-11 px-3 sm:px-4 shrink-0 whitespace-nowrap"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserPlus className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>Add staff</span>
+                    </span>
+                  </Button>
+                </div>
               </div>
 
-              {/* Filter chips: All, offices from config, Deactivated + Department select */}
+              {/* Filter chips: All, offices from config, Not activated, Deactivated + Department select */}
               <div className="flex items-center gap-2 flex-wrap">
                 {[
                   { id: 'all', label: 'All', count: staffCounts.all },
@@ -1269,6 +1427,7 @@ export function AdminView() {
                     label: o.name,
                     count: staffCounts[o.id] || 0,
                   })),
+                  { id: 'not_activated', label: 'Not activated', count: staffCounts.not_activated },
                   { id: 'deactivated', label: 'Deactivated', count: staffCounts.deactivated },
                 ].map((chip) => {
                   const isSelected = staffFilter === chip.id;
@@ -1342,14 +1501,22 @@ export function AdminView() {
                   {groupedStaff.map((group) => (
                     <div key={group.office.id} className="space-y-2">
                       <h2 className="text-xs font-bold text-ink-muted uppercase tracking-wider px-1">
-                        {group.office.label || `${group.office.name} office`} ({group.members.length})
+                        {group.office.label || `${group.office.name} office`}{' '}
+                        <span className="normal-case font-normal text-ink-muted">
+                          ({group.members.filter(isStaffActive).length} active
+                          {group.members.filter((s) => s.status === 'invited').length > 0 &&
+                            `, ${group.members.filter((s) => s.status === 'invited').length} not activated`}
+                          )
+                        </span>
                       </h2>
                       <div className="border border-line rounded-2xl bg-surface divide-y divide-line overflow-hidden shadow-2xs">
                         {group.members.map((member) => {
                           const active = isStaffActive(member);
+                          const isInvited = member.status === 'invited';
+                          const isDeactivated = member.status === 'deactivated';
                           const isSelf = member.id === currentUserId;
                           const isOnlyAdmin = member.role === 'admin' && activeAdminCount <= 1;
-                          const canDeactivate = active && !isSelf && !isOnlyAdmin;
+                          const canDeactivate = (active || isInvited) && !isSelf && !isOnlyAdmin;
 
                           let disableReason = '';
                           if (isSelf) {
@@ -1387,7 +1554,7 @@ export function AdminView() {
                                       )}
                                     </div>
 
-                                    {/* Role Badge, Department, and Office caption (and Deactivated badge if inactive) */}
+                                    {/* Role Badge, Department, and Office caption (and badges for Not activated / Deactivated) */}
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <Badge role={member.role}>
                                         {ROLE_LABELS[member.role] || member.role}
@@ -1400,7 +1567,12 @@ export function AdminView() {
                                       <span className="text-xs text-ink-muted">
                                         {officeLabelOf(member.officeId || member.office)}
                                       </span>
-                                      {!active && (
+                                      {isInvited && (
+                                        <Badge variant="warning">
+                                          Not activated
+                                        </Badge>
+                                      )}
+                                      {isDeactivated && (
                                         <Badge variant="danger">
                                           Deactivated
                                         </Badge>
@@ -1479,16 +1651,21 @@ export function AdminView() {
                                   {formatPhoneNg(member.phone)}
                                 </div>
 
-                                {/* Status (only Deactivated gets a badge) */}
-                                <div className="w-24 shrink-0 flex items-center justify-start">
-                                  {!active && (
+                                {/* Status */}
+                                <div className="w-28 shrink-0 flex items-center justify-start">
+                                  {isInvited && (
+                                    <Badge variant="warning">
+                                      Not activated
+                                    </Badge>
+                                  )}
+                                  {isDeactivated && (
                                     <Badge variant="danger">
                                       Deactivated
                                     </Badge>
                                   )}
                                 </div>
 
-                                {/* Actions: Edit and Deactivate/Reactivate as two secondary buttons */}
+                                {/* Actions: Edit and Deactivate/Reactivate as two secondary buttons + More */}
                                 <div className="flex items-center gap-2 shrink-0">
                                   <Button
                                     variant="secondary"
@@ -1507,6 +1684,16 @@ export function AdminView() {
                                     >
                                       Deactivate
                                     </Button>
+                                  ) : isInvited ? (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled={!canDeactivate}
+                                      title={disableReason || undefined}
+                                      onClick={() => setDeactivatingStaff(member)}
+                                    >
+                                      Deactivate
+                                    </Button>
                                   ) : (
                                     <Button
                                       variant="secondary"
@@ -1516,6 +1703,14 @@ export function AdminView() {
                                       Reactivate
                                     </Button>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedStaffForSheet(member)}
+                                    aria-label={`More actions for ${member.name}`}
+                                    className="w-11 h-11 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0"
+                                  >
+                                    <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -1623,6 +1818,10 @@ export function AdminView() {
                         const officeLabel = officeLabelOf(req.officeId);
                         const roleLabel = ROLE_LABELS[req.requestedRole] || req.requestedRole;
                         const isApproved = req.status === 'approved';
+                        const matchedPerson = staff.find(
+                          (s) => s.phone && normalisePhoneNg(s.phone) === normalisePhoneNg(req.phone)
+                        );
+                        const isPersonActivated = matchedPerson ? matchedPerson.status === 'active' : false;
 
                         return (
                           <div
@@ -1651,9 +1850,14 @@ export function AdminView() {
                             </div>
 
                             {isApproved ? (
-                              <Badge variant="success" size="sm">
-                                Approved
-                              </Badge>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <Badge variant="success" size="sm">
+                                  Approved
+                                </Badge>
+                                <span className="text-xs text-ink-muted">
+                                  {isPersonActivated ? 'Activated' : 'Not activated yet'}
+                                </span>
+                              </div>
                             ) : (
                               <Badge variant="neutral" size="sm">
                                 Declined
@@ -1809,6 +2013,10 @@ export function AdminView() {
               </div>
             </div>
           )}
+
+          {activeTab === 'activity' && (
+            <ActivityLogTab activityLog={activityLog} staff={staff} />
+          )}
         </div>
       </main>
 
@@ -1839,9 +2047,11 @@ export function AdminView() {
         {selectedStaffForSheet && (() => {
           const member = selectedStaffForSheet;
           const active = isStaffActive(member);
+          const isInvited = member.status === 'invited';
+          const isDeactivated = member.status === 'deactivated';
           const isSelf = member.id === currentUserId;
           const isOnlyAdmin = member.role === 'admin' && activeAdminCount <= 1;
-          const canDeactivate = active && !isSelf && !isOnlyAdmin;
+          const canDeactivate = (active || isInvited) && !isSelf && !isOnlyAdmin;
 
           let disableReason = '';
           if (isSelf) {
@@ -1872,7 +2082,12 @@ export function AdminView() {
                     <Badge role={member.role}>
                       {ROLE_LABELS[member.role] || member.role}
                     </Badge>
-                    {!active && (
+                    {isInvited && (
+                      <Badge variant="warning">
+                        Not activated
+                      </Badge>
+                    )}
+                    {isDeactivated && (
                       <Badge variant="danger">
                         Deactivated
                       </Badge>
@@ -1881,16 +2096,97 @@ export function AdminView() {
                   <div className="text-xs text-ink-muted">
                     {member.title}
                   </div>
-                  <div className="text-xs text-ink-muted flex items-center gap-2">
+                  <div className="text-xs text-ink-muted flex items-center gap-2 flex-wrap">
                     <span>{officeLabelOf(member.officeId || member.office)}</span>
                     <span>·</span>
                     <span className="tabular-nums tracking-normal">{formatPhoneNg(member.phone)}</span>
+                    {member.email && (
+                      <>
+                        <span>·</span>
+                        <span className="break-all font-mono">{member.email}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Actions as full-width rows (44px) */}
               <div className="space-y-2 pt-1">
+                {isInvited && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = member;
+                        setSelectedStaffForSheet(null);
+                        let link = (activationLinks || []).slice().reverse().find((l) => l.staffId === target.id && !l.usedAt);
+                        let token = link?.token;
+                        if (!token) {
+                          const res = sendActivationLink(target.id);
+                          token = res?.link?.token;
+                        }
+                        openEmailPreview('activation', target, token);
+                      }}
+                      className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      Email preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = member;
+                        setSelectedStaffForSheet(null);
+                        let link = (activationLinks || []).slice().reverse().find((l) => l.staffId === target.id && !l.usedAt);
+                        let token = link?.token;
+                        if (!token) {
+                          const res = sendActivationLink(target.id);
+                          token = res?.link?.token;
+                        }
+                        if (token) {
+                          const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+                          const fullUrl = `${origin}/activate/${token}`;
+                          if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(fullUrl).catch(() => {});
+                          }
+                        }
+                        showToast(getActivationLinkCopiedMessage());
+                      }}
+                      className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      Copy activation link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = member;
+                        setSelectedStaffForSheet(null);
+                        const res = sendActivationLink(target.id);
+                        showToast(getActivationLinkSentMessage(target.name));
+                        openEmailPreview('activation', target, res?.link?.token);
+                      }}
+                      className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      Send new link
+                    </button>
+                  </>
+                )}
+
+                {active && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = member;
+                      setSelectedStaffForSheet(null);
+                      const res = sendPasswordResetLink(target.id);
+                      showToast(getPasswordResetLinkSentMessage(target.name));
+                      openEmailPreview('reset', target, res?.link?.token);
+                    }}
+                    className="w-full h-11 px-4 rounded-xl border border-line bg-surface text-ink font-semibold text-xs flex items-center justify-center hover:bg-surface-raised cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    Send password reset link
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1903,7 +2199,7 @@ export function AdminView() {
                   Edit role and office
                 </button>
 
-                {active ? (
+                {(active || isInvited) ? (
                   <div className="space-y-1.5">
                     <button
                       type="button"
@@ -2161,10 +2457,22 @@ export function AdminView() {
                   role={reviewingRequest.requestedRole}
                   size="lg"
                 />
-                <div className="min-w-0">
+                <div className="min-w-0 space-y-0.5">
                   <h3 className="text-sm font-bold text-ink">{reviewingRequest.name}</h3>
                   <p className="text-xs font-mono text-ink-muted">
                     {formatPhoneNg(reviewingRequest.phone)}
+                  </p>
+                  {reviewingRequest.email ? (
+                    <p className="text-xs font-mono text-ink-soft break-all">
+                      {reviewingRequest.email}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-ink-muted italic">
+                      No email on file
+                    </p>
+                  )}
+                  <p className="text-xs text-ink-muted pt-1">
+                    Approving creates the account and prepares an activation email.
                   </p>
                 </div>
               </div>
@@ -2349,6 +2657,24 @@ export function AdminView() {
           </div>
         </div>
       </Modal>
+
+      {/* Import Staff Drawer */}
+      <ImportStaffDrawer
+        key={`import-staff-${isImportStaffOpen}`}
+        isOpen={isImportStaffOpen}
+        onClose={() => setIsImportStaffOpen(false)}
+        staff={staff}
+        onImport={handleImportStaff}
+      />
+
+      {/* Simulated Email Preview Drawer */}
+      <EmailPreviewDrawer
+        isOpen={emailPreviewState.isOpen}
+        onClose={closeEmailPreview}
+        kind={emailPreviewState.kind}
+        person={emailPreviewState.person}
+        token={emailPreviewState.token}
+      />
     </div>
   );
 }
