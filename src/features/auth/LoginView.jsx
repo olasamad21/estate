@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Phone, Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { ROLE_LABELS } from '../../mock/staff.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
@@ -19,7 +19,8 @@ export function LoginView() {
   const [requestFormKey, setRequestFormKey] = useState(0);
   const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
   const [phone, setPhone] = useState('+234 000 000 0001');
-  const [code, setCode] = useState('123456');
+  const [password, setPassword] = useState('password123');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,8 +44,8 @@ export function LoginView() {
     e.preventDefault();
     setError('');
 
-    if (code.trim().length !== 6) {
-      setError('Please enter a 6-digit code.');
+    if (!password.trim()) {
+      setError('Please enter your password.');
       return;
     }
 
@@ -61,13 +62,13 @@ export function LoginView() {
 
   const handleQuickFill = (staffMember) => {
     setPhone(formatPhoneNg(staffMember.phone));
-    setCode('123456');
+    setPassword('password123');
     setError('');
   };
 
   const handleQuickFillPending = () => {
     setPhone(formatPhoneNg('+2340000000101'));
-    setCode('123456');
+    setPassword('password123');
     setError('');
   };
 
@@ -152,14 +153,14 @@ export function LoginView() {
                 <p className="text-xs text-ink-muted">Format: +234 80X XXX XXXX</p>
               </div>
 
-              {/* 6-Digit Code */}
+              {/* Password */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="staff-code" className="block text-xs font-semibold text-ink">
-                    Verification Code
+                  <label htmlFor="staff-password" className="block text-xs font-semibold text-ink">
+                    Password
                   </label>
                   <span className="text-xs text-ink-muted font-medium">
-                    Demo: use any 6 digits
+                    Demo: any password accepted
                   </span>
                 </div>
                 <div className="relative">
@@ -167,16 +168,28 @@ export function LoginView() {
                     <Lock className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <input
-                    id="staff-code"
-                    name="login_code"
-                    type="text"
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
+                    id="staff-password"
+                    name="login_password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
                     required
-                    className="w-full pl-9 pr-3 py-2 text-xs font-mono tracking-widest bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
+                    autoComplete="current-password"
+                    className="w-full pl-9 pr-11 py-2 text-xs bg-surface border border-line rounded-lg text-ink focus:border-brand focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-muted hover:text-ink transition-colors cursor-pointer min-w-[44px] min-h-[44px] justify-center"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
               </div>
 
