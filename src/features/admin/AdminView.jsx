@@ -1710,11 +1710,6 @@ export function AdminView() {
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="shrink-0">
-                                  <Badge role={member.role}>
-                                    {ROLE_LABELS[member.role] || member.role}
-                                  </Badge>
-                                </div>
 
                                 {/* Office */}{member.showOldDetails && (
                                 <div className="text-xs text-ink-muted shrink-0 w-32">
