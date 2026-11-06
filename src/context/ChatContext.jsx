@@ -567,23 +567,26 @@ export function ChatProvider({ children }) {
     }));
   }, [currentUserId, currentUser, isOffline, channels]);
 
-  const sendFile = useCallback((channelId, { fileName, fileSize, fileKind, caption }) => {
+  const sendFile = useCallback((channelId, { type, fileName, fileSize, fileKind, durationSec, isSample, caption }) => {
     if (!currentUserId || !channelId || !fileName) return null;
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return null;
 
     const trimmedCaption = caption && typeof caption === 'string' && caption.trim() ? caption.trim() : undefined;
     const nowIso = new Date().toISOString();
+    const msgType = type || (fileKind === 'video' ? 'video' : 'file');
     const newMsg = {
       id: `msg-${Date.now()}`,
       channelId,
       senderId: currentUserId,
-      type: 'file',
+      type: msgType,
       fileName,
       fileSize: fileSize || '1.2 MB',
-      fileKind: fileKind || 'document',
+      fileKind: fileKind || (msgType === 'video' ? 'video' : 'document'),
       text: fileName,
       caption: trimmedCaption,
+      durationSec: durationSec ?? null,
+      isSample: Boolean(isSample),
       createdAt: nowIso,
       status: isOffline ? 'queued' : 'sent',
     };

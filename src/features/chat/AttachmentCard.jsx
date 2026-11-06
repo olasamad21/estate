@@ -1,14 +1,17 @@
 import { useRef, useCallback, useMemo } from 'react';
-import { FileText, Download, MoreHorizontal } from 'lucide-react';
+import { FileText, Download, MoreHorizontal, Play } from 'lucide-react';
 import { useToast } from '../../components/common/useToast.js';
 import { getFileDownloadStartedMessage } from '../../utils/messages.js';
+import { getPreviewUrl } from '../../utils/previewUrls.js';
 import { PhotoView } from './PhotoView.jsx';
+import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
 
 export function AttachmentCard({
   message,
   fileName = 'Document.pdf',
   fileSize = '1.5 MB',
   fileKind = 'document',
+  durationSec = null,
   onOpenFileDetail,
   onOpenActions,
 }) {
@@ -22,7 +25,8 @@ export function AttachmentCard({
     fileName,
     fileSize,
     fileKind,
-  }, [message, fileName, fileSize, fileKind]);
+    durationSec,
+  }, [message, fileName, fileSize, fileKind, durationSec]);
 
   const handleLongPress = useCallback(() => {
     if (onOpenActions) {
@@ -62,18 +66,96 @@ export function AttachmentCard({
     }
   }, []);
 
+  const isVideo = message?.type === 'video' || fileKind === 'video';
   const isPhoto = fileKind === 'photo';
   const isPdf = (fileName || '').toLowerCase().endsWith('.pdf');
-  const cleanName = (fileName || 'photo')
+  const cleanName = (fileName || 'attachment')
     .replace(/\.[^/.]+$/, '')
     .replace(/_/g, ' ')
     .trim();
+
+  const durationFormatted = useMemo(() => {
+    const sec = message?.durationSec ?? durationSec;
+    if (typeof sec === 'number' && Number.isFinite(sec)) {
+      const mins = Math.floor(sec / 60);
+      const secs = String(Math.floor(sec % 60)).padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+    return null;
+  }, [message?.durationSec, durationSec]);
+
+  const previewUrl = message?.id ? getPreviewUrl(message.id) : null;
 
   const handleDownload = () => {
     showToast(getFileDownloadStartedMessage(fileName));
   };
 
-  // 1. Photo messages show the 4:3 picture button with top-right More actions button
+  // 1. Video messages show 16:9 thumbnail with centered Play icon and duration pill
+  if (isVideo) {
+    return (
+      <div className="relative inline-block w-full max-w-[280px] sm:max-w-[320px]">
+        <button
+          type="button"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={onTouchEnd}
+          onClick={(e) => {
+            if (didLongPressRef.current) return;
+            e.stopPropagation();
+            onOpenFileDetail?.(filePayload);
+          }}
+          aria-label={`Open video ${cleanName}`}
+          className="relative block w-full aspect-[16/9] rounded-lg border border-line overflow-hidden hover:opacity-95 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand bg-surface-raised"
+        >
+          {previewUrl && !message?.isSample ? (
+            <video
+              src={previewUrl}
+              preload="metadata"
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <PhotoPlaceholder
+              fileName={fileName}
+              className="w-full h-full object-cover"
+            />
+          )}
+
+          {/* Centered Play icon overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-10 h-10 rounded-full bg-surface/85 border border-line flex items-center justify-center text-ink shadow-sm">
+              <Play className="w-5 h-5 fill-current ml-0.5" aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Duration pill at bottom right */}
+          {durationFormatted && (
+            <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-surface/90 border border-line text-xs font-medium text-ink tabular-nums shadow-xs">
+              {durationFormatted}
+            </div>
+          )}
+        </button>
+
+        {onOpenActions && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenActions(filePayload);
+            }}
+            aria-label="Message actions"
+            className="absolute top-1.5 right-1.5 w-11 h-11 rounded-lg bg-surface/90 border border-line hover:border-brand hover:text-brand flex items-center justify-center text-ink-muted transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs z-10"
+          >
+            <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 2. Photo messages show the 4:3 picture button with top-right More actions button
   if (isPhoto) {
     return (
       <div className="relative inline-block w-full max-w-[280px] sm:max-w-[320px]">

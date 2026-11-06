@@ -1,0 +1,19 @@
+{
+  "name": "Da Ace Cribs Staff Chat",
+  "short_name": "Da Ace Cribs",
+  "description": "Private staff messaging for Ace Realm Integrated Services",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0E7C8B",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

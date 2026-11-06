@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Download, MessageSquare, Mic, Trash2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, MessageSquare, Mic, Trash2, AlertTriangle, Play, Pause } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { Button } from '../../components/common/Button.jsx';
@@ -10,12 +10,89 @@ import { canDelete } from '../../utils/chat.js';
 import { getPreviewUrl, setPreviewUrl } from '../../utils/previewUrls.js';
 import { getFileDownloadStartedMessage, getMessageDeletedMessage } from '../../utils/messages.js';
 import { PhotoView } from './PhotoView.jsx';
+import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
 import { DocumentPreview } from './DocumentPreview.jsx';
 
 function formatDuration(sec) {
+  if (sec === null || sec === undefined) return '0:00';
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function SampleVideoPlayer({ file }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const totalSec = file.durationSec || 60;
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const stepMs = 100;
+    const inc = stepMs / (totalSec * 1000);
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        const next = prev + inc;
+        if (next >= 1) {
+          setIsPlaying(false);
+          return 1;
+        }
+        return next;
+      });
+    }, stepMs);
+    return () => clearInterval(timer);
+  }, [isPlaying, totalSec]);
+
+  const handleTogglePlay = () => {
+    if (progress >= 1) {
+      setProgress(0);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying((prev) => !prev);
+    }
+  };
+
+  const currentSec = Math.min(totalSec, Math.floor(progress * totalSec));
+
+  return (
+    <div className="w-full bg-surface-raised border border-line rounded-2xl p-3 space-y-3">
+      <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-surface border border-line flex items-center justify-center">
+        <PhotoPlaceholder
+          fileName={file.fileName}
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      {/* Progress bar */}
+      <div className="space-y-1.5">
+        <div className="w-full bg-line rounded-full h-1.5 overflow-hidden">
+          <div
+            className="bg-brand h-full transition-[width] duration-100 ease-linear rounded-full"
+            style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-xs text-ink-muted tabular-nums">
+          <span>{formatDuration(currentSec)}</span>
+          <span>{formatDuration(totalSec)}</span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-center">
+        <button
+          type="button"
+          onClick={handleTogglePlay}
+          aria-label={isPlaying ? 'Pause video' : 'Play video'}
+          className="w-11 h-11 rounded-full bg-brand text-surface hover:bg-brand-ink transition-colors flex items-center justify-center cursor-pointer shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          {isPlaying ? (
+            <Pause className="w-5 h-5 fill-current" aria-hidden="true" />
+          ) : (
+            <Play className="w-5 h-5 fill-current ml-0.5" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function FileDetailDrawer({
@@ -36,8 +113,9 @@ export function FileDetailDrawer({
 
   const allowedToDelete = currentFile?.id ? canDelete(currentFile, currentUser) : false;
 
+  const isVideo = currentFile.type === 'video' || currentFile.fileKind === 'video';
   const isVoice = currentFile.type === 'voice';
-  const isPhoto = currentFile.fileKind === 'photo';
+  const isPhoto = currentFile.fileKind === 'photo' && !isVideo;
   const sender = staffById[currentFile.senderId];
   const senderName = sender?.name || 'Staff';
 
@@ -47,7 +125,9 @@ export function FileDetailDrawer({
 
   const size = isVoice
     ? formatDuration(currentFile.durationSec || 15)
-    : currentFile.fileSize || '1.2 MB';
+    : isVideo && currentFile.durationSec
+      ? `${currentFile.fileSize || 'Video'} · ${formatDuration(currentFile.durationSec)}`
+      : currentFile.fileSize || '1.2 MB';
 
   const formattedDate = formatDateNg(currentFile.createdAt) || 'Today';
 
@@ -77,6 +157,8 @@ export function FileDetailDrawer({
     onClose();
   };
 
+  const previewUrl = currentFile.id ? getPreviewUrl(currentFile.id) : null;
+
   return (
     <>
       <Drawer isOpen={isOpen && !isDeleteModalOpen} onClose={onClose} title="File Details">
@@ -96,8 +178,34 @@ export function FileDetailDrawer({
             </p>
           </div>
 
-          {/* Body: large PhotoView for photos, DocumentPreview for documents */}
-          {isPhoto ? (
+          {/* Body: video player / simulated player / PhotoView / DocumentPreview */}
+          {isVideo ? (
+            currentFile.isSample ? (
+              <SampleVideoPlayer key={currentFile.id || 'sample-player'} file={currentFile} />
+            ) : previewUrl ? (
+              <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden">
+                <video
+                  src={previewUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full max-h-[58dvh] rounded-xl object-contain"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2 w-full">
+                <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden aspect-[16/9]">
+                  <PhotoPlaceholder
+                    fileName={currentFile.fileName}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <p className="text-xs text-ink-muted text-center leading-relaxed">
+                  The video file is not kept in this demo after a reload.
+                </p>
+              </div>
+            )
+          ) : isPhoto ? (
             <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden">
               <PhotoView
                 message={currentFile}

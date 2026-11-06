@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { Image, FileText, Sparkles, UserPlus, Building2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Image, Video, FileText, Sparkles, UserPlus, Building2 } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { setPreviewUrl } from '../../utils/previewUrls.js';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -24,14 +24,22 @@ export function AttachmentDrawer({
 }) {
   const { currentUser } = useChat();
   const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const docInputRef = useRef(null);
+  const [videoError, setVideoError] = useState(null);
 
   const showPostLead = canPostLead(currentUser, channel);
   const showShareListing = canShareListing(currentUser, channel);
 
+  const handleClose = () => {
+    setVideoError(null);
+    onClose();
+  };
+
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      setVideoError(null);
       const objectUrl = file.type?.startsWith('image/') ? URL.createObjectURL(file) : null;
       if (onSelectAttachment) {
         onSelectAttachment({
@@ -57,9 +65,90 @@ export function AttachmentDrawer({
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVideoError(null);
+
+    // Limit 1: Size at most 100 MB (100 * 1024 * 1024 bytes)
+    const maxSizeBytes = 100 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setVideoError('This video is too large. The limit is about 100 MB or 2 minutes.');
+      e.target.value = '';
+      return;
+    }
+
+    // Limit 2: Duration at most 120 seconds via temporary video element
+    const tempUrl = URL.createObjectURL(file);
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+
+    let isFinished = false;
+    const cleanupAndProceed = (duration) => {
+      if (isFinished) return;
+      isFinished = true;
+      try {
+        URL.revokeObjectURL(tempUrl);
+      } catch {
+        // ignore
+      }
+      e.target.value = '';
+
+      if (duration !== null && duration > 120) {
+        setVideoError('This video is too large. The limit is about 100 MB or 2 minutes.');
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      const durationSec = duration !== null ? Math.round(duration) : null;
+      if (onSelectAttachment) {
+        onSelectAttachment({
+          file,
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'video',
+          type: 'video',
+          durationSec,
+          objectUrl,
+          isSample: false,
+        });
+      } else {
+        const msgId = onAttachFile?.({
+          fileName: file.name,
+          fileSize: formatBytes(file.size),
+          fileKind: 'video',
+          type: 'video',
+          durationSec,
+          isSample: false,
+        });
+        if (objectUrl && msgId) {
+          setPreviewUrl(msgId, objectUrl);
+        }
+      }
+      onClose();
+    };
+
+    tempVideo.onloadedmetadata = () => {
+      const dur = tempVideo.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        cleanupAndProceed(dur);
+      } else {
+        cleanupAndProceed(null);
+      }
+    };
+
+    tempVideo.onerror = () => {
+      // If duration cannot be read but size is fine, allow it with duration unknown
+      cleanupAndProceed(null);
+    };
+
+    tempVideo.src = tempUrl;
+  };
+
   const handleDocChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      setVideoError(null);
       if (onSelectAttachment) {
         onSelectAttachment({
           file,
@@ -82,6 +171,7 @@ export function AttachmentDrawer({
   };
 
   const handleSamplePhoto = () => {
+    setVideoError(null);
     if (onSelectAttachment) {
       onSelectAttachment({
         fileName: 'Site_Photo_Maitama.jpg',
@@ -100,7 +190,33 @@ export function AttachmentDrawer({
     onClose();
   };
 
+  const handleSampleVideo = () => {
+    setVideoError(null);
+    if (onSelectAttachment) {
+      onSelectAttachment({
+        fileName: 'Site_Walkthrough_Maitama.mp4',
+        fileSize: '34.9 MB',
+        fileKind: 'video',
+        type: 'video',
+        durationSec: 75,
+        objectUrl: null,
+        isSample: true,
+      });
+    } else {
+      onAttachFile?.({
+        fileName: 'Site_Walkthrough_Maitama.mp4',
+        fileSize: '34.9 MB',
+        fileKind: 'video',
+        type: 'video',
+        durationSec: 75,
+        isSample: true,
+      });
+    }
+    onClose();
+  };
+
   const handleSampleDoc = () => {
+    setVideoError(null);
     if (onSelectAttachment) {
       onSelectAttachment({
         fileName: 'Brochure_Maitama_Duplex.pdf',
@@ -120,8 +236,14 @@ export function AttachmentDrawer({
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Share File or Photo">
+    <Drawer isOpen={isOpen} onClose={handleClose} title="Share File or Photo">
       <div className="space-y-3">
+        {videoError && (
+          <div className="p-3 rounded-xl bg-status-danger-bg border border-status-danger-line text-xs text-status-danger">
+            {videoError}
+          </div>
+        )}
+
         {/* Hidden native file inputs */}
         <input
           ref={photoInputRef}
@@ -130,6 +252,14 @@ export function AttachmentDrawer({
           accept="image/*"
           className="hidden"
           onChange={handlePhotoChange}
+        />
+        <input
+          ref={videoInputRef}
+          name="attach_video"
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={handleVideoChange}
         />
         <input
           ref={docInputRef}
@@ -152,6 +282,21 @@ export function AttachmentDrawer({
           <div className="min-w-0">
             <p className="text-xs font-bold text-ink">Photo</p>
             <p className="text-xs text-ink-muted">Share property photos or site inspections</p>
+          </div>
+        </button>
+
+        {/* Option: Video */}
+        <button
+          type="button"
+          onClick={() => videoInputRef.current?.click()}
+          className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand group-hover:scale-105 transition-transform">
+            <Video className="w-5 h-5 text-brand" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-ink">Video</p>
+            <p className="text-xs text-ink-muted">Share property walkthroughs or site recordings</p>
           </div>
         </button>
 
@@ -185,6 +330,21 @@ export function AttachmentDrawer({
           </div>
         </button>
 
+        {/* Option: Use a sample video */}
+        <button
+          type="button"
+          onClick={handleSampleVideo}
+          className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line-strong bg-surface-raised hover:bg-surface hover:border-brand transition-colors text-left cursor-pointer group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-brand text-surface flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="w-5 h-5 text-surface" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-ink">Use a sample video</p>
+            <p className="text-xs text-ink-muted">Site_Walkthrough_Maitama.mp4 (34.9 MB)</p>
+          </div>
+        </button>
+
         {/* Option 4: Use a sample document */}
         <button
           type="button"
@@ -205,7 +365,7 @@ export function AttachmentDrawer({
           <button
             type="button"
             onClick={() => {
-              onClose();
+              handleClose();
               onOpenPostLead?.();
             }}
             className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
@@ -225,7 +385,7 @@ export function AttachmentDrawer({
           <button
             type="button"
             onClick={() => {
-              onClose();
+              handleClose();
               onOpenShareListing?.();
             }}
             className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"

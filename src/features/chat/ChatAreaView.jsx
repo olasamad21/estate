@@ -420,9 +420,12 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
     if (!pendingAttachmentRef.current || !channel) return;
     const currentAtt = pendingAttachmentRef.current;
     const msgId = sendFile(channel.id, {
+      type: currentAtt.type || (currentAtt.fileKind === 'video' ? 'video' : 'file'),
       fileName: currentAtt.fileName,
       fileSize: currentAtt.fileSize,
       fileKind: currentAtt.fileKind,
+      durationSec: currentAtt.durationSec ?? null,
+      isSample: Boolean(currentAtt.isSample),
       caption,
     });
 

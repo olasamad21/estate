@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, Mic, ChevronRight } from 'lucide-react';
+import { FileText, Mic, ChevronRight, Play } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { formatDateNg } from '../../utils/formatters.js';
 import { PhotoView } from './PhotoView.jsx';
@@ -29,20 +29,24 @@ export function ChannelFilesDrawer({
   const [activeTab, setActiveTab] = useState('media');
   const [previewItem, setPreviewItem] = useState(null);
 
-  // Filter messages for current channel (including thread replies) that are files or voice notes
+  // Filter messages for current channel (including thread replies) that are files, videos, or voice notes
   const channelFiles = useMemo(() => {
     if (!channel) return [];
     return messages.filter(
-      (m) => m.channelId === channel.id && !m.deletedAt && (m.type === 'file' || m.type === 'voice')
+      (m) => m.channelId === channel.id && !m.deletedAt && (m.type === 'file' || m.type === 'voice' || m.type === 'video')
     );
   }, [messages, channel]);
 
   const displayedItems = useMemo(() => {
     if (activeTab === 'media') {
-      return channelFiles.filter((m) => m.type === 'file' && m.fileKind === 'photo');
+      return channelFiles.filter(
+        (m) => (m.type === 'file' && m.fileKind === 'photo') || m.type === 'video' || m.fileKind === 'video'
+      );
     }
     if (activeTab === 'documents') {
-      return channelFiles.filter((m) => m.type === 'file' && m.fileKind !== 'photo');
+      return channelFiles.filter(
+        (m) => m.type === 'file' && m.fileKind !== 'photo' && m.fileKind !== 'video'
+      );
     }
     if (activeTab === 'voice') {
       return channelFiles.filter((m) => m.type === 'voice');
@@ -91,7 +95,8 @@ export function ChannelFilesDrawer({
             /* Media Tab: 3-column grid of square thumbnails */
             <div className="grid grid-cols-3 gap-2">
               {displayedItems.map((item) => {
-                const cleanName = (item.fileName || 'photo')
+                const isVideo = item.type === 'video' || item.fileKind === 'video';
+                const cleanName = (item.fileName || (isVideo ? 'video' : 'photo'))
                   .replace(/\.[^/.]+$/, '')
                   .replace(/_/g, ' ')
                   .trim();
@@ -101,8 +106,8 @@ export function ChannelFilesDrawer({
                     key={item.id}
                     type="button"
                     onClick={() => handleItemClick(item)}
-                    aria-label={`Open photo ${cleanName}`}
-                    className="aspect-square rounded-xl border border-line overflow-hidden bg-surface-raised hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand block"
+                    aria-label={`Open ${isVideo ? 'video' : 'photo'} ${cleanName}`}
+                    className="relative aspect-square rounded-xl border border-line overflow-hidden bg-surface-raised hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand block"
                   >
                     <PhotoView
                       message={item}
@@ -110,6 +115,20 @@ export function ChannelFilesDrawer({
                       fit="cover"
                       className="w-full h-full"
                     />
+                    {isVideo && (
+                      <>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-8 h-8 rounded-full bg-surface/85 border border-line flex items-center justify-center text-ink shadow-2xs">
+                            <Play className="w-4 h-4 fill-current ml-0.5" aria-hidden="true" />
+                          </div>
+                        </div>
+                        {item.durationSec && (
+                          <div className="absolute bottom-1.5 right-1.5 px-1 py-0.5 rounded bg-surface/90 border border-line text-xs font-medium text-ink tabular-nums shadow-xs">
+                            {formatDuration(item.durationSec)}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </button>
                 );
               })}

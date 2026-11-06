@@ -198,3 +198,11 @@
   overscroll-behavior-y: none;
 }
 
+/* Standalone display mode (PWA / Installed app) */
+@media (display-mode: standalone) {
+  .standalone-hide {
+    display: none !important;
+  }
+}
+
+

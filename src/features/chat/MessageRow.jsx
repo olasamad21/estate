@@ -261,13 +261,14 @@ export function MessageRow({
               </button>
             )}
           </div>
-        ) : message.type === 'file' ? (
+        ) : (message.type === 'file' || message.type === 'video') ? (
           <div className="mt-1">
             <AttachmentCard
               message={message}
               fileName={message.fileName || message.text}
               fileSize={message.fileSize || '1.5 MB'}
-              fileKind={message.fileKind || 'document'}
+              fileKind={message.fileKind || (message.type === 'video' ? 'video' : 'document')}
+              durationSec={message.durationSec}
               onOpenFileDetail={onOpenFileDetail}
               onOpenActions={onOpenActions}
             />

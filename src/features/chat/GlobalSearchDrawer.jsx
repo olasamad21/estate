@@ -10,6 +10,7 @@ import {
   Users,
   FileText,
   Image,
+  Video,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -167,8 +168,11 @@ export function GlobalSearchDrawer({
       if (m.type === 'text') {
         return (m.text || '').toLowerCase().includes(q);
       }
-      if (m.type === 'file' && m.caption) {
-        return m.caption.toLowerCase().includes(q);
+      if (m.type === 'file' || m.type === 'video') {
+        return (
+          (m.caption || '').toLowerCase().includes(q) ||
+          (m.fileName || '').toLowerCase().includes(q)
+        );
       }
       return false;
     });
@@ -179,8 +183,11 @@ export function GlobalSearchDrawer({
       const ch = channelMap[m.channelId];
       if (!ch || ch.archived) return false;
       if (m.deletedAt) return false;
-      if (m.type !== 'file') return false;
-      return (m.fileName || '').toLowerCase().includes(q);
+      if (m.type !== 'file' && m.type !== 'video') return false;
+      return (
+        (m.fileName || '').toLowerCase().includes(q) ||
+        (m.caption || '').toLowerCase().includes(q)
+      );
     });
 
     return {
@@ -506,7 +513,8 @@ export function GlobalSearchDrawer({
                     const chName = ch ? channelDisplayName(ch, currentUserId, staff) : 'channel';
                     const sender = staffById[file.senderId];
                     const firstName = sender ? callNameOf(sender) : 'Staff';
-                    const isPhoto = file.fileKind === 'photo';
+                    const isVideo = file.type === 'video' || file.fileKind === 'video';
+                    const isPhoto = file.fileKind === 'photo' && !isVideo;
 
                     return (
                       <button
@@ -517,7 +525,9 @@ export function GlobalSearchDrawer({
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-2">
                           <div className="w-8 h-8 rounded-lg bg-surface-raised border border-line flex items-center justify-center text-brand shrink-0">
-                            {isPhoto ? (
+                            {isVideo ? (
+                              <Video className="w-4 h-4 text-brand" aria-hidden="true" />
+                            ) : isPhoto ? (
                               <Image className="w-4 h-4 text-brand" aria-hidden="true" />
                             ) : (
                               <FileText className="w-4 h-4 text-brand" aria-hidden="true" />
@@ -527,6 +537,11 @@ export function GlobalSearchDrawer({
                             <div className="text-xs font-bold text-ink break-words">
                               <HighlightMatch text={file.fileName} query={query} />
                             </div>
+                            {file.caption && (
+                              <div className="text-xs text-ink-muted break-words">
+                                <HighlightMatch text={file.caption} query={query} />
+                              </div>
+                            )}
                             <div className="text-xs text-ink-muted">
                               {ch?.kind === 'listing' ? chName : `#${chName}`}
                               {ch?.officeId && ` · ${getOfficeName(ch.officeId)}`} · {firstName} · {formatListTimeNg(file.createdAt)}

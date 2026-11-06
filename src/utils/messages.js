@@ -243,3 +243,8 @@ export function getStaffImportedMessage(count = 0) {
   return count === 1 ? '1 staff account created' : `${count} staff accounts created`;
 }
 
+export function getAndroidAppDemoDownloadMessage() {
+  return 'Demo only. The real download link is added at handover.';
+}
+
+

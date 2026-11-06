@@ -1,8 +1,15 @@
 import { useState, useRef } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Play } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
+
+function formatDuration(sec) {
+  if (sec === null || sec === undefined) return 'Duration unknown';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export function AttachmentPreviewDrawer({
   isOpen,
@@ -17,9 +24,10 @@ export function AttachmentPreviewDrawer({
 
   if (!attachment) return null;
 
+  const isVideo = attachment.type === 'video' || attachment.fileKind === 'video';
   const isPhoto = attachment.fileKind === 'photo';
   const isPdf = (attachment.fileName || '').toLowerCase().endsWith('.pdf');
-  const title = isPhoto ? 'Send photo' : 'Send document';
+  const title = isVideo ? 'Send video' : isPhoto ? 'Send photo' : 'Send document';
 
   const handleCaptionChange = (e) => {
     const val = e.target.value.slice(0, 300);
@@ -56,7 +64,46 @@ export function AttachmentPreviewDrawer({
     >
       <div className="space-y-4 flex-1 flex flex-col">
         {/* Preview Area */}
-        {isPhoto ? (
+        {isVideo ? (
+          <div className="space-y-2">
+            {attachment.isSample ? (
+              <div className="relative w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center aspect-[16/9]">
+                <PhotoPlaceholder
+                  fileName={attachment.fileName}
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-surface/90 border border-line flex items-center justify-center text-ink shadow-md">
+                    <Play className="w-7 h-7 fill-current ml-0.5" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2">
+                {attachment.objectUrl ? (
+                  <video
+                    src={attachment.objectUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="w-full max-h-[50dvh] object-contain rounded-lg"
+                  />
+                ) : (
+                  <PhotoPlaceholder
+                    fileName={attachment.fileName}
+                    className="w-full h-full object-contain"
+                  />
+                )}
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-ink-muted px-1">
+              <span className="font-medium text-ink break-words">{attachment.fileName}</span>
+              <span className="tabular-nums shrink-0">
+                {attachment.fileSize} · {formatDuration(attachment.durationSec)}
+              </span>
+            </div>
+          </div>
+        ) : isPhoto ? (
           attachment.isSample ? (
             <div className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center aspect-[4/3]">
               <PhotoPlaceholder

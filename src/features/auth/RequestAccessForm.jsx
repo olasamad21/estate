@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone, User, CheckCircle2, Mail } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
@@ -12,6 +13,7 @@ const ROLE_OPTIONS = [
 ];
 
 export function RequestAccessForm({ onBackToSignIn }) {
+  const navigate = useNavigate();
   const { submitAccessRequest } = useChat();
 
   const [name, setName] = useState('');
@@ -281,7 +283,17 @@ export function RequestAccessForm({ onBackToSignIn }) {
         </div>
       </form>
 
-      <p className="text-xs text-ink-muted text-center pt-2 leading-relaxed">
+      <div className="standalone-hide flex justify-center pt-0.5">
+        <button
+          type="button"
+          onClick={() => navigate('/get-app')}
+          className="text-xs font-medium text-ink-muted hover:text-brand transition-colors cursor-pointer min-h-[44px] flex items-center"
+        >
+          Get the app
+        </button>
+      </div>
+
+      <p className="text-xs text-ink-muted text-center pt-1 leading-relaxed">
         All conversations in this demo are invented. Names are used for demonstration only.
       </p>
     </div>

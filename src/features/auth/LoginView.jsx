@@ -243,6 +243,17 @@ export function LoginView() {
                 <p className="text-xs text-ink-muted text-center pt-1 leading-relaxed">
                   All conversations in this demo are invented. Names are used for demonstration only.
                 </p>
+
+                {/* Get the app quiet link */}
+                <div className="standalone-hide flex justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/get-app')}
+                    className="text-xs font-medium text-ink-muted hover:text-brand transition-colors cursor-pointer min-h-[44px] flex items-center gap-1.5"
+                  >
+                    <span>Get the app</span>
+                  </button>
+                </div>
               </form>
 
               {/* Demo Numbers Section */}

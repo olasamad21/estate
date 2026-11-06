@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus, KeyRound } from 'lucide-react';
+import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus, KeyRound, Smartphone } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
@@ -167,6 +167,19 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
             >
               <KeyRound className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
               <span>Change password</span>
+            </button>
+
+            {/* Get the app (hidden in standalone mode) */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/get-app');
+              }}
+              className="standalone-hide w-full min-h-[44px] px-3.5 py-3 flex items-center gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <Smartphone className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+              <span>Get the app</span>
             </button>
 
             {/* Admin (Admins only) */}

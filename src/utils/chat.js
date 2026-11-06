@@ -833,6 +833,18 @@ export function messagePreview(message, staff) {
     return `Property: ${title}`;
   }
 
+  if (message.type === 'video' || message.fileKind === 'video') {
+    if (message.caption) {
+      return `Video: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+    }
+    if (typeof message.durationSec === 'number' && Number.isFinite(message.durationSec)) {
+      const mins = Math.floor(message.durationSec / 60);
+      const secs = String(Math.floor(message.durationSec % 60)).padStart(2, '0');
+      return `Video, ${mins}:${secs}`;
+    }
+    return 'Video, duration unknown';
+  }
+
   if (message.fileKind === 'photo' || (message.type === 'file' && message.fileKind === 'photo')) {
     if (message.caption) {
       return `Photo: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;

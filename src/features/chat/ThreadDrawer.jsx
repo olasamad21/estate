@@ -73,13 +73,14 @@ export function ThreadDrawer({
                   {formatTimeNg(parentMessage.createdAt)}
                 </span>
               </div>
-              {parentMessage.type === 'file' ? (
+              {(parentMessage.type === 'file' || parentMessage.type === 'video') ? (
                 <div className="mt-1">
                   <AttachmentCard
                     message={parentMessage}
                     fileName={parentMessage.fileName || parentMessage.text}
                     fileSize={parentMessage.fileSize || '1.5 MB'}
-                    fileKind={parentMessage.fileKind || 'document'}
+                    fileKind={parentMessage.fileKind || (parentMessage.type === 'video' ? 'video' : 'document')}
+                    durationSec={parentMessage.durationSec}
                   />
                   {parentMessage.caption && (
                     <div className="text-sm text-ink leading-relaxed break-words mt-1.5">
@@ -131,13 +132,14 @@ export function ThreadDrawer({
                         {formatTimeNg(reply.createdAt)}
                       </span>
                     </div>
-                    {reply.type === 'file' ? (
+                    {(reply.type === 'file' || reply.type === 'video') ? (
                       <div className="mt-1">
                         <AttachmentCard
                           message={reply}
                           fileName={reply.fileName || reply.text}
                           fileSize={reply.fileSize || '1.5 MB'}
-                          fileKind={reply.fileKind || 'document'}
+                          fileKind={reply.fileKind || (reply.type === 'video' ? 'video' : 'document')}
+                          durationSec={reply.durationSec}
                         />
                         {reply.caption && (
                           <div className="text-sm text-ink leading-relaxed break-words mt-1.5">

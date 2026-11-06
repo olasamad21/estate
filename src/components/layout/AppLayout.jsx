@@ -78,7 +78,7 @@ export function AppLayout({ children }) {
   }, [currentUser, currentUserId, lastReadAtByUser, channels, messages, notifyPrefs]);
 
   return (
-    <div className="h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden">
+    <div className="h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
       {/* Prototype Banner (Slim, monospaced, dismissible for session, returns on reload) */}
       {!isBannerDismissed && (
         <header

@@ -9,6 +9,7 @@ import { LoginView } from './features/auth/LoginView.jsx';
 import { ActivateView } from './features/auth/ActivateView.jsx';
 import { ForgotView } from './features/auth/ForgotView.jsx';
 import { ResetPasswordView } from './features/auth/ResetPasswordView.jsx';
+import { GetAppView } from './features/auth/GetAppView.jsx';
 import { ChannelListView } from './features/chat/ChannelListView.jsx';
 import { ChatAreaView } from './features/chat/ChatAreaView.jsx';
 import { AdminView } from './features/admin/AdminView.jsx';
@@ -63,6 +64,12 @@ function AppContent() {
           element={
             isAuthenticated ? <Navigate to="/channels" replace /> : <LoginView />
           }
+        />
+
+        {/* Public Get The App Route (works signed in or out) */}
+        <Route
+          path="/get-app"
+          element={<GetAppView />}
         />
 
         {/* Public Activation Route (works whether or not someone is signed in) */}
