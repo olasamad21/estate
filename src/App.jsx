@@ -13,23 +13,25 @@ import { GetAppView } from './features/auth/GetAppView.jsx';
 import { ChannelListView } from './features/chat/ChannelListView.jsx';
 import { ChatAreaView } from './features/chat/ChatAreaView.jsx';
 import { AdminView } from './features/admin/AdminView.jsx';
+import { useVisualViewport } from './hooks/useVisualViewport.js';
 
 function WorkspaceLayout() {
+  useVisualViewport();
   const { id: channelId } = useParams();
 
   return (
-    <div className="h-full w-full flex flex-col lg:flex-row overflow-hidden">
+    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">
       {/* Mobile view (< 1024px): single column */}
-      <div className="lg:hidden h-full w-full overflow-hidden">
+      <div className="lg:hidden flex-1 min-h-0 w-full flex flex-col overflow-hidden">
         {channelId ? <ChatAreaView key={channelId} /> : <ChannelListView />}
       </div>
 
       {/* Desktop view (>= 1024px): 320px sidebar + chat pane */}
-      <div className="hidden lg:flex h-full w-full overflow-hidden">
+      <div className="hidden lg:flex flex-1 min-h-0 w-full overflow-hidden">
         <aside className="w-80 shrink-0 border-r border-line h-full overflow-hidden">
           <ChannelListView />
         </aside>
-        <main className="flex-1 min-w-0 h-full overflow-hidden">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
           <ChatAreaView key={channelId || 'general'} defaultChannelId="general" />
         </main>
       </div>

@@ -456,7 +456,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
   if (!channel || !isVisible) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-4 bg-surface">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-6 text-center space-y-4 bg-surface">
         <div className="w-12 h-12 rounded-full bg-surface-raised border border-line flex items-center justify-center text-ink-muted">
           <Lock className="w-6 h-6" aria-hidden="true" />
         </div>
@@ -534,7 +534,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-surface overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col bg-surface overflow-hidden">
       {/* Channel Header (min 56px compact row, flex-none) */}
       <div className="min-h-14 py-1.5 px-2 sm:px-4 border-b border-line flex items-center justify-between flex-none bg-surface">
         <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
@@ -762,11 +762,11 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
           {/* Message Composer or Archived Notice */}
           {channel?.archived ? (
-            <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium flex-none">
+            <div className="p-4 border-t border-line bg-surface-raised text-center text-xs text-ink-muted font-medium shrink-0">
               This channel is archived
             </div>
           ) : (
-            <div className="flex-none">
+            <div className="shrink-0">
               <MessageComposer
                 key={editingMessage ? editingMessage.id : 'composer'}
                 channel={channel}

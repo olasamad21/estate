@@ -17,6 +17,7 @@ export function AppLayout({ children }) {
   const { channels, messages, currentUser, currentUserId, lastReadAtByUser, isOffline, notifyPrefs, accessRequests } = useChat();
   const location = useLocation();
   const isAdminRoute = location.pathname === '/admin';
+  const isChannelsRoute = location.pathname.startsWith('/channels');
   const isChannelChatRoute = Boolean(
     location.pathname.startsWith('/channels/') && location.pathname !== '/channels'
   );
@@ -78,7 +79,22 @@ export function AppLayout({ children }) {
   }, [currentUser, currentUserId, lastReadAtByUser, channels, messages, notifyPrefs]);
 
   return (
-    <div className="h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
+    <div
+      className={
+        isChannelsRoute
+          ? 'fixed inset-x-0 w-full bg-canvas flex flex-col overflow-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]'
+          : 'h-dvh max-h-dvh w-full bg-canvas flex flex-col overflow-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]'
+      }
+      style={
+        isChannelsRoute
+          ? {
+              top: 'var(--app-offset-top, 0px)',
+              height: 'var(--app-h, 100dvh)',
+              maxHeight: 'var(--app-h, 100dvh)',
+            }
+          : undefined
+      }
+    >
       {/* Prototype Banner (Slim, monospaced, dismissible for session, returns on reload) */}
       {!isBannerDismissed && (
         <header
@@ -198,7 +214,13 @@ export function AppLayout({ children }) {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div
+        className={
+          isChannelsRoute
+            ? 'flex-1 min-h-0 flex flex-col overflow-hidden'
+            : 'flex-1 min-h-0 overflow-hidden'
+        }
+      >
         {children}
       </div>
 
