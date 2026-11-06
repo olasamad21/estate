@@ -76,9 +76,11 @@ function officeLabelOf(id) {
   return o ? o.label || o.name : 'Head Quarters';
 }
 
-function officeNameOf(id) {
-  const o = (COMPANY_CONFIG.offices || []).find((x) => x.id === id);
-  return o ? o.name : 'Head Quarters';
+function officeNameOf(id) { { return officeLabelOf(id);
+}
+
+
+
 }
 
 function renderChannelIcon(ch) {
@@ -1288,7 +1290,7 @@ export function AdminView() {
     <div className="h-full flex flex-col bg-canvas overflow-y-auto">
       {/* Top Header */}
       <header className="bg-surface border-b border-line px-4 sm:px-6 py-4 shrink-0">
-        <div className="max-w-[56rem] mx-auto space-y-3">
+        <div className="max-w-[56rem] lg:max-w-6xl mx-auto space-y-3">
           <Link
             to="/channels"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-ink hover:underline"
@@ -1359,7 +1361,7 @@ export function AdminView() {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:px-6 py-6">
-        <div className="max-w-[56rem] mx-auto space-y-6">
+        <div className="max-w-[56rem] lg:max-w-6xl mx-auto space-y-6">
           {activeTab === 'staff' && (
             <div className="space-y-4">
               {/* Staff tab count heading: active + not activated */}
@@ -1529,7 +1531,7 @@ export function AdminView() {
                             <div key={member.id}>
                               {/* Compact Row (below 1024px) */}
                               <div
-                                className={`p-3.5 sm:p-4 min-h-[4.5rem] sm:min-h-[4.75rem] flex items-center justify-between gap-3 lg:hidden transition-colors ${
+                                className={`p-3.5 sm:p-4 min-h-[4.5rem] sm:min-h-[4.75rem] flex items-center justify-between gap-3 xl:hidden transition-colors ${
                                   active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
                                 }`}
                               >
@@ -1550,7 +1552,7 @@ export function AdminView() {
                                         {member.name}
                                       </span>
                                       {isSelf && (
-                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line">
+                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line shrink-0">
                                           You
                                         </span>
                                       )}
@@ -1573,8 +1575,36 @@ export function AdminView() {
                                       )}
                                     </div>
 
-                                    {/* Department, Office, and Phone metadata row */}
+                                    {/* Job title & department caption line + Office + Phone */}
                                     <div className="flex items-center gap-1.5 text-xs text-ink-muted flex-wrap">
+                                      {member.showOldDetails && (
+                                        <>
+                                          <span className="text-ink-soft font-medium">
+                                            {member.title && (
+                                          <span className="text-ink-soft font-medium">
+                                            {member.title}
+                                          </span>
+                                        )}
+                                        {member.showOldDetails && member.title && member.department && (
+                                          <span aria-hidden="true">·</span>
+                                        )}
+                                        {(member.title || member.department) && (
+                                         <>
+                                           <span className="text-ink-soft font-medium">
+                                             {member.title ? (member.department ? `${member.title} · ${member.department}` : member.title) : member.department}
+                                           </span>
+                                           {member.showOldDetails && <span>·</span>}
+                                         </>
+                                       )}
+                                       {member.showOldDetails && (
+                                          <span>
+                                            {member.department}
+                                          </span>
+                                        )}
+                                          </span>
+                                          <span>·</span>
+                                        </>
+                                      )}
                                       {member.department && (
                                         <>
                                           <span className="text-ink-soft font-medium">
@@ -1607,7 +1637,7 @@ export function AdminView() {
 
                               {/* Desktop Row (from 1024px up) */}
                               <div
-                                className={`p-3.5 hidden lg:flex items-center justify-between gap-4 transition-colors ${
+                                className={`p-3.5 hidden xl:flex items-center justify-between gap-4 transition-colors ${
                                   active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
                                 }`}
                               >
@@ -1620,48 +1650,83 @@ export function AdminView() {
                                     isOnline={active && (member.isOnline ?? member.online)}
                                     size="md"
                                   />
-                                  <div className="min-w-0">
+                                  <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="text-xs font-semibold text-ink break-words">
                                         {member.name}
                                       </span>
                                       {isSelf && (
-                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line">
+                                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-raised text-ink-muted border border-line shrink-0">
                                           You
                                         </span>
                                       )}
                                     </div>
-                                    {member.title && (
-                                      <div className="text-xs text-ink-muted mt-0.5">
-                                        {member.title}
+                                    {(member.title || member.department) && (
+                                      <div className="text-xs text-ink-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                        {member.showOldDetails && (
+                                          <span className="text-ink-soft font-medium">
+                                            {member.title}
+                                          </span>
+                                        )}
+                                        {member.showOldDetails && member.title && member.department && (
+                                          <span aria-hidden="true">·</span>
+                                        )}
+                                        {(member.title || member.department) && (
+                                         <>
+                                           <span className="text-ink-soft font-medium">
+                                             {member.title ? (member.department ? `${member.title} · ${member.department}` : member.title) : member.department}
+                                           </span>
+                                           {member.showOldDetails && <span>·</span>}
+                                         </>
+                                       )}
+                                       {member.showOldDetails && (
+                                          <span>
+                                            {member.department}
+                                          </span>
+                                        )}
                                       </div>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Department */}
+                                {/* Department */}{member.showOldDetails && (
                                 <div className="text-xs text-ink-soft shrink-0 w-28">
                                   {member.department || 'General'}
                                 </div>
 
-                                {/* Role Badge */}
+                                )}{/* Role Badge & Status Badges */}
+                                <div className="shrink-0 flex items-center gap-1.5 flex-wrap">
+                                  <Badge role={member.role}>
+                                    {ROLE_LABELS[member.role] || member.role}
+                                  </Badge>
+                                  {isInvited && (
+                                    <Badge variant="warning">
+                                      Not activated
+                                    </Badge>
+                                  )}
+                                  {isDeactivated && (
+                                    <Badge variant="danger">
+                                      Deactivated
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="shrink-0">
                                   <Badge role={member.role}>
                                     {ROLE_LABELS[member.role] || member.role}
                                   </Badge>
                                 </div>
 
-                                {/* Office */}
+                                {/* Office */}{member.showOldDetails && (
                                 <div className="text-xs text-ink-muted shrink-0 w-32">
                                   {officeNameOf(member.officeId || member.office)}
                                 </div>
 
-                                {/* Phone */}
+                                )}{/* Phone */}
                                 <div className="text-xs text-ink-muted tabular-nums tracking-normal shrink-0">
                                   {formatPhoneNg(member.phone)}
                                 </div>
 
-                                {/* Status */}
+                                {/* Status */}{member.showOldDetails && (
                                 <div className="w-28 shrink-0 flex items-center justify-start">
                                   {isInvited && (
                                     <Badge variant="warning">
@@ -1675,7 +1740,7 @@ export function AdminView() {
                                   )}
                                 </div>
 
-                                {/* Actions: Edit and Deactivate/Reactivate as two secondary buttons + More */}
+                                )}{/* Actions: Edit and More */}
                                 <div className="flex items-center gap-2 shrink-0">
                                   <Button
                                     variant="secondary"
@@ -1684,7 +1749,7 @@ export function AdminView() {
                                   >
                                     Edit
                                   </Button>
-                                  {active ? (
+                                  {member.canQuickDeactivate && active ? (
                                     <Button
                                       variant="secondary"
                                       size="sm"
@@ -1770,9 +1835,9 @@ export function AdminView() {
                           key={req.id}
                           className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-surface-raised transition-colors"
                         >
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                             <Avatar name={req.name} initials={initials} role={req.requestedRole} size="md" />
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-semibold text-ink text-xs sm:text-sm">
                                   {req.name}
@@ -1838,9 +1903,9 @@ export function AdminView() {
                             key={req.id}
                             className="p-3 sm:p-4 flex items-center justify-between gap-3"
                           >
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                               <Avatar name={req.name} initials={initials} role={req.requestedRole} size="sm" />
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-semibold text-ink text-xs">
                                     {req.name}
