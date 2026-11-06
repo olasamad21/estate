@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
-import { canPost, callNameOf } from '../../utils/chat.js';
+import { useChat } from '../../context/ChatContext.jsx';
+import { canPost, callNameOf, channelMembersFor } from '../../utils/chat.js';
 import { Button } from '../../components/common/Button.jsx';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
@@ -12,9 +13,17 @@ function formatTimer(sec) {
 }
 
 export function MessageComposer({
-  channel,
-  currentUser,
-  channelMembers = [],
+  variant = 'channel',
+  placeholder,
+  inputName = 'composer_message',
+  onSubmitText,
+  allowAttach,
+  allowVoice,
+  allowEdit,
+  members,
+  channel = null,
+  currentUser = null,
+  channelMembers,
   editingMessage = null,
   onSendMessage,
   onSendVoiceNote,
@@ -22,7 +31,18 @@ export function MessageComposer({
   onSaveEdit,
   onCancelEdit,
 }) {
-  const [text, setText] = useState(editingMessage?.text || '');
+  const { currentUser: contextUser, staff, sendMessage } = useChat();
+  const resolvedUser = currentUser ?? contextUser ?? null;
+
+  const isThread = variant === 'thread';
+  const effectiveAllowAttach = allowAttach ?? !isThread;
+  const effectiveAllowVoice = allowVoice ?? !isThread;
+  const effectiveAllowEdit = allowEdit ?? !isThread;
+  const activeEditingMessage = effectiveAllowEdit ? (editingMessage ?? null) : null;
+  const mentionMembers =
+    members ?? channelMembers ?? (channel ? channelMembersFor(channel, staff) : []);
+
+  const [text, setText] = useState(activeEditingMessage?.text || '');
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -31,18 +51,22 @@ export function MessageComposer({
   const textareaRef = useRef(null);
   const recordTimerRef = useRef(null);
 
-  const allowedToPost = canPost(currentUser, channel);
+  const allowedToPost = channel ? canPost(resolvedUser, channel) : true;
+  const hasText = Boolean(text.trim());
+  const resolvedPlaceholder = activeEditingMessage
+    ? 'Edit your message...'
+    : (placeholder ?? (isThread ? 'Reply in thread' : 'Message'));
 
   // Focus textarea when editing begins
   useEffect(() => {
-    if (editingMessage && textareaRef.current) {
+    if (activeEditingMessage && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [editingMessage]);
+  }, [activeEditingMessage]);
 
   // Voice recording timer
   useEffect(() => {
-    if (!isRecording) return;
+    if (!isRecording || !effectiveAllowVoice) return;
 
     recordTimerRef.current = setInterval(() => {
       setRecordingSeconds((prev) => prev + 1);
@@ -54,7 +78,7 @@ export function MessageComposer({
         recordTimerRef.current = null;
       }
     };
-  }, [isRecording]);
+  }, [isRecording, effectiveAllowVoice]);
 
   // Auto-resize textarea height
   useEffect(() => {
@@ -116,7 +140,8 @@ export function MessageComposer({
   };
 
   const handleStartRecording = () => {
-    if (editingMessage && onCancelEdit) {
+    if (!effectiveAllowVoice) return;
+    if (activeEditingMessage && onCancelEdit) {
       onCancelEdit();
     }
     setRecordingSeconds(0);
@@ -154,13 +179,18 @@ export function MessageComposer({
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    if (!text.trim() || !allowedToPost) return;
+    const trimmed = text.trim();
+    if (!trimmed || !allowedToPost) return;
 
-    if (editingMessage) {
-      onSaveEdit?.(editingMessage.id, text.trim());
+    if (activeEditingMessage) {
+      onSaveEdit?.(activeEditingMessage.id, trimmed);
       onCancelEdit?.();
-    } else {
-      onSendMessage(text.trim());
+    } else if (onSubmitText) {
+      onSubmitText(trimmed);
+    } else if (onSendMessage) {
+      onSendMessage(trimmed);
+    } else if (channel?.id) {
+      sendMessage(channel.id, trimmed);
     }
 
     setText('');
@@ -191,7 +221,7 @@ export function MessageComposer({
         <MentionMenu
           key={mentionQuery}
           query={mentionQuery}
-          members={channelMembers}
+          members={mentionMembers}
           onSelectMember={handleSelectMention}
           onClose={() => setMentionQuery(null)}
         />
@@ -205,7 +235,7 @@ export function MessageComposer({
       />
 
       {/* Editing Message Banner */}
-      {editingMessage && (
+      {activeEditingMessage && (
         <div className="px-3 py-1.5 bg-brand/10 border-b border-brand/20 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 min-w-0 text-brand font-medium">
             <Pencil className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -226,7 +256,7 @@ export function MessageComposer({
 
       {/* Composer Input Area */}
       <form onSubmit={handleSubmit} className="p-1.5 sm:p-2.5">
-        {isRecording ? (
+        {effectiveAllowVoice && isRecording ? (
           /* Voice Recording Mode Bar */
           <div className="flex items-center justify-between gap-3 bg-status-danger-bg border border-status-danger-line rounded-xl px-4 py-2.5 min-h-[48px]">
             <div className="flex items-center gap-2.5">
@@ -267,14 +297,16 @@ export function MessageComposer({
           /* Regular Message Bar */
           <div className="flex items-end gap-1.5 bg-surface-raised border border-line rounded-xl px-2 py-1 focus-within:border-brand transition-colors min-h-12">
             {/* Attachment Button */}
-            <button
-              type="button"
-              onClick={onOpenAttachDrawer}
-              aria-label="Attach file or photo"
-              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
-            >
-              <Paperclip className="w-4 h-4" aria-hidden="true" />
-            </button>
+            {effectiveAllowAttach && (
+              <button
+                type="button"
+                onClick={onOpenAttachDrawer}
+                aria-label="Attach file or photo"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+              >
+                <Paperclip className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
 
             {/* Emoji Button */}
             <button
@@ -289,17 +321,17 @@ export function MessageComposer({
             {/* Textarea */}
             <textarea
               ref={textareaRef}
-              name="composer_message"
+              name={inputName}
               rows={1}
               value={text}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
-              placeholder={editingMessage ? 'Edit your message...' : `Message #${channel?.name || 'channel'}`}
+              placeholder={resolvedPlaceholder}
               className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-11 max-h-[7.5rem] leading-5 py-3 px-2 overflow-y-auto"
             />
 
             {/* Mic Button */}
-            {!text.trim() && !editingMessage && (
+            {effectiveAllowVoice && !hasText && !activeEditingMessage && (
               <button
                 type="button"
                 onClick={handleStartRecording}
@@ -313,12 +345,18 @@ export function MessageComposer({
             {/* Submit Button */}
             <Button
               type="submit"
-              variant={text.trim() ? 'primary' : 'ghost'}
+              variant={hasText ? 'primary' : 'ghost'}
               size="sm"
-              disabled={!text.trim()}
-              aria-label={editingMessage ? 'Save changes' : 'Send message'}
+              disabled={!hasText}
+              aria-label={
+                activeEditingMessage
+                  ? 'Save changes'
+                  : isThread
+                  ? 'Send thread reply'
+                  : 'Send message'
+              }
               className={`rounded-lg shrink-0 w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center p-0 transition-colors ${
-                text.trim()
+                hasText
                   ? 'cursor-pointer'
                   : 'text-ink-muted/50 hover:bg-transparent active:scale-100 cursor-not-allowed'
               }`}

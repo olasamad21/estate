@@ -769,8 +769,11 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
             <div className="shrink-0">
               <MessageComposer
                 key={editingMessage ? editingMessage.id : 'composer'}
+                variant="channel"
+                placeholder="Message"
                 channel={channel}
                 currentUser={currentUser}
+                members={channelMembers}
                 channelMembers={channelMembers}
                 editingMessage={editingMessage}
                 onSendMessage={(text) => sendMessage(channel.id, text)}
@@ -819,7 +822,9 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         onClose={() => setSelectedThreadMessage(null)}
         parentMessage={currentThreadParentMessage}
         allMessages={messages}
+        channel={channel}
         currentUser={currentUser}
+        members={channelMembers}
         staffById={staffById}
         isArchived={Boolean(channel?.archived)}
         allowedToPost={canPost(currentUser, channel)}

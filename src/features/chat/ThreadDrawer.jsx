@@ -1,25 +1,29 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send, Lock } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Lock } from 'lucide-react';
+import { useChat } from '../../context/ChatContext.jsx';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { formatTimeNg } from '../../utils/formatters.js';
 import { threadReplies, initialsOf } from '../../utils/chat.js';
 import { ROLE_LABELS } from '../../mock/staff.js';
-import { Button } from '../../components/common/Button.jsx';
 import { AttachmentCard } from './AttachmentCard.jsx';
+import { MessageComposer } from './MessageComposer.jsx';
 
 export function ThreadDrawer({
   isOpen,
   onClose,
   parentMessage,
   allMessages = [],
+  channel = null,
+  currentUser = null,
+  members,
   staffById = {},
   isArchived = false,
   allowedToPost = true,
   onSendReply,
 }) {
-  const [replyText, setReplyText] = useState('');
+  const { sendThreadReply } = useChat();
   const scrollRef = useRef(null);
 
   const parentSender = parentMessage ? staffById[parentMessage.senderId] : null;
@@ -31,25 +35,11 @@ export function ThreadDrawer({
     }
   }, [replies.length, isOpen]);
 
-  const handleSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!replyText.trim() || !parentMessage) return;
-    onSendReply(parentMessage.channelId, parentMessage.id, replyText);
-    setReplyText('');
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
   if (!parentMessage) return null;
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Thread">
-      <div className="flex flex-col h-[70dvh] -mx-4 -mb-4">
+      <div className="flex flex-col h-[70dvh] min-h-0 -mx-4 -mb-4">
         {/* Parent message header block */}
         <div className="px-4 py-3 bg-surface-raised border-b border-line shrink-0">
           <div className="flex items-start gap-2.5">
@@ -102,7 +92,7 @@ export function ThreadDrawer({
         </div>
 
         {/* Replies list */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
           {replies.length === 0 ? (
             <div className="text-center py-8 text-xs text-ink-muted">
               No replies yet. Start the thread conversation below.
@@ -170,29 +160,24 @@ export function ThreadDrawer({
             <span>Only admins can send messages.</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-3 bg-surface border-t border-line shrink-0">
-            <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-xl px-3 py-1.5 focus-within:border-brand">
-              <input
-                type="text"
-                name="thread_reply"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Reply in thread..."
-                className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted focus:outline-none"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                disabled={!replyText.trim()}
-                className="w-7 h-7 p-0 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
-                aria-label="Send thread reply"
-              >
-                <Send className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-            </div>
-          </form>
+          <div className="shrink-0">
+            <MessageComposer
+              key={parentMessage.id}
+              variant="thread"
+              placeholder="Reply in thread"
+              inputName="thread_reply"
+              channel={channel}
+              currentUser={currentUser}
+              members={members}
+              onSubmitText={(trimmedText) => {
+                if (onSendReply) {
+                  onSendReply(parentMessage.channelId, parentMessage.id, trimmedText);
+                } else {
+                  sendThreadReply(parentMessage.channelId, parentMessage.id, trimmedText);
+                }
+              }}
+            />
+          </div>
         )}
       </div>
     </Drawer>
