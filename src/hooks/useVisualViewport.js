@@ -8,6 +8,11 @@ export function useVisualViewport() {
     const root = document.documentElement;
 
     const syncViewport = () => {
+      if ((vv.scale ?? 1) > 1.01) {
+        root.style.removeProperty('--app-h');
+        root.style.removeProperty('--app-offset-top');
+        return;
+      }
       root.style.setProperty('--app-h', `${vv.height}px`);
       root.style.setProperty('--app-offset-top', `${vv.offsetTop}px`);
     };

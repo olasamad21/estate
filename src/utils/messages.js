@@ -168,6 +168,10 @@ export function getTextSizeChangedMessage(label = 'Standard') {
   return `Text size set to ${label}`;
 }
 
+export function getEnterKeyChangedMessage(label = 'Automatic') {
+  return `Enter key set to ${label}`;
+}
+
 export function getSwitchedPersonaMessage(name = '') {
   return name ? `Switched to ${name}` : 'Switched persona';
 }

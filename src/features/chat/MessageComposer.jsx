@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { canPost, callNameOf, channelMembersFor } from '../../utils/chat.js';
+import { getEnterKeyPref, shouldEnterSend } from '../../utils/enterKey.js';
 import { Button } from '../../components/common/Button.jsx';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
@@ -47,6 +48,9 @@ export function MessageComposer({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [mentionQuery, setMentionQuery] = useState(null);
+  const [enterKeyHint] = useState(() =>
+    shouldEnterSend(getEnterKeyPref()) ? 'send' : 'enter'
+  );
 
   const textareaRef = useRef(null);
   const recordTimerRef = useRef(null);
@@ -84,7 +88,7 @@ export function MessageComposer({
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [text]);
 
@@ -162,7 +166,7 @@ export function MessageComposer({
 
   const handleKeyDown = (e) => {
     if (mentionQuery !== null) {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter') {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         return;
       }
       if (e.key === 'Escape') {
@@ -171,7 +175,30 @@ export function MessageComposer({
       }
     }
 
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key !== 'Enter') {
+      return;
+    }
+
+    if (e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229) {
+      return;
+    }
+
+    if (mentionQuery !== null) {
+      return;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      handleSubmit();
+      return;
+    }
+
+    if (e.shiftKey) {
+      return;
+    }
+
+    const pref = getEnterKeyPref();
+    if (shouldEnterSend(pref)) {
       e.preventDefault();
       handleSubmit();
     }
@@ -326,8 +353,9 @@ export function MessageComposer({
               value={text}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
+              enterKeyHint={enterKeyHint}
               placeholder={resolvedPlaceholder}
-              className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-11 max-h-[7.5rem] leading-5 py-3 px-2 overflow-y-auto"
+              className="flex-1 bg-transparent text-base text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-11 max-h-[7.5rem] leading-6 py-2.5 px-2 overflow-y-auto"
             />
 
             {/* Mic Button */}

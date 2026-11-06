@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Settings, LogOut, ALargeSmall, Wrench, MessageSquarePlus, KeyRound, Smartphone } from 'lucide-react';
+import { Bell, Settings, LogOut, ALargeSmall, CornerDownLeft, Wrench, MessageSquarePlus, KeyRound, Smartphone } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { useToast } from '../common/useToast.js';
 import { getLoggedOutMessage } from '../../utils/messages.js';
@@ -9,11 +9,13 @@ import { ROLE_LABELS } from '../../mock/staff.js';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { formatPhoneNg } from '../../utils/formatters.js';
 import { TEXT_SIZES, getTextSize } from '../../utils/textSize.js';
+import { ENTER_KEY_OPTIONS, getEnterKeyPref } from '../../utils/enterKey.js';
 import { Drawer } from '../common/Drawer.jsx';
 import { Avatar } from '../common/Avatar.jsx';
 import { Badge } from '../common/Badge.jsx';
 import { NotificationSettingsDrawer } from '../../features/chat/NotificationSettingsDrawer.jsx';
 import { TextSizeDrawer } from '../../features/settings/TextSizeDrawer.jsx';
+import { EnterKeyDrawer } from '../../features/settings/EnterKeyDrawer.jsx';
 import { ChangePasswordDrawer } from '../../features/auth/ChangePasswordDrawer.jsx';
 
 export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
@@ -24,7 +26,9 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
   const [isTextSizeOpen, setIsTextSizeOpen] = useState(false);
+  const [isEnterKeyOpen, setIsEnterKeyOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [currentEnterPrefId, setCurrentEnterPrefId] = useState(() => getEnterKeyPref());
 
   const pendingRequestsCount = useMemo(() => {
     return canUseAdmin(currentUser) ? pendingRequests(accessRequests).length : 0;
@@ -33,6 +37,9 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
   const currentSizeId = getTextSize();
   const currentSizeObj = TEXT_SIZES.find((s) => s.id === currentSizeId);
   const textSizeLabel = currentSizeObj?.label || 'Standard';
+
+  const currentEnterPrefObj = ENTER_KEY_OPTIONS.find((opt) => opt.id === currentEnterPrefId);
+  const enterKeyLabel = currentEnterPrefObj?.label || 'Automatic';
 
   const callName = callNameOf(currentUser) || 'User';
 
@@ -65,7 +72,10 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
       {/* 44px round avatar button */}
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setCurrentEnterPrefId(getEnterKeyPref());
+          setIsOpen(true);
+        }}
         aria-label={`Account menu for ${callName}`}
         title={`Account menu for ${currentUser?.name || 'User'}`}
         className="w-11 h-11 flex items-center justify-center rounded-full hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer shrink-0 transition-opacity"
@@ -154,6 +164,22 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
                 <span>Text size</span>
               </div>
               <span className="text-xs text-ink-muted">{textSizeLabel}</span>
+            </button>
+
+            {/* Enter key */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setIsEnterKeyOpen(true);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-3 flex items-center justify-between gap-3 text-xs font-medium text-ink hover:bg-surface-raised transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-3">
+                <CornerDownLeft className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+                <span>Enter key</span>
+              </div>
+              <span className="text-xs text-ink-muted text-right">{enterKeyLabel}</span>
             </button>
 
             {/* Change password */}
@@ -249,6 +275,16 @@ export function AccountMenu({ onOpenDemoTools, onOpenFeedback }) {
       <TextSizeDrawer
         isOpen={isTextSizeOpen}
         onClose={() => setIsTextSizeOpen(false)}
+      />
+
+      {/* Enter Key Drawer */}
+      <EnterKeyDrawer
+        key={isEnterKeyOpen ? 'open' : 'closed'}
+        isOpen={isEnterKeyOpen}
+        onClose={() => {
+          setIsEnterKeyOpen(false);
+          setCurrentEnterPrefId(getEnterKeyPref());
+        }}
       />
 
       {/* Change Password Drawer */}
