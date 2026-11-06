@@ -24,6 +24,7 @@ function SampleVideoPlayer({ file }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const totalSec = file.durationSec || 60;
+  const aspectRatio = (file.width && file.height) ? `${file.width} / ${file.height}` : '16 / 9';
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -55,7 +56,10 @@ function SampleVideoPlayer({ file }) {
 
   return (
     <div className="w-full bg-surface-raised border border-line rounded-2xl p-3 space-y-3">
-      <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-surface border border-line flex items-center justify-center">
+      <div
+        className="relative w-full rounded-xl overflow-hidden bg-surface border border-line flex items-center justify-center max-h-[50dvh] mx-auto"
+        style={{ aspectRatio }}
+      >
         <PhotoPlaceholder
           fileName={file.fileName}
           className="w-full h-full object-contain"
@@ -183,7 +187,14 @@ export function FileDetailDrawer({
             currentFile.isSample ? (
               <SampleVideoPlayer key={currentFile.id || 'sample-player'} file={currentFile} />
             ) : previewUrl ? (
-              <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden">
+              <div
+                className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden mx-auto"
+                style={{
+                  aspectRatio: (currentFile.width && currentFile.height)
+                    ? `${currentFile.width} / ${currentFile.height}`
+                    : '16 / 9',
+                }}
+              >
                 <video
                   src={previewUrl}
                   controls
@@ -194,7 +205,14 @@ export function FileDetailDrawer({
               </div>
             ) : (
               <div className="space-y-2 w-full">
-                <div className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden aspect-[16/9]">
+                <div
+                  className="w-full max-h-[60dvh] bg-surface-raised border border-line rounded-2xl flex items-center justify-center p-2 overflow-hidden mx-auto"
+                  style={{
+                    aspectRatio: (currentFile.width && currentFile.height)
+                      ? `${currentFile.width} / ${currentFile.height}`
+                      : '16 / 9',
+                  }}
+                >
                   <PhotoPlaceholder
                     fileName={currentFile.fileName}
                     className="w-full h-full object-contain"

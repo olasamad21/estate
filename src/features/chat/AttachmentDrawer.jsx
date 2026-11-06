@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Image, Video, FileText, Sparkles, UserPlus, Building2 } from 'lucide-react';
+import { Image, Video, FileText, Sparkles, UserPlus, Building2, Camera } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { setPreviewUrl } from '../../utils/previewUrls.js';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -23,8 +23,13 @@ export function AttachmentDrawer({
   onOpenShareListing,
 }) {
   const { currentUser } = useChat();
+  const [isTouchDevice] = useState(() => (
+    typeof window !== 'undefined' && Boolean(window.matchMedia?.('(pointer: coarse)')?.matches)
+  ));
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const cameraPhotoInputRef = useRef(null);
+  const cameraVideoInputRef = useRef(null);
   const docInputRef = useRef(null);
   const [videoError, setVideoError] = useState(null);
 
@@ -84,7 +89,7 @@ export function AttachmentDrawer({
     tempVideo.preload = 'metadata';
 
     let isFinished = false;
-    const cleanupAndProceed = (duration) => {
+    const cleanupAndProceed = (duration, width = null, height = null) => {
       if (isFinished) return;
       isFinished = true;
       try {
@@ -109,6 +114,8 @@ export function AttachmentDrawer({
           fileKind: 'video',
           type: 'video',
           durationSec,
+          width: width ?? null,
+          height: height ?? null,
           objectUrl,
           isSample: false,
         });
@@ -119,6 +126,8 @@ export function AttachmentDrawer({
           fileKind: 'video',
           type: 'video',
           durationSec,
+          width: width ?? null,
+          height: height ?? null,
           isSample: false,
         });
         if (objectUrl && msgId) {
@@ -130,10 +139,12 @@ export function AttachmentDrawer({
 
     tempVideo.onloadedmetadata = () => {
       const dur = tempVideo.duration;
+      const w = typeof tempVideo.videoWidth === 'number' && tempVideo.videoWidth > 0 ? tempVideo.videoWidth : null;
+      const h = typeof tempVideo.videoHeight === 'number' && tempVideo.videoHeight > 0 ? tempVideo.videoHeight : null;
       if (Number.isFinite(dur) && dur > 0) {
-        cleanupAndProceed(dur);
+        cleanupAndProceed(dur, w, h);
       } else {
-        cleanupAndProceed(null);
+        cleanupAndProceed(null, w, h);
       }
     };
 
@@ -199,6 +210,8 @@ export function AttachmentDrawer({
         fileKind: 'video',
         type: 'video',
         durationSec: 75,
+        width: 1280,
+        height: 720,
         objectUrl: null,
         isSample: true,
       });
@@ -209,6 +222,8 @@ export function AttachmentDrawer({
         fileKind: 'video',
         type: 'video',
         durationSec: 75,
+        width: 1280,
+        height: 720,
         isSample: true,
       });
     }
@@ -239,12 +254,35 @@ export function AttachmentDrawer({
     <Drawer isOpen={isOpen} onClose={handleClose} title="Share File or Photo">
       <div className="space-y-3">
         {videoError && (
-          <div className="p-3 rounded-xl bg-status-danger-bg border border-status-danger-line text-xs text-status-danger">
-            {videoError}
+          <div className="p-3 rounded-xl bg-status-danger-bg border border-status-danger-line text-xs text-status-danger space-y-1">
+            <p className="font-medium">{videoError}</p>
+            <p className="text-ink-muted">Try a shorter recording.</p>
           </div>
         )}
 
         {/* Hidden native file inputs */}
+        {isTouchDevice && (
+          <>
+            <input
+              ref={cameraPhotoInputRef}
+              name="attach_camera_photo"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+            <input
+              ref={cameraVideoInputRef}
+              name="attach_camera_video"
+              type="file"
+              accept="video/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleVideoChange}
+            />
+          </>
+        )}
         <input
           ref={photoInputRef}
           name="attach_photo"
@@ -270,7 +308,41 @@ export function AttachmentDrawer({
           onChange={handleDocChange}
         />
 
-        {/* Option 1: Photo */}
+        {/* Touch only: Take photo */}
+        {isTouchDevice && (
+          <button
+            type="button"
+            onClick={() => cameraPhotoInputRef.current?.click()}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand group-hover:scale-105 transition-transform">
+              <Camera className="w-5 h-5 text-brand" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-ink">Take photo</p>
+              <p className="text-xs text-ink-muted">Capture property photo with camera</p>
+            </div>
+          </button>
+        )}
+
+        {/* Touch only: Record video */}
+        {isTouchDevice && (
+          <button
+            type="button"
+            onClick={() => cameraVideoInputRef.current?.click()}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-line bg-surface hover:bg-surface-raised transition-colors text-left cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-surface-raised border border-line flex items-center justify-center shrink-0 text-brand group-hover:scale-105 transition-transform">
+              <Video className="w-5 h-5 text-brand" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-ink">Record video</p>
+              <p className="text-xs text-ink-muted">Record walkthrough with camera</p>
+            </div>
+          </button>
+        )}
+
+        {/* Option 1: Choose photo */}
         <button
           type="button"
           onClick={() => photoInputRef.current?.click()}
@@ -280,12 +352,12 @@ export function AttachmentDrawer({
             <Image className="w-5 h-5 text-brand" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-ink">Photo</p>
+            <p className="text-xs font-bold text-ink">Choose photo</p>
             <p className="text-xs text-ink-muted">Share property photos or site inspections</p>
           </div>
         </button>
 
-        {/* Option: Video */}
+        {/* Option: Choose video */}
         <button
           type="button"
           onClick={() => videoInputRef.current?.click()}
@@ -295,7 +367,7 @@ export function AttachmentDrawer({
             <Video className="w-5 h-5 text-brand" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-ink">Video</p>
+            <p className="text-xs font-bold text-ink">Choose video</p>
             <p className="text-xs text-ink-muted">Share property walkthroughs or site recordings</p>
           </div>
         </button>

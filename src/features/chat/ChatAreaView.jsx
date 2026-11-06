@@ -425,6 +425,8 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
       fileSize: currentAtt.fileSize,
       fileKind: currentAtt.fileKind,
       durationSec: currentAtt.durationSec ?? null,
+      width: currentAtt.width ?? null,
+      height: currentAtt.height ?? null,
       isSample: Boolean(currentAtt.isSample),
       caption,
     });

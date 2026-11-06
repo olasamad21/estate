@@ -567,7 +567,7 @@ export function ChatProvider({ children }) {
     }));
   }, [currentUserId, currentUser, isOffline, channels]);
 
-  const sendFile = useCallback((channelId, { type, fileName, fileSize, fileKind, durationSec, isSample, caption }) => {
+  const sendFile = useCallback((channelId, { type, fileName, fileSize, fileKind, durationSec, isSample, caption, width, height }) => {
     if (!currentUserId || !channelId || !fileName) return null;
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return null;
@@ -586,6 +586,8 @@ export function ChatProvider({ children }) {
       text: fileName,
       caption: trimmedCaption,
       durationSec: durationSec ?? null,
+      width: typeof width === 'number' && Number.isFinite(width) ? width : null,
+      height: typeof height === 'number' && Number.isFinite(height) ? height : null,
       isSample: Boolean(isSample),
       createdAt: nowIso,
       status: isOffline ? 'queued' : 'sent',

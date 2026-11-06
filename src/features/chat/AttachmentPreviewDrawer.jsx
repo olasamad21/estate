@@ -67,7 +67,14 @@ export function AttachmentPreviewDrawer({
         {isVideo ? (
           <div className="space-y-2">
             {attachment.isSample ? (
-              <div className="relative w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center aspect-[16/9]">
+              <div
+                className="relative w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center mx-auto"
+                style={{
+                  aspectRatio: (attachment.width && attachment.height)
+                    ? `${attachment.width} / ${attachment.height}`
+                    : '16 / 9',
+                }}
+              >
                 <PhotoPlaceholder
                   fileName={attachment.fileName}
                   className="w-full h-full object-contain"
@@ -79,7 +86,14 @@ export function AttachmentPreviewDrawer({
                 </div>
               </div>
             ) : (
-              <div className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2">
+              <div
+                className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2 mx-auto"
+                style={{
+                  aspectRatio: (attachment.width && attachment.height)
+                    ? `${attachment.width} / ${attachment.height}`
+                    : '16 / 9',
+                }}
+              >
                 {attachment.objectUrl ? (
                   <video
                     src={attachment.objectUrl}
