@@ -101,7 +101,8 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-scrim transition-opacity duration-200"
+      className="fixed inset-x-0 z-50 flex items-center justify-center p-4 bg-scrim transition-opacity duration-200"
+      style={{ top: 'var(--app-offset-top, 0px)', height: 'var(--app-h, 100dvh)' }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
@@ -111,10 +112,10 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`w-full ${maxWidth} bg-surface rounded-2xl border border-line shadow-2xl flex flex-col overflow-hidden animate-modal-mount focus:outline-none`}
+        className={`w-full max-h-full ${maxWidth} bg-surface rounded-2xl border border-line shadow-2xl flex flex-col overflow-hidden animate-modal-mount focus:outline-none`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
           <h2 id={titleId} className="text-base font-semibold text-ink">
             {title}
           </h2>
@@ -129,13 +130,13 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto max-h-[70dvh] text-sm text-ink-soft">
+        <div className="p-5 overflow-y-auto min-h-0 max-h-[calc(var(--app-h,100dvh)*0.7)] text-sm text-ink-soft">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-5 py-3.5 bg-surface-raised border-t border-line">
+          <div className="flex items-center justify-end gap-3 px-5 py-3.5 bg-surface-raised border-t border-line shrink-0">
             {footer}
           </div>
         )}

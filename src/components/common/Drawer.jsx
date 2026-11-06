@@ -273,15 +273,16 @@ export function Drawer({
 
   const panelLayoutClasses =
     variant === 'form'
-      ? 'w-full h-[100dvh] max-h-[100dvh] rounded-none border-none shadow-none flex flex-col bg-surface pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] lg:relative lg:inset-auto lg:w-full lg:max-w-md lg:h-auto lg:max-h-[85dvh] lg:rounded-2xl lg:border lg:border-line lg:shadow-2xl lg:p-0'
-      : 'w-full max-w-md bg-surface rounded-t-2xl border-t border-x border-line shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[85dvh]';
+      ? 'w-full h-[var(--app-h,100dvh)] max-h-[var(--app-h,100dvh)] rounded-none border-none shadow-none flex flex-col bg-surface pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] lg:relative lg:inset-auto lg:w-full lg:max-w-md lg:h-auto lg:max-h-[calc(var(--app-h,100dvh)*0.85)] lg:rounded-2xl lg:border lg:border-line lg:shadow-2xl lg:p-0'
+      : 'w-full max-w-md bg-surface rounded-t-2xl border-t border-x border-line shadow-2xl flex flex-col max-h-[calc(var(--app-h,100dvh)*0.92)] sm:max-h-[calc(var(--app-h,100dvh)*0.85)]';
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-50 flex justify-center bg-scrim transition-opacity duration-250 ${
+        className={`fixed inset-x-0 z-50 flex justify-center bg-scrim transition-opacity duration-250 ${
           variant === 'form' ? 'items-stretch lg:items-center' : 'items-end'
         } ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        style={{ top: 'var(--app-offset-top, 0px)', height: 'var(--app-h, 100dvh)' }}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
       >

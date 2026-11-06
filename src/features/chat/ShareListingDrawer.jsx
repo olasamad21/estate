@@ -73,7 +73,7 @@ function ShareListingForm({ isOpen, channel, onClose }) {
             No properties yet.
           </div>
         ) : (
-          <div className="space-y-4 max-h-[45dvh] overflow-y-auto pr-1" role="radiogroup" aria-label="Properties">
+          <div className="space-y-4 max-h-[calc(var(--app-h,100dvh)*0.45)] overflow-y-auto pr-1" role="radiogroup" aria-label="Properties">
             {siteGroups.map((group) => {
               const headingText = group.location
                 ? `${group.title} · ${group.location}`

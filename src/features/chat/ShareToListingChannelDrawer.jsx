@@ -109,7 +109,7 @@ function ShareToListingChannelForm({ isOpen, listingChannel, onClose }) {
           Select destination <span className="text-status-danger">*</span>
         </label>
 
-        <div className="space-y-2 max-h-[45dvh] overflow-y-auto pr-1" role="radiogroup" aria-label="Destination Channels">
+        <div className="space-y-2 max-h-[calc(var(--app-h,100dvh)*0.45)] overflow-y-auto pr-1" role="radiogroup" aria-label="Destination Channels">
           {renderChannelGroup('Channels', Hash, groupedChannels.publicChannels)}
           {renderChannelGroup('Private', Lock, groupedChannels.privateChannels)}
           {renderChannelGroup('Direct messages', MessageSquare, groupedChannels.directMessages)}

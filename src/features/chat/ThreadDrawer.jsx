@@ -39,7 +39,7 @@ export function ThreadDrawer({
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Thread">
-      <div className="flex flex-col h-[70dvh] min-h-0 -mx-4 -mb-4">
+      <div className="flex flex-col h-[calc(var(--app-h,100dvh)*0.7)] max-h-[calc(var(--app-h,100dvh)*0.92-7.25rem)] sm:max-h-[calc(var(--app-h,100dvh)*0.85-7.25rem)] min-h-0 -mx-4 -mb-4">
         {/* Parent message header block */}
         <div className="px-4 py-3 bg-surface-raised border-b border-line shrink-0">
           <div className="flex items-start gap-2.5">

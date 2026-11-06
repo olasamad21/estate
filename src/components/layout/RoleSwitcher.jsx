@@ -124,7 +124,7 @@ export function RoleSwitcher({
         isOpen={isOpen}
         onClose={() => handleSetOpen(false)}
         title="Demo Tools"
-        panelClassName="h-full max-h-[92dvh] lg:max-h-[85dvh] lg:max-w-md lg:rounded-2xl lg:border lg:self-center"
+        panelClassName="h-full max-h-[calc(var(--app-h,100dvh)*0.92)] lg:max-h-[calc(var(--app-h,100dvh)*0.85)] lg:max-w-md lg:rounded-2xl lg:border lg:self-center"
       >
         <div className="space-y-5">
           {/* Top caption */}

@@ -68,7 +68,7 @@ export function AttachmentPreviewDrawer({
           <div className="space-y-2">
             {attachment.isSample ? (
               <div
-                className="relative w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center mx-auto"
+                className="relative w-full max-h-[calc(var(--app-h,100dvh)*0.55)] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center mx-auto"
                 style={{
                   aspectRatio: (attachment.width && attachment.height)
                     ? `${attachment.width} / ${attachment.height}`
@@ -87,7 +87,7 @@ export function AttachmentPreviewDrawer({
               </div>
             ) : (
               <div
-                className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2 mx-auto"
+                className="w-full max-h-[calc(var(--app-h,100dvh)*0.55)] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2 mx-auto"
                 style={{
                   aspectRatio: (attachment.width && attachment.height)
                     ? `${attachment.width} / ${attachment.height}`
@@ -100,7 +100,7 @@ export function AttachmentPreviewDrawer({
                     controls
                     playsInline
                     preload="metadata"
-                    className="w-full max-h-[50dvh] object-contain rounded-lg"
+                    className="w-full max-h-[calc(var(--app-h,100dvh)*0.5)] object-contain rounded-lg"
                   />
                 ) : (
                   <PhotoPlaceholder
@@ -119,19 +119,19 @@ export function AttachmentPreviewDrawer({
           </div>
         ) : isPhoto ? (
           attachment.isSample ? (
-            <div className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center aspect-[4/3]">
+            <div className="w-full max-h-[calc(var(--app-h,100dvh)*0.55)] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center aspect-[4/3]">
               <PhotoPlaceholder
                 fileName={attachment.fileName}
                 className="w-full h-full object-contain"
               />
             </div>
           ) : (
-            <div className="w-full max-h-[55dvh] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2">
+            <div className="w-full max-h-[calc(var(--app-h,100dvh)*0.55)] rounded-xl overflow-hidden bg-surface-raised border border-line flex items-center justify-center p-2">
               {attachment.objectUrl ? (
                 <img
                   src={attachment.objectUrl}
                   alt={attachment.fileName || 'Photo preview'}
-                  className="w-full max-h-[50dvh] object-contain rounded-lg"
+                  className="w-full max-h-[calc(var(--app-h,100dvh)*0.5)] object-contain rounded-lg"
                 />
               ) : (
                 <PhotoPlaceholder

@@ -281,7 +281,7 @@ export function GlobalSearchDrawer({
       isOpen={isOpen}
       onClose={handleClose}
       title="Search Workspace"
-      panelClassName="h-full max-h-[92dvh] lg:max-h-[80dvh] lg:max-w-xl lg:rounded-2xl lg:border"
+      panelClassName="h-full max-h-[calc(var(--app-h,100dvh)*0.92)] lg:max-h-[calc(var(--app-h,100dvh)*0.8)] lg:max-w-xl lg:rounded-2xl lg:border"
     >
       <div className="space-y-4">
         {/* Search input field */}
