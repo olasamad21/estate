@@ -1533,15 +1533,17 @@ export function AdminView() {
                                   active ? 'hover:bg-surface-raised/40' : 'bg-surface-raised/50 opacity-75'
                                 }`}
                               >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <Avatar
-                                    role={member.role}
-                                    initials={initialsOf(member.name)}
-                                    name={member.name}
-                                    isOnline={active && (member.isOnline ?? member.online)}
-                                    size="md"
-                                  />
-                                  <div className="min-w-0 flex-1 space-y-0.5">
+                                <div className="flex items-start gap-3 min-w-0 flex-1">
+                                  <div className="pt-0.5 shrink-0">
+                                    <Avatar
+                                      role={member.role}
+                                      initials={initialsOf(member.name)}
+                                      name={member.name}
+                                      isOnline={active && (member.isOnline ?? member.online)}
+                                      size="md"
+                                    />
+                                  </div>
+                                  <div className="min-w-0 flex-1 space-y-1.5">
                                     {/* Name and optional neutral "You" tag */}
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="text-xs font-semibold text-ink break-words">
@@ -1554,19 +1556,11 @@ export function AdminView() {
                                       )}
                                     </div>
 
-                                    {/* Role Badge, Department, and Office caption (and badges for Not activated / Deactivated) */}
+                                    {/* Role Badge and status badges */}
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <Badge role={member.role}>
                                         {ROLE_LABELS[member.role] || member.role}
                                       </Badge>
-                                      {member.department && (
-                                        <span className="text-xs text-ink-soft font-medium">
-                                          {member.department}
-                                        </span>
-                                      )}
-                                      <span className="text-xs text-ink-muted">
-                                        {officeLabelOf(member.officeId || member.office)}
-                                      </span>
                                       {isInvited && (
                                         <Badge variant="warning">
                                           Not activated
@@ -1579,9 +1573,23 @@ export function AdminView() {
                                       )}
                                     </div>
 
-                                    {/* Formatted phone (tabular figures, normal letter spacing) */}
-                                    <div className="text-xs text-ink-muted tabular-nums tracking-normal">
-                                      {formatPhoneNg(member.phone)}
+                                    {/* Department, Office, and Phone metadata row */}
+                                    <div className="flex items-center gap-1.5 text-xs text-ink-muted flex-wrap">
+                                      {member.department && (
+                                        <>
+                                          <span className="text-ink-soft font-medium">
+                                            {member.department}
+                                          </span>
+                                          <span>·</span>
+                                        </>
+                                      )}
+                                      <span>
+                                        {officeLabelOf(member.officeId || member.office)}
+                                      </span>
+                                      <span>·</span>
+                                      <span className="tabular-nums tracking-normal">
+                                        {formatPhoneNg(member.phone)}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -1623,9 +1631,11 @@ export function AdminView() {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs text-ink-muted">
-                                      {member.title}
-                                    </div>
+                                    {member.title && (
+                                      <div className="text-xs text-ink-muted mt-0.5">
+                                        {member.title}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -2063,22 +2073,29 @@ export function AdminView() {
           return (
             <div className="space-y-4">
               {/* Header: avatar, name, job title, role Badge, office, phone */}
-              <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-center gap-3">
-                <Avatar
-                  role={member.role}
-                  initials={initialsOf(member.name)}
-                  name={member.name}
-                  isOnline={active && (member.isOnline ?? member.online)}
-                  size="md"
-                />
-                <div className="min-w-0 space-y-1">
+              <div className="p-3.5 rounded-xl bg-surface-raised border border-line flex items-start gap-3">
+                <div className="pt-0.5 shrink-0">
+                  <Avatar
+                    role={member.role}
+                    initials={initialsOf(member.name)}
+                    name={member.name}
+                    isOnline={active && (member.isOnline ?? member.online)}
+                    size="md"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {/* Name and optional neutral "You" tag */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-ink">{member.name}</span>
+                    <span className="text-xs font-bold text-ink break-words">{member.name}</span>
                     {isSelf && (
                       <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface text-ink-muted border border-line">
                         You
                       </span>
                     )}
+                  </div>
+
+                  {/* Role Badge and status badges */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge role={member.role}>
                       {ROLE_LABELS[member.role] || member.role}
                     </Badge>
@@ -2093,11 +2110,23 @@ export function AdminView() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-ink-muted">
-                    {member.title}
-                  </div>
-                  <div className="text-xs text-ink-muted flex items-center gap-2 flex-wrap">
+
+                  {/* Job title if present */}
+                  {member.title && (
+                    <div className="text-xs text-ink-soft font-medium">
+                      {member.title}
+                    </div>
+                  )}
+
+                  {/* Office, Department, Phone, Email metadata row */}
+                  <div className="text-xs text-ink-muted flex items-center gap-1.5 flex-wrap">
                     <span>{officeLabelOf(member.officeId || member.office)}</span>
+                    {member.department && (
+                      <>
+                        <span>·</span>
+                        <span>{member.department}</span>
+                      </>
+                    )}
                     <span>·</span>
                     <span className="tabular-nums tracking-normal">{formatPhoneNg(member.phone)}</span>
                     {member.email && (
