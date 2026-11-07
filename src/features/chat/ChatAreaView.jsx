@@ -754,7 +754,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
 
           {/* Typing Indicator */}
           {typingStatus && typingStatus.channelId === channel.id && (
-            <div className="px-4 py-1 text-xs text-ink-muted flex items-center gap-1.5 bg-surface flex-none">
+            <div className="px-2 sm:px-3 py-1 text-xs text-ink-muted flex items-center gap-2 bg-surface flex-none">
               <span className="font-semibold text-ink">{typingStatus.staffName}</span>
               <span>is typing...</span>
             </div>

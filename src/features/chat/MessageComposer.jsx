@@ -3,7 +3,6 @@ import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { canPost, callNameOf, channelMembersFor } from '../../utils/chat.js';
 import { getEnterKeyPref, shouldEnterSend } from '../../utils/enterKey.js';
-import { Button } from '../../components/common/Button.jsx';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
 
@@ -204,6 +203,10 @@ export function MessageComposer({
     }
   };
 
+  const handleKeepFocusDown = (e) => {
+    e.preventDefault();
+  };
+
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     const trimmed = text.trim();
@@ -225,6 +228,7 @@ export function MessageComposer({
     setIsEmojiOpen(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
+      textareaRef.current.focus({ preventScroll: true });
     }
   };
 
@@ -241,6 +245,11 @@ export function MessageComposer({
     );
   }
 
+  const isActivelyRecording = effectiveAllowVoice && isRecording;
+  const showSendInChannel = !isActivelyRecording && (hasText || Boolean(activeEditingMessage));
+  const showMicInChannel = !isActivelyRecording && !showSendInChannel;
+  const sendAriaLabel = activeEditingMessage ? 'Save changes' : 'Send message';
+
   return (
     <div className="relative border-t border-line bg-surface flex-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Mention Menu */}
@@ -254,16 +263,9 @@ export function MessageComposer({
         />
       )}
 
-      {/* Emoji Picker Popover */}
-      <EmojiPicker
-        isOpen={isEmojiOpen}
-        onClose={() => setIsEmojiOpen(false)}
-        onSelectEmoji={handleSelectEmoji}
-      />
-
       {/* Editing Message Banner */}
       {activeEditingMessage && (
-        <div className="px-3 py-1.5 bg-brand/10 border-b border-brand/20 flex items-center justify-between text-xs">
+        <div className="px-2 sm:px-3 bg-brand/10 border-b border-brand/20 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 min-w-0 text-brand font-medium">
             <Pencil className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="overflow-hidden text-ellipsis whitespace-nowrap">
@@ -274,7 +276,7 @@ export function MessageComposer({
             type="button"
             onClick={onCancelEdit}
             aria-label="Cancel editing"
-            className="text-xs text-ink-muted hover:text-ink font-semibold ml-2 cursor-pointer"
+            className="min-h-11 min-w-11 px-2 inline-flex items-center justify-center text-xs text-ink-muted hover:text-ink font-semibold cursor-pointer rounded-lg shrink-0"
           >
             Cancel
           </button>
@@ -282,117 +284,140 @@ export function MessageComposer({
       )}
 
       {/* Composer Input Area */}
-      <form onSubmit={handleSubmit} className="p-1.5 sm:p-2.5">
-        {effectiveAllowVoice && isRecording ? (
-          /* Voice Recording Mode Bar */
-          <div className="flex items-center justify-between gap-3 bg-status-danger-bg border border-status-danger-line rounded-xl px-4 py-2.5 min-h-[48px]">
-            <div className="flex items-center gap-2.5">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 px-2 sm:px-3 py-2">
+        {/* Attachment Button */}
+        {effectiveAllowAttach && (
+          <button
+            type="button"
+            onClick={onOpenAttachDrawer}
+            aria-label="Attach file or photo"
+            className="w-11 h-11 min-w-11 min-h-11 rounded-full flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-raised active:bg-surface-raised transition-colors duration-150 cursor-pointer shrink-0"
+          >
+            <Paperclip className="w-5 h-5" aria-hidden="true" />
+          </button>
+        )}
+
+        {isActivelyRecording ? (
+          /* Voice Recording Mode Bar (in pill's place) */
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-2 bg-status-danger-bg border border-status-danger-line rounded-3xl pl-3 pr-1">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-status-danger animate-pulse shrink-0" />
-              <Mic className="w-4 h-4 text-status-danger shrink-0" aria-hidden="true" />
-              <span className="text-xs font-mono font-bold text-status-danger tabular-nums">
+              <Mic className="w-4 h-4 text-status-danger shrink-0 hidden sm:block" aria-hidden="true" />
+              <span className="text-xs font-mono font-bold text-status-danger tabular-nums shrink-0">
                 {formatTimer(recordingSeconds)}
               </span>
-              <span className="text-xs text-ink-muted hidden sm:inline">
+              <span className="text-xs text-ink-muted hidden md:inline overflow-hidden text-ellipsis whitespace-nowrap">
                 Recording voice note...
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
+            <div className="flex items-center gap-1 shrink-0">
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={handleCancelRecording}
-                className="text-xs text-ink-muted hover:text-ink h-8 px-2.5 cursor-pointer"
+                className="min-h-11 min-w-11 h-11 px-2 rounded-full inline-flex items-center justify-center text-xs font-medium text-ink-muted hover:text-ink hover:bg-surface/60 transition-colors duration-150 cursor-pointer"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="primary"
-                size="sm"
                 onClick={handleSendVoiceNote}
                 aria-label="Send voice note"
-                className="h-8 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                className="min-h-11 min-w-11 h-11 px-2.5 sm:px-3 rounded-full bg-brand text-surface hover:bg-brand-ink inline-flex items-center justify-center gap-1.5 font-medium transition-colors duration-150 cursor-pointer"
               >
-                <Send className="w-3.5 h-3.5" aria-hidden="true" />
-                <span className="text-xs">Send</span>
-              </Button>
+                <Send className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="text-xs hidden sm:inline">Send</span>
+              </button>
             </div>
           </div>
         ) : (
-          /* Regular Message Bar */
-          <div className="flex items-end gap-1.5 bg-surface-raised border border-line rounded-xl px-2 py-1 focus-within:border-brand transition-colors min-h-12">
-            {/* Attachment Button */}
-            {effectiveAllowAttach && (
+          /* Input Pill + Emoji Picker Anchor */
+          <div className="relative flex-1 min-w-0">
+            <EmojiPicker
+              isOpen={isEmojiOpen}
+              onClose={() => setIsEmojiOpen(false)}
+              onSelectEmoji={handleSelectEmoji}
+            />
+            <div className="relative flex items-end bg-surface-raised border border-line rounded-3xl transition-[border-color,box-shadow] duration-150 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-line">
+              <textarea
+                ref={textareaRef}
+                name={inputName}
+                rows={1}
+                value={text}
+                onChange={handleTextChange}
+                onKeyDown={handleKeyDown}
+                enterKeyHint={enterKeyHint}
+                placeholder={resolvedPlaceholder}
+                className="composer-pill-textarea block w-full bg-transparent text-base text-ink placeholder:text-ink-muted resize-none outline-none focus:outline-none focus-visible:outline-none min-h-11 max-h-[7.5rem] leading-6 py-2.5 overflow-y-auto"
+              />
               <button
                 type="button"
-                onClick={onOpenAttachDrawer}
-                aria-label="Attach file or photo"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+                onClick={() => setIsEmojiOpen((prev) => !prev)}
+                aria-label="Insert reaction emoji"
+                className="composer-emoji-btn absolute right-1 bottom-1 w-9 h-9 rounded-full items-center justify-center text-ink-muted hover:text-ink hover:bg-surface active:bg-surface transition-colors duration-150 cursor-pointer before:content-[''] before:absolute before:-inset-1"
               >
-                <Paperclip className="w-4 h-4" aria-hidden="true" />
+                <Smile className="w-4 h-4" aria-hidden="true" />
               </button>
-            )}
+            </div>
+          </div>
+        )}
 
-            {/* Emoji Button */}
-            <button
-              type="button"
-              onClick={() => setIsEmojiOpen((prev) => !prev)}
-              aria-label="Insert reaction emoji"
-              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
-            >
-              <Smile className="w-4 h-4" aria-hidden="true" />
-            </button>
-
-            {/* Textarea */}
-            <textarea
-              ref={textareaRef}
-              name={inputName}
-              rows={1}
-              value={text}
-              onChange={handleTextChange}
-              onKeyDown={handleKeyDown}
-              enterKeyHint={enterKeyHint}
-              placeholder={resolvedPlaceholder}
-              className="flex-1 bg-transparent text-base text-ink placeholder:text-ink-muted resize-none focus:outline-none min-h-11 max-h-[7.5rem] leading-6 py-2.5 px-2 overflow-y-auto"
-            />
-
-            {/* Mic Button */}
-            {effectiveAllowVoice && !hasText && !activeEditingMessage && (
+        {/* Fixed 2.75rem Action Slot */}
+        <div className="relative w-11 h-11 min-w-11 min-h-11 shrink-0">
+          {effectiveAllowVoice ? (
+            <>
               <button
                 type="button"
                 onClick={handleStartRecording}
                 aria-label="Record voice note"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand hover:bg-surface rounded-lg transition-colors cursor-pointer shrink-0"
+                tabIndex={showMicInChannel ? 0 : -1}
+                aria-hidden={showMicInChannel ? undefined : true}
+                className={`composer-action-morph absolute inset-0 w-11 h-11 min-w-11 min-h-11 rounded-full flex items-center justify-center bg-transparent text-ink-muted hover:text-ink hover:bg-surface-raised active:bg-surface-raised ${
+                  showMicInChannel
+                    ? 'opacity-100 scale-100 cursor-pointer'
+                    : 'opacity-0 scale-[0.85] pointer-events-none'
+                }`}
               >
-                <Mic className="w-4 h-4" aria-hidden="true" />
+                <Mic className="w-5 h-5" aria-hidden="true" />
               </button>
-            )}
-
-            {/* Submit Button */}
-            <Button
+              <button
+                type="submit"
+                disabled={!hasText}
+                onPointerDown={handleKeepFocusDown}
+                onMouseDown={handleKeepFocusDown}
+                aria-label={sendAriaLabel}
+                tabIndex={showSendInChannel ? 0 : -1}
+                aria-hidden={showSendInChannel ? undefined : true}
+                className={`composer-action-morph absolute inset-0 w-11 h-11 min-w-11 min-h-11 rounded-full flex items-center justify-center ${
+                  activeEditingMessage && !hasText
+                    ? 'bg-surface-raised text-ink-muted cursor-not-allowed'
+                    : 'bg-brand text-surface hover:bg-brand-ink cursor-pointer'
+                } ${
+                  showSendInChannel
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-[0.85] pointer-events-none'
+                }`}
+              >
+                <Send className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <button
               type="submit"
-              variant={hasText ? 'primary' : 'ghost'}
-              size="sm"
               disabled={!hasText}
-              aria-label={
-                activeEditingMessage
-                  ? 'Save changes'
-                  : isThread
-                  ? 'Send thread reply'
-                  : 'Send message'
-              }
-              className={`rounded-lg shrink-0 w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center p-0 transition-colors ${
+              onPointerDown={handleKeepFocusDown}
+              onMouseDown={handleKeepFocusDown}
+              aria-label={sendAriaLabel}
+              className={`composer-action-morph absolute inset-0 w-11 h-11 min-w-11 min-h-11 rounded-full flex items-center justify-center ${
                 hasText
-                  ? 'cursor-pointer'
-                  : 'text-ink-muted/50 hover:bg-transparent active:scale-100 cursor-not-allowed'
+                  ? 'bg-brand text-surface hover:bg-brand-ink cursor-pointer'
+                  : 'bg-surface-raised text-ink-muted cursor-not-allowed'
               }`}
             >
               <Send className="w-4 h-4" aria-hidden="true" />
-            </Button>
-          </div>
-        )}
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

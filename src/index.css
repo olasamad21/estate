@@ -84,6 +84,9 @@
   /* Typography */
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Motion easing */
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -212,6 +215,34 @@
   select {
     font-size: 1rem;
   }
+}
+
+/* Composer fine-pointer hover emoji button, pill padding, and 120ms action morph */
+.composer-emoji-btn {
+  display: none;
+}
+
+.composer-pill-textarea {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .composer-emoji-btn {
+    display: flex;
+  }
+
+  .composer-pill-textarea {
+    padding-right: 2.75rem;
+  }
+}
+
+.composer-action-morph {
+  transition:
+    opacity 120ms var(--ease-snappy),
+    transform 120ms var(--ease-snappy),
+    background-color 120ms var(--ease-snappy),
+    color 120ms var(--ease-snappy);
 }
 
 

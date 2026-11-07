@@ -33,7 +33,7 @@ export function EmojiPicker({ isOpen, onClose, onSelectEmoji }) {
   return (
     <div
       ref={popoverRef}
-      className="absolute bottom-full mb-2 left-2 z-40 bg-surface border border-line rounded-xl shadow-xl p-2.5 animate-modal-mount"
+      className="absolute bottom-full mb-2 right-0 z-40 bg-surface border border-line rounded-xl shadow-xl p-2.5 animate-modal-mount"
       role="dialog"
       aria-label="Emoji Picker"
     >
