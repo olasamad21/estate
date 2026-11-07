@@ -8,7 +8,7 @@ import { SEED_ACCESS_REQUESTS, SEED_ACTIVATION_LINKS } from '../mock/accessReque
 import { SEED_ACTIVITY_LOG } from '../mock/activityLog.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty, normaliseMessageText } from '../utils/chat.js';
 import { hashPassword, passwordRules, isPasswordValid, checkPassword } from '../utils/password.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
@@ -457,7 +457,8 @@ export function ChatProvider({ children }) {
   }, [showToast]);
 
   const sendMessage = useCallback((channelId, text) => {
-    if (!text || !text.trim() || !currentUserId) return;
+    const cleanText = normaliseMessageText(text);
+    if (!cleanText || !currentUserId) return;
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return;
 
@@ -467,7 +468,7 @@ export function ChatProvider({ children }) {
       channelId,
       senderId: currentUserId,
       type: 'text',
-      text: text.trim(),
+      text: cleanText,
       createdAt: nowIso,
       status: isOffline ? 'queued' : 'sent',
     };
@@ -522,7 +523,8 @@ export function ChatProvider({ children }) {
   }, [currentUserId, currentUser, isOffline, channels, staff, clearTypingTimer]);
 
   const sendThreadReply = useCallback((channelId, parentId, text) => {
-    if (!text || !text.trim() || !currentUserId || !parentId) return;
+    const cleanText = normaliseMessageText(text);
+    if (!cleanText || !currentUserId || !parentId) return;
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return;
 
@@ -533,7 +535,7 @@ export function ChatProvider({ children }) {
       parentId,
       senderId: currentUserId,
       type: 'text',
-      text: text.trim(),
+      text: cleanText,
       createdAt: nowIso,
       status: isOffline ? 'queued' : 'sent',
     };
@@ -572,7 +574,8 @@ export function ChatProvider({ children }) {
     const currentChannel = channels.find((c) => c.id === channelId);
     if (!currentChannel || !canPost(currentUser, currentChannel)) return null;
 
-    const trimmedCaption = caption && typeof caption === 'string' && caption.trim() ? caption.trim() : undefined;
+    const normalisedCaption = normaliseMessageText(caption);
+    const trimmedCaption = normalisedCaption || undefined;
     const nowIso = new Date().toISOString();
     const msgType = type || (fileKind === 'video' ? 'video' : 'file');
     const newMsg = {
@@ -602,13 +605,14 @@ export function ChatProvider({ children }) {
   }, [currentUserId, currentUser, isOffline, channels]);
 
   const editMessage = useCallback((messageId, newText) => {
-    if (!messageId || !newText.trim()) return;
+    const cleanText = normaliseMessageText(newText);
+    if (!messageId || !cleanText) return;
     const nowIso = new Date().toISOString();
     setChatState((prev) => ({
       ...prev,
       messages: prev.messages.map((m) =>
         m.id === messageId
-          ? { ...m, text: newText.trim(), editedAt: nowIso }
+          ? { ...m, text: cleanText, editedAt: nowIso }
           : m
       ),
     }));
@@ -2063,7 +2067,7 @@ export function ChatProvider({ children }) {
         senderId: currentUserId,
         type: 'lead',
         clientName: (clientName || '').trim(),
-        enquiry: (enquiry || '').trim(),
+        enquiry: normaliseMessageText(enquiry),
         area: (area || '').trim(),
         budgetNgn: Number(budgetNgn) || 0,
         claimedById: null,
@@ -2109,7 +2113,7 @@ export function ChatProvider({ children }) {
         senderId: currentUserId,
         type: 'listing',
         listingChannelId,
-        note: (note || '').trim(),
+        note: normaliseMessageText(note),
         createdAt: nowIso,
         status: isOffline ? 'queued' : 'sent',
       };

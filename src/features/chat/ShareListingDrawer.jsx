@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { formatNaira } from '../../utils/formatters.js';
 import { useChat } from '../../context/ChatContext.jsx';
-import { shareableListings, officeLabelOf } from '../../utils/chat.js';
+import { shareableListings, officeLabelOf, normaliseMessageText } from '../../utils/chat.js';
 import { ListingPhoto } from './ListingPhoto.jsx';
 
 function ShareListingForm({ isOpen, channel, onClose }) {
@@ -13,7 +13,7 @@ function ShareListingForm({ isOpen, channel, onClose }) {
   const [selectedListingId, setSelectedListingId] = useState('');
   const [note, setNote] = useState('');
 
-  const isDirty = Boolean(selectedListingId || note.trim());
+  const isDirty = Boolean(selectedListingId || normaliseMessageText(note));
 
   const siteGroups = useMemo(() => {
     const list = shareableListings(currentUser, channels);
@@ -48,7 +48,7 @@ function ShareListingForm({ isOpen, channel, onClose }) {
     e.preventDefault();
     if (!selectedListingId || !channel) return;
 
-    shareListing(channel.id, selectedListingId, note);
+    shareListing(channel.id, selectedListingId, normaliseMessageText(note));
     onClose();
   };
 

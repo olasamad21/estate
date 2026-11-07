@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { canPost, callNameOf, channelMembersFor } from '../../utils/chat.js';
+import { canPost, callNameOf, channelMembersFor, normaliseMessageText } from '../../utils/chat.js';
 import { getEnterKeyPref, shouldEnterSend } from '../../utils/enterKey.js';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
@@ -55,7 +55,7 @@ export function MessageComposer({
   const recordTimerRef = useRef(null);
 
   const allowedToPost = channel ? canPost(resolvedUser, channel) : true;
-  const hasText = Boolean(text.trim());
+  const hasText = Boolean(normaliseMessageText(text));
   const resolvedPlaceholder = activeEditingMessage
     ? 'Edit your message...'
     : (placeholder ?? (isThread ? 'Reply in thread' : 'Message'));
@@ -209,7 +209,7 @@ export function MessageComposer({
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    const trimmed = text.trim();
+    const trimmed = normaliseMessageText(text);
     if (!trimmed || !allowedToPost) return;
 
     if (activeEditingMessage) {

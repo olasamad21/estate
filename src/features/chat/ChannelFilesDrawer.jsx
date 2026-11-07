@@ -170,7 +170,7 @@ export function ChannelFilesDrawer({
                         </p>
                         {item.caption && (
                           <p className="text-xs text-ink-muted mt-0.5 break-words">
-                            {item.caption}
+                            {item.caption.replace(/[\r\n]+/g, ' ').trim()}
                           </p>
                         )}
                         <p className="text-xs text-ink-muted mt-0.5">

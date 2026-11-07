@@ -795,6 +795,21 @@ const LISTING_TITLES = {
 };
 
 /**
+ * Normalises user-entered message text:
+ * - converts \r\n (and lone \r) to \n
+ * - trims only the start and end of the whole text
+ * - collapses three or more consecutive line breaks into two (one blank line)
+ * - leaves spaces inside lines untouched
+ */
+export function normaliseMessageText(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
  * Returns a concise single-line preview string for any message type.
  */
 export function messagePreview(message, staff) {
@@ -805,7 +820,7 @@ export function messagePreview(message, staff) {
   }
 
   if (message.type === 'system') {
-    return message.text || '';
+    return (message.text || '').replace(/[\r\n]+/g, ' ').trim();
   }
 
   if (message.type === 'lead') {

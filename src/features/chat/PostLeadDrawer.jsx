@@ -3,6 +3,7 @@ import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { COMPANY_CONFIG } from '../../config/market.js';
 import { useChat } from '../../context/ChatContext.jsx';
+import { normaliseMessageText } from '../../utils/chat.js';
 
 function formatBudgetInput(raw) {
   const digits = String(raw || '').replace(/\D/g, '');
@@ -21,7 +22,7 @@ function PostLeadForm({ isOpen, channel, onClose }) {
 
   const isDirty = Boolean(
     clientName.trim() ||
-    enquiry.trim() ||
+    normaliseMessageText(enquiry) ||
     area.trim() ||
     budgetFormatted.trim()
   );
@@ -51,7 +52,7 @@ function PostLeadForm({ isOpen, channel, onClose }) {
       errs.clientName = 'Client name must be at most 60 characters.';
     }
 
-    const trimmedEnquiry = enquiry.trim();
+    const trimmedEnquiry = normaliseMessageText(enquiry);
     if (!trimmedEnquiry) {
       errs.enquiry = 'Enquiry description is required.';
     } else if (trimmedEnquiry.length < 5) {
@@ -89,7 +90,7 @@ function PostLeadForm({ isOpen, channel, onClose }) {
 
     postLead(channel.id, {
       clientName: clientName.trim(),
-      enquiry: enquiry.trim(),
+      enquiry: normaliseMessageText(enquiry),
       area: area.trim(),
       budgetNgn: numericBudget,
     });

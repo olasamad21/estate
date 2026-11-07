@@ -273,7 +273,7 @@ export function MessageRow({
               onOpenActions={onOpenActions}
             />
             {message.caption && (
-              <div className="text-sm text-ink leading-relaxed break-words mt-1.5 max-w-[65ch]">
+              <div className="text-sm text-ink leading-relaxed whitespace-pre-wrap break-words mt-1.5 max-w-[65ch]">
                 {renderFormattedText(message.caption, currentUser)}
               </div>
             )}
@@ -314,7 +314,7 @@ export function MessageRow({
               <h4 className="text-xs sm:text-sm font-bold text-ink">
                 {message.clientName}
               </h4>
-              <p className="text-xs text-ink-soft leading-relaxed mt-1">
+              <p className="text-xs text-ink-soft leading-relaxed whitespace-pre-wrap break-words mt-1">
                 {message.enquiry}
               </p>
             </div>
@@ -427,7 +427,7 @@ export function MessageRow({
                 </div>
 
                 {message.note && (
-                  <p className="text-xs text-ink-soft leading-relaxed border-t border-line pt-2">
+                  <p className="text-xs text-ink-soft leading-relaxed whitespace-pre-wrap break-words border-t border-line pt-2">
                     {message.note}
                   </p>
                 )}
@@ -452,7 +452,7 @@ export function MessageRow({
             );
           })()
         ) : (
-          <div className="text-xs text-ink leading-relaxed break-words max-w-[65ch]">
+          <div className="text-xs text-ink leading-relaxed whitespace-pre-wrap break-words max-w-[65ch]">
             {renderFormattedText(message.text, currentUser)}
           </div>
         )}

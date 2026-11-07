@@ -48,12 +48,12 @@ export function PinnedMessagesDrawer({
                   <Pin className="w-3.5 h-3.5 text-brand shrink-0" aria-hidden="true" />
                 </div>
 
-                <p className="text-xs text-ink line-clamp-2 leading-relaxed">
+                <p className="text-xs text-ink line-clamp-2 leading-relaxed break-words">
                   {msg.type === 'voice'
                     ? 'Voice note'
                     : msg.type === 'file'
                     ? `File: ${msg.fileName || msg.text}`
-                    : msg.text}
+                    : (msg.text || '').replace(/[\r\n]+/g, ' ').trim()}
                 </p>
 
                 <div className="flex items-center gap-1 text-xs text-brand-ink font-semibold pt-1">

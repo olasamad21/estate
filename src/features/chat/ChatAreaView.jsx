@@ -689,7 +689,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
                         ? 'Voice note'
                         : pinnedMessages[0].type === 'file'
                         ? `File: ${pinnedMessages[0].fileName || 'Attachment'}`
-                        : pinnedMessages[0].text}
+                        : (pinnedMessages[0].text || '').replace(/[\r\n]+/g, ' ').trim()}
                     </span>
                   </div>
                 ) : (

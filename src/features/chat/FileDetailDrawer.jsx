@@ -173,7 +173,7 @@ export function FileDetailDrawer({
               {title}
             </h3>
             {currentFile.caption && (
-              <p className="text-xs text-ink-muted break-words leading-relaxed">
+              <p className="text-xs text-ink-muted whitespace-pre-wrap break-words leading-relaxed">
                 {currentFile.caption}
               </p>
             )}

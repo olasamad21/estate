@@ -73,13 +73,13 @@ export function ThreadDrawer({
                     durationSec={parentMessage.durationSec}
                   />
                   {parentMessage.caption && (
-                    <div className="text-sm text-ink leading-relaxed break-words mt-1.5">
+                    <div className="text-sm text-ink leading-relaxed whitespace-pre-wrap break-words mt-1.5">
                       {parentMessage.caption}
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-ink leading-relaxed break-words">
+                <p className="text-xs text-ink leading-relaxed whitespace-pre-wrap break-words">
                   {parentMessage.text}
                 </p>
               )}
@@ -132,13 +132,13 @@ export function ThreadDrawer({
                           durationSec={reply.durationSec}
                         />
                         {reply.caption && (
-                          <div className="text-sm text-ink leading-relaxed break-words mt-1.5">
+                          <div className="text-sm text-ink leading-relaxed whitespace-pre-wrap break-words mt-1.5">
                             {reply.caption}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs text-ink leading-relaxed break-words">
+                      <p className="text-xs text-ink leading-relaxed whitespace-pre-wrap break-words">
                         {reply.text}
                       </p>
                     )}

@@ -3,7 +3,7 @@ import { Hash, Lock, MessageSquare } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
-import { canShareListing, channelDisplayName } from '../../utils/chat.js';
+import { canShareListing, channelDisplayName, normaliseMessageText } from '../../utils/chat.js';
 
 function ShareToListingChannelForm({ isOpen, listingChannel, onClose }) {
   const { currentUser, channels, staff, shareListing } = useChat();
@@ -11,7 +11,7 @@ function ShareToListingChannelForm({ isOpen, listingChannel, onClose }) {
   const [selectedChannelId, setSelectedChannelId] = useState('');
   const [note, setNote] = useState('');
 
-  const isDirty = Boolean(selectedChannelId || note.trim());
+  const isDirty = Boolean(selectedChannelId || normaliseMessageText(note));
 
   // Eligible destination channels grouped by section
   const groupedChannels = useMemo(() => {
@@ -46,7 +46,7 @@ function ShareToListingChannelForm({ isOpen, listingChannel, onClose }) {
     if (!selectedChannelId || !listingChannel) return;
 
     const targetDisplayName = channelDisplayName(selectedChannel, currentUser?.id, staff);
-    shareListing(selectedChannelId, listingChannel.id, note, targetDisplayName);
+    shareListing(selectedChannelId, listingChannel.id, normaliseMessageText(note), targetDisplayName);
     onClose();
   };
 

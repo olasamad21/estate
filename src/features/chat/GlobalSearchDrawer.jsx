@@ -480,7 +480,7 @@ export function GlobalSearchDrawer({
                         </div>
                         <div className="text-xs text-ink leading-relaxed break-words">
                           <HighlightMatch
-                            text={msg.type === 'file' ? (msg.caption || msg.text) : msg.text}
+                            text={((msg.type === 'file' || msg.type === 'video') ? (msg.caption || msg.text) : (msg.text || '')).replace(/[\r\n]+/g, ' ').trim()}
                             query={query}
                           />
                         </div>
@@ -539,7 +539,7 @@ export function GlobalSearchDrawer({
                             </div>
                             {file.caption && (
                               <div className="text-xs text-ink-muted break-words">
-                                <HighlightMatch text={file.caption} query={query} />
+                                <HighlightMatch text={file.caption.replace(/[\r\n]+/g, ' ').trim()} query={query} />
                               </div>
                             )}
                             <div className="text-xs text-ink-muted">

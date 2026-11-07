@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { FileText, Play } from 'lucide-react';
 import { Drawer } from '../../components/common/Drawer.jsx';
 import { Button } from '../../components/common/Button.jsx';
+import { normaliseMessageText } from '../../utils/chat.js';
 import { PhotoPlaceholder } from './PhotoPlaceholder.jsx';
 
 function formatDuration(sec) {
@@ -20,7 +21,7 @@ export function AttachmentPreviewDrawer({
   const [caption, setCaption] = useState('');
   const textareaRef = useRef(null);
 
-  const isDirty = Boolean(caption.trim());
+  const isDirty = Boolean(normaliseMessageText(caption));
 
   if (!attachment) return null;
 
@@ -41,7 +42,7 @@ export function AttachmentPreviewDrawer({
 
   const handleSend = () => {
     onSend?.({
-      caption: caption.trim(),
+      caption: normaliseMessageText(caption),
     });
   };
 
