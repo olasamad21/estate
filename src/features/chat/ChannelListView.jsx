@@ -23,7 +23,7 @@ const FILTER_TABS = [
   { id: 'direct', label: 'Direct', icon: MessageSquare },
 ];
 
-export function ChannelListView() {
+export function ChannelListView({ defaultChannelId = null }) {
   const {
     channels,
     messages,
@@ -35,7 +35,8 @@ export function ChannelListView() {
     notifyPrefs,
   } = useChat();
   const navigate = useNavigate();
-  const { id: activeChannelId } = useParams();
+  const { id: routeChannelId } = useParams();
+  const activeChannelId = routeChannelId ?? defaultChannelId ?? null;
 
   const [activeFilter, setActiveFilter] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);

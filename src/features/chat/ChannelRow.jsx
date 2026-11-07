@@ -5,11 +5,13 @@ import {
   unreadCount,
   mentionsUser,
   messagePreview,
+  collapseToSingleLine,
   callNameOf,
   initialsOf,
   siteSummary,
   siteActivity,
 } from '../../utils/chat.js';
+import { channelDraftKey, useDraft, useHasDraft } from '../../utils/drafts.js';
 import { formatListTimeNg } from '../../utils/formatters.js';
 import { Avatar } from '../../components/common/Avatar.jsx';
 import { ListingPhoto } from './ListingPhoto.jsx';
@@ -28,8 +30,14 @@ export function ChannelRow({
   userReadMap = {},
   notifyPrefs = {},
 }) {
-  const currentUserId = currentUser?.id || null;
+  const currentUserId = currentUser?.id ?? null;
   const isSite = channel.kind === 'site';
+  const draftScopeKey = !channel.archived && currentUserId
+    ? channelDraftKey(currentUserId, channel.id)
+    : null;
+  const hasChannelDraft = useHasDraft(draftScopeKey);
+  const showDraftPreview = hasChannelDraft && !isActive && !channel.archived;
+  const draftText = useDraft(showDraftPreview ? draftScopeKey : null);
 
   // For site channels, compute activity & summary across the site and its properties
   const siteAct = isSite
@@ -167,7 +175,14 @@ export function ChannelRow({
             </p>
           )}
           <p className="text-xs text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
-            {previewText}
+            {showDraftPreview ? (
+              <>
+                <span className="font-semibold text-brand-ink">Draft: </span>
+                <span>{collapseToSingleLine(draftText)}</span>
+              </>
+            ) : (
+              previewText
+            )}
           </p>
         </div>
       </div>

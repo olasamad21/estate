@@ -768,7 +768,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
           ) : (
             <div className="shrink-0">
               <MessageComposer
-                key={editingMessage ? editingMessage.id : 'composer'}
+                key={`${currentUser?.id ?? 'anon'}:channel:${channel.id}:${editingMessage ? `edit:${editingMessage.id}` : 'draft'}`}
                 variant="channel"
                 placeholder="Message"
                 channel={channel}
@@ -828,9 +828,7 @@ export function ChatAreaView({ defaultChannelId = 'general' }) {
         staffById={staffById}
         isArchived={Boolean(channel?.archived)}
         allowedToPost={canPost(currentUser, channel)}
-        onSendReply={(chId, parentId, text) => {
-          sendThreadReply(chId, parentId, text);
-        }}
+        onSendReply={(chId, parentId, text) => sendThreadReply(chId, parentId, text)}
       />
 
       <SeenByDrawer

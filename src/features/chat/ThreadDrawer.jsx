@@ -162,19 +162,19 @@ export function ThreadDrawer({
         ) : (
           <div className="shrink-0">
             <MessageComposer
-              key={parentMessage.id}
+              key={`${currentUser?.id ?? 'anon'}:thread:${parentMessage.id}`}
               variant="thread"
               placeholder="Reply in thread"
               inputName="thread_reply"
               channel={channel}
+              parentId={parentMessage.id}
               currentUser={currentUser}
               members={members}
               onSubmitText={(trimmedText) => {
                 if (onSendReply) {
-                  onSendReply(parentMessage.channelId, parentMessage.id, trimmedText);
-                } else {
-                  sendThreadReply(parentMessage.channelId, parentMessage.id, trimmedText);
+                  return onSendReply(parentMessage.channelId, parentMessage.id, trimmedText);
                 }
+                return sendThreadReply(parentMessage.channelId, parentMessage.id, trimmedText);
               }}
             />
           </div>

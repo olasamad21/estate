@@ -810,6 +810,14 @@ export function normaliseMessageText(text) {
 }
 
 /**
+ * Collapses multi-line text into a trimmed single-line preview string.
+ */
+export function collapseToSingleLine(text) {
+  if (typeof text !== 'string') return '';
+  return text.replace(/[\r\n]+/g, ' ').trim();
+}
+
+/**
  * Returns a concise single-line preview string for any message type.
  */
 export function messagePreview(message, staff) {
@@ -820,7 +828,7 @@ export function messagePreview(message, staff) {
   }
 
   if (message.type === 'system') {
-    return (message.text || '').replace(/[\r\n]+/g, ' ').trim();
+    return collapseToSingleLine(message.text);
   }
 
   if (message.type === 'lead') {
@@ -850,7 +858,7 @@ export function messagePreview(message, staff) {
 
   if (message.type === 'video' || message.fileKind === 'video') {
     if (message.caption) {
-      return `Video: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+      return `Video: ${collapseToSingleLine(message.caption)}`;
     }
     if (typeof message.durationSec === 'number' && Number.isFinite(message.durationSec)) {
       const mins = Math.floor(message.durationSec / 60);
@@ -862,7 +870,7 @@ export function messagePreview(message, staff) {
 
   if (message.fileKind === 'photo' || (message.type === 'file' && message.fileKind === 'photo')) {
     if (message.caption) {
-      return `Photo: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+      return `Photo: ${collapseToSingleLine(message.caption)}`;
     }
     return 'Photo';
   }
@@ -870,7 +878,7 @@ export function messagePreview(message, staff) {
   if (message.type === 'file') {
     const fileName = message.fileName || 'File';
     if (message.caption) {
-      return `${fileName}: ${message.caption.replace(/[\r\n]+/g, ' ').trim()}`;
+      return `${fileName}: ${collapseToSingleLine(message.caption)}`;
     }
     return fileName;
   }
@@ -882,7 +890,7 @@ export function messagePreview(message, staff) {
     return `Voice note, ${mins}:${secs}`;
   }
 
-  return (message.text || '').replace(/[\r\n]+/g, ' ').trim();
+  return collapseToSingleLine(message.text);
 }
 
 /**

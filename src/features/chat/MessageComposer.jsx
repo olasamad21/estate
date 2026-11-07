@@ -3,6 +3,7 @@ import { Send, Lock, Paperclip, Smile, Mic, Pencil } from 'lucide-react';
 import { useChat } from '../../context/ChatContext.jsx';
 import { canPost, callNameOf, channelMembersFor, normaliseMessageText } from '../../utils/chat.js';
 import { getEnterKeyPref, shouldEnterSend } from '../../utils/enterKey.js';
+import { channelDraftKey, threadDraftKey, getDraft, setDraft } from '../../utils/drafts.js';
 import { EmojiPicker } from './EmojiPicker.jsx';
 import { MentionMenu } from './MentionMenu.jsx';
 
@@ -22,6 +23,7 @@ export function MessageComposer({
   allowEdit,
   members,
   channel = null,
+  parentId = null,
   currentUser = null,
   channelMembers,
   editingMessage = null,
@@ -33,16 +35,26 @@ export function MessageComposer({
 }) {
   const { currentUser: contextUser, staff, sendMessage } = useChat();
   const resolvedUser = currentUser ?? contextUser ?? null;
+  const resolvedUserId = resolvedUser?.id ?? null;
 
   const isThread = variant === 'thread';
   const effectiveAllowAttach = allowAttach ?? !isThread;
   const effectiveAllowVoice = allowVoice ?? !isThread;
   const effectiveAllowEdit = allowEdit ?? !isThread;
   const activeEditingMessage = effectiveAllowEdit ? (editingMessage ?? null) : null;
+  const scopeKey = isThread
+    ? threadDraftKey(resolvedUserId, parentId)
+    : channelDraftKey(resolvedUserId, channel?.id ?? null);
   const mentionMembers =
     members ?? channelMembers ?? (channel ? channelMembersFor(channel, staff) : []);
 
-  const [text, setText] = useState(activeEditingMessage?.text || '');
+  const [text, setText] = useState(() => {
+    if (activeEditingMessage) {
+      return activeEditingMessage.text ?? '';
+    }
+    return scopeKey ? getDraft(scopeKey) : '';
+  });
+  const [sendHint, setSendHint] = useState(null);
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -60,12 +72,29 @@ export function MessageComposer({
     ? 'Edit your message...'
     : (placeholder ?? (isThread ? 'Reply in thread' : 'Message'));
 
-  // Focus textarea when editing begins
+  // Focus textarea when editing begins; when mounting with a non-empty draft, place caret at end without stealing focus
   useEffect(() => {
-    if (activeEditingMessage && textareaRef.current) {
-      textareaRef.current.focus();
+    const el = textareaRef.current;
+    if (!el) return;
+    if (activeEditingMessage) {
+      el.focus();
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        // ignore
+      }
+      return;
     }
-  }, [activeEditingMessage]);
+    if (el.value.length > 0) {
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        // ignore
+      }
+    }
+  }, [activeEditingMessage, allowedToPost]);
 
   // Voice recording timer
   useEffect(() => {
@@ -89,12 +118,18 @@ export function MessageComposer({
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [text]);
+  }, [text, allowedToPost]);
 
   const handleTextChange = (e) => {
     const val = e.target.value;
     const cursorPos = e.target.selectionStart || 0;
+    if (sendHint !== null) {
+      setSendHint(null);
+    }
     setText(val);
+    if (!activeEditingMessage && scopeKey) {
+      setDraft(scopeKey, val);
+    }
 
     const textBeforeCursor = val.slice(0, cursorPos);
     const match = textBeforeCursor.match(/@([a-zA-Z0-9_]*)$/);
@@ -116,7 +151,13 @@ export function MessageComposer({
       const mentionStart = match.index;
       const newTextBefore = textBeforeCursor.slice(0, mentionStart) + `@${firstName} `;
       const newText = newTextBefore + textAfterCursor;
+      if (sendHint !== null) {
+        setSendHint(null);
+      }
       setText(newText);
+      if (!activeEditingMessage && scopeKey) {
+        setDraft(scopeKey, newText);
+      }
       setMentionQuery(null);
       setTimeout(() => {
         if (textareaRef.current) {
@@ -131,7 +172,13 @@ export function MessageComposer({
   const handleSelectEmoji = (emoji) => {
     const cursorPos = textareaRef.current ? textareaRef.current.selectionStart : text.length;
     const newText = text.slice(0, cursorPos) + emoji + text.slice(cursorPos);
+    if (sendHint !== null) {
+      setSendHint(null);
+    }
     setText(newText);
+    if (!activeEditingMessage && scopeKey) {
+      setDraft(scopeKey, newText);
+    }
     setIsEmojiOpen(false);
     setTimeout(() => {
       if (textareaRef.current) {
@@ -210,22 +257,38 @@ export function MessageComposer({
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     const trimmed = normaliseMessageText(text);
-    if (!trimmed || !allowedToPost) return;
+    if (!trimmed) return;
 
+    let didSend = false;
     if (activeEditingMessage) {
-      onSaveEdit?.(activeEditingMessage.id, trimmed);
-      onCancelEdit?.();
+      didSend = Boolean(onSaveEdit?.(activeEditingMessage.id, trimmed));
     } else if (onSubmitText) {
-      onSubmitText(trimmed);
+      didSend = Boolean(onSubmitText(trimmed));
     } else if (onSendMessage) {
-      onSendMessage(trimmed);
+      didSend = Boolean(onSendMessage(trimmed));
     } else if (channel?.id) {
-      sendMessage(channel.id, trimmed);
+      didSend = Boolean(sendMessage(channel.id, trimmed));
     }
 
+    if (!didSend) {
+      setSendHint("Message not sent. You can't send here.");
+      if (textareaRef.current) {
+        textareaRef.current.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    setSendHint(null);
     setText('');
     setMentionQuery(null);
     setIsEmojiOpen(false);
+
+    if (activeEditingMessage) {
+      onCancelEdit?.();
+    } else if (scopeKey) {
+      setDraft(scopeKey, '');
+    }
+
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.focus({ preventScroll: true });
@@ -280,6 +343,13 @@ export function MessageComposer({
           >
             Cancel
           </button>
+        </div>
+      )}
+
+      {/* Inline Send Failure Hint */}
+      {sendHint && (
+        <div role="status" className="px-3 sm:px-4 pt-1.5 text-xs text-ink-muted">
+          {sendHint}
         </div>
       )}
 

@@ -8,7 +8,8 @@ import { SEED_ACCESS_REQUESTS, SEED_ACTIVATION_LINKS } from '../mock/accessReque
 import { SEED_ACTIVITY_LOG } from '../mock/activityLog.js';
 import { LEADS_BY_OFFICE } from '../mock/leads.js';
 import { getRandomColleagueReply } from '../mock/replies.js';
-import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty, normaliseMessageText } from '../utils/chat.js';
+import { channelMembersFor, slugify, isStaffActive, linkState, requestForPhone, generateUniqueListingSlug, generateUniqueSiteSlug, canManageListing, canPostLead, canShareListing, shareableListings, callNameOf, canPost, canEdit, canClaimLead, canManageChannel, getDmSlug, canCreateSite, canAddProperty, normaliseMessageText } from '../utils/chat.js';
+import { clearAllDrafts } from '../utils/drafts.js';
 import { hashPassword, passwordRules, isPasswordValid, checkPassword } from '../utils/password.js';
 import { COMPANY_CONFIG } from '../config/market.js';
 import { useToast } from '../components/common/useToast.js';
@@ -424,6 +425,7 @@ export function ChatProvider({ children }) {
 
   const logout = useCallback(() => {
     clearTypingTimer();
+    clearAllDrafts();
     setCurrentUserId(null);
     safeLocalStorage.remove('session_user');
   }, [clearTypingTimer]);
@@ -458,9 +460,13 @@ export function ChatProvider({ children }) {
 
   const sendMessage = useCallback((channelId, text) => {
     const cleanText = normaliseMessageText(text);
-    if (!cleanText || !currentUserId) return;
-    const currentChannel = channels.find((c) => c.id === channelId);
-    if (!currentChannel || !canPost(currentUser, currentChannel)) return;
+    if (!cleanText || !currentUserId || !currentUser || !isStaffActive(currentUser)) {
+      return false;
+    }
+    const currentChannel = channels.find((c) => c.id === channelId) ?? null;
+    if (!currentChannel || currentChannel.archived || !canPost(currentUser, currentChannel)) {
+      return false;
+    }
 
     const nowIso = new Date().toISOString();
     const newMsg = {
@@ -520,13 +526,23 @@ export function ChatProvider({ children }) {
         }, delay);
       }
     }
+
+    return true;
   }, [currentUserId, currentUser, isOffline, channels, staff, clearTypingTimer]);
 
   const sendThreadReply = useCallback((channelId, parentId, text) => {
     const cleanText = normaliseMessageText(text);
-    if (!cleanText || !currentUserId || !parentId) return;
-    const currentChannel = channels.find((c) => c.id === channelId);
-    if (!currentChannel || !canPost(currentUser, currentChannel)) return;
+    if (!cleanText || !currentUserId || !currentUser || !isStaffActive(currentUser) || !parentId) {
+      return false;
+    }
+    const currentChannel = channels.find((c) => c.id === channelId) ?? null;
+    if (!currentChannel || currentChannel.archived || !canPost(currentUser, currentChannel)) {
+      return false;
+    }
+    const parentMsg = messages.find((m) => m.id === parentId) ?? null;
+    if (!parentMsg || parentMsg.deletedAt || parentMsg.channelId !== channelId) {
+      return false;
+    }
 
     const nowIso = new Date().toISOString();
     const newMsg = {
@@ -544,7 +560,9 @@ export function ChatProvider({ children }) {
       ...prev,
       messages: [...prev.messages, newMsg],
     }));
-  }, [currentUserId, currentUser, isOffline, channels]);
+
+    return true;
+  }, [currentUserId, currentUser, isOffline, channels, messages]);
 
   const sendVoiceNote = useCallback((channelId, durationSec) => {
     if (!currentUserId || !channelId) return;
@@ -606,7 +624,17 @@ export function ChatProvider({ children }) {
 
   const editMessage = useCallback((messageId, newText) => {
     const cleanText = normaliseMessageText(newText);
-    if (!messageId || !cleanText) return;
+    if (!messageId || !cleanText || !currentUser || !isStaffActive(currentUser)) {
+      return false;
+    }
+    const targetMsg = messages.find((m) => m.id === messageId) ?? null;
+    if (!targetMsg || !canEdit(targetMsg, currentUser)) {
+      return false;
+    }
+    const targetChannel = channels.find((c) => c.id === targetMsg.channelId) ?? null;
+    if (!targetChannel || targetChannel.archived || !canPost(currentUser, targetChannel)) {
+      return false;
+    }
     const nowIso = new Date().toISOString();
     setChatState((prev) => ({
       ...prev,
@@ -616,7 +644,8 @@ export function ChatProvider({ children }) {
           : m
       ),
     }));
-  }, []);
+    return true;
+  }, [currentUser, messages, channels]);
 
   const deleteMessage = useCallback((messageId) => {
     if (!messageId) return;
@@ -723,6 +752,7 @@ export function ChatProvider({ children }) {
 
   const resetDemo = useCallback(() => {
     clearTypingTimer();
+    clearAllDrafts();
     loginAttemptsRef.current = {};
     safeSessionStorage.remove('chat_state');
     const fresh = {

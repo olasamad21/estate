@@ -29,7 +29,7 @@ function WorkspaceLayout() {
       {/* Desktop view (>= 1024px): 320px sidebar + chat pane */}
       <div className="hidden lg:flex flex-1 min-h-0 w-full overflow-hidden">
         <aside className="w-80 shrink-0 border-r border-line h-full overflow-hidden">
-          <ChannelListView />
+          <ChannelListView defaultChannelId="general" />
         </aside>
         <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
           <ChatAreaView key={channelId || 'general'} defaultChannelId="general" />
